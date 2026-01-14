@@ -10,17 +10,17 @@ export function AppLayout() {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background gradient-mesh">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
-            <Loader2 className="size-10 animate-spin text-primary relative" />
+          <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-primary" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </motion.div>
       </div>
     );
@@ -34,39 +34,17 @@ export function AppLayout() {
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar />
       <main className="flex-1 relative overflow-hidden flex flex-col h-full">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 gradient-mesh">
-          <motion.div 
-            className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-primary/8 to-transparent blur-3xl"
-            animate={{ 
-              scale: [1, 1.1, 1],
-              rotate: [0, 10, 0],
-            }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div 
-            className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-gold/6 to-transparent blur-3xl"
-            animate={{ 
-              scale: [1, 1.15, 1],
-              rotate: [0, -10, 0],
-            }}
-            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div 
-            className="absolute top-[40%] left-[20%] w-[200px] h-[200px] rounded-full bg-accent/20 blur-2xl"
-            animate={{ 
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/[0.02] rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gold/[0.02] rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
         </div>
         
-        {/* Content */}
         <motion.div 
-          className="relative z-10 flex-1 overflow-y-auto pb-24 lg:pb-0 scrollbar-hide"
+          className="relative z-10 flex-1 overflow-y-auto pb-20 lg:pb-0 scrollbar-hide"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
         >
           <Outlet />
         </motion.div>
