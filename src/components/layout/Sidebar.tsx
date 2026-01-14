@@ -9,6 +9,7 @@ import {
   LogOut,
   Hexagon,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -19,6 +20,7 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const { profile, signOut } = useAuth();
 
   return (
     <aside className="w-64 flex-shrink-0 hidden lg:flex flex-col h-full bg-card border-r border-border">
@@ -69,7 +71,9 @@ export function Sidebar() {
         <div className="mt-auto pt-4 border-t border-border">
           <Link
             to="/settings"
-            className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 ${
+              location.pathname === "/settings" ? "bg-accent text-accent-foreground" : ""
+            }`}
           >
             <Settings className="size-5" />
             <span className="font-medium text-sm">Settings</span>
@@ -81,17 +85,15 @@ export function Sidebar() {
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border">
           <div
-            className="size-10 rounded-full bg-cover bg-center ring-2 ring-card"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--gold)))",
-            }}
+            className="size-10 rounded-full bg-gradient-to-br from-primary to-gold"
           />
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate">
-              Alex Miner
+              {profile?.display_name || "Miner"}
             </span>
-            <span className="text-xs text-primary font-medium">Pro Plan</span>
+            <span className="text-xs text-primary font-medium">
+              {profile?.is_premium ? "Pro Plan" : `Level ${profile?.level || 1}`}
+            </span>
           </div>
         </div>
 
@@ -99,7 +101,7 @@ export function Sidebar() {
         <div className="mt-3 bg-accent/50 rounded-xl p-3 border border-border">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Mining Status
+              Mining Power
             </span>
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
@@ -107,12 +109,23 @@ export function Sidebar() {
             </span>
           </div>
           <div className="flex items-end gap-1">
-            <span className="text-xl font-bold text-foreground">42.8</span>
+            <span className="text-xl font-bold text-foreground">
+              {profile?.mining_power || 50}
+            </span>
             <span className="text-xs font-medium text-muted-foreground mb-1">
-              MH/s
+              %
             </span>
           </div>
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={signOut}
+          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors"
+        >
+          <LogOut className="size-4" />
+          Logout
+        </button>
       </div>
     </aside>
   );

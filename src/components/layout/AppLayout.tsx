@@ -1,8 +1,24 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export function AppLayout() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar />
@@ -15,7 +31,7 @@ export function AppLayout() {
         </div>
         
         {/* Content */}
-        <div className="relative z-10 flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <div className="relative z-10 flex-1 overflow-y-auto pb-24 lg:pb-0">
           <Outlet />
         </div>
       </main>

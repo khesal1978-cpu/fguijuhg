@@ -5,31 +5,33 @@ import {
   Users,
   Wallet,
   Trophy,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Home", path: "/" },
   { icon: Users, label: "Team", path: "/team" },
   { icon: Wallet, label: "Wallet", path: "/wallet" },
-  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
+  { icon: Trophy, label: "Rank", path: "/leaderboard" },
+  { icon: Settings, label: "More", path: "/settings" },
 ];
 
 export function MobileNav() {
   const location = useLocation();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-border bg-card/95">
-      <div className="flex items-center justify-around py-2 px-4">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-area-bottom">
+      <div className="flex items-center justify-around py-2 px-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-colors ${
+              className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-colors min-w-[60px] ${
                 isActive
                   ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground active:text-foreground"
               }`}
             >
               <motion.div
