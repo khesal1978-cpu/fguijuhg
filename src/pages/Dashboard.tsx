@@ -1,11 +1,12 @@
-import { motion } from "framer-motion";
-import { Bell, Gauge, Layers, Timer, TrendingUp, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Gauge, Layers, Timer, TrendingUp, Loader2, Coins, Zap } from "lucide-react";
 import { MiningButton } from "@/components/dashboard/MiningButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityItem } from "@/components/dashboard/ActivityItem";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMining } from "@/hooks/useMining";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -20,10 +21,28 @@ export default function Dashboard() {
     loading: miningLoading 
   } = useMining();
   const { transactions, loading: txLoading } = useTransactions(5);
+  
+  // Live earnings counter
+  const [liveEarnings, setLiveEarnings] = useState(0);
+
+  useEffect(() => {
+    if (!isMining || !profile?.mining_rate) {
+      setLiveEarnings(0);
+      return;
+    }
+
+    const perSecond = Number(profile.mining_rate) / 3600;
+    const interval = setInterval(() => {
+      setLiveEarnings((prev) => prev + perSecond);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isMining, profile?.mining_rate]);
 
   const handleMiningTap = async () => {
     if (canClaim) {
       await claimReward();
+      setLiveEarnings(0);
     } else if (canStartMining) {
       await startMining();
     }
@@ -56,12 +75,26 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-card rounded-full border border-border shadow-card">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-medium text-primary">
-              {isMining ? "Mining Active" : "Ready"}
+          <motion.div 
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-card ${
+              isMining 
+                ? "bg-primary/10 border-primary/30" 
+                : canClaim 
+                ? "bg-gold/10 border-gold/30"
+                : "bg-destructive/10 border-destructive/30"
+            }`}
+            animate={isMining ? { scale: [1, 1.02, 1] } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <span className={`w-2 h-2 rounded-full ${
+              isMining ? "bg-primary animate-pulse" : canClaim ? "bg-gold animate-pulse" : "bg-destructive"
+            }`} />
+            <span className={`text-xs font-bold ${
+              isMining ? "text-primary" : canClaim ? "text-gold" : "text-destructive"
+            }`}>
+              {isMining ? "Mining Active" : canClaim ? "Ready to Claim" : "Inactive"}
             </span>
-          </div>
+          </motion.div>
           <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors rounded-full hover:bg-secondary">
             <Bell className="size-5" />
           </button>
@@ -75,6 +108,33 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Animated background particles */}
+        {isMining && (
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-primary/40 rounded-full"
+                initial={{ 
+                  x: Math.random() * 100 + "%", 
+                  y: "100%",
+                  opacity: 0.5 
+                }}
+                animate={{ 
+                  y: "-20%",
+                  opacity: [0.5, 1, 0],
+                }}
+                transition={{
+                  duration: 3 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: i * 0.5,
+                  ease: "linear",
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Decorative corner accents - hidden on mobile */}
         <div className="hidden sm:block absolute top-8 left-8 text-primary/10">
           <Layers className="size-16" />
@@ -89,6 +149,7 @@ export default function Dashboard() {
             Current Balance
           </h3>
           <div className="flex items-center justify-center gap-2 font-display text-3xl sm:text-4xl md:text-6xl font-bold text-foreground tracking-tight">
+            <Coins className="size-8 sm:size-10 md:size-12 text-gold" />
             <span className="gradient-text bg-gradient-to-r from-foreground to-muted-foreground">
               {Number(profile?.balance || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
@@ -105,6 +166,24 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Live Earnings Counter */}
+        <AnimatePresence>
+          {isMining && liveEarnings > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="absolute top-4 right-4 sm:top-8 sm:right-8 bg-primary/10 border border-primary/30 rounded-xl px-3 py-2 z-10"
+            >
+              <p className="text-xs text-muted-foreground font-medium">This Session</p>
+              <p className="text-lg font-display font-bold text-primary flex items-center gap-1">
+                <Zap className="size-4" />
+                +{liveEarnings.toFixed(4)}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Mining Button */}
         <MiningButton 
           progress={progress} 
@@ -112,17 +191,24 @@ export default function Dashboard() {
           canClaim={canClaim}
           canStart={canStartMining}
           onTap={handleMiningTap}
+          miningRate={Number(profile?.mining_rate || 10)}
         />
 
         {/* Status Text */}
         <div className="mt-6 sm:mt-8 text-center">
           <p className="text-sm font-medium text-muted-foreground">
             {canClaim ? (
-              <span className="text-gold font-bold">Rewards ready to claim!</span>
+              <motion.span 
+                className="text-gold font-bold"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                ✨ Rewards ready to claim! ✨
+              </motion.span>
             ) : isMining ? (
-              <>Cycle Ends In: <span className="text-primary font-bold">{cycleDisplay}</span></>
+              <>Cycle Ends In: <span className="text-primary font-bold font-mono">{cycleDisplay}</span></>
             ) : (
-              <span>Tap to start a new mining cycle</span>
+              <span className="text-destructive">Mining inactive - Tap to start!</span>
             )}
           </p>
         </div>
@@ -143,15 +229,15 @@ export default function Dashboard() {
           label="Total Mined"
           value={Number(profile?.total_mined || 0).toLocaleString()}
           unit="CASET"
-          iconBg="bg-blue-100 dark:bg-blue-900/30"
-          iconColor="text-blue-500"
+          iconBg="bg-primary/10"
+          iconColor="text-primary"
         />
         <StatCard
           icon={<Timer className="size-6 sm:size-7" />}
           label="Cycle Timer"
           value={isMining ? cycleDisplay : "Ready"}
-          iconBg="bg-purple-100 dark:bg-purple-900/30"
-          iconColor="text-purple-500"
+          iconBg={isMining ? "bg-primary/10" : "bg-destructive/10"}
+          iconColor={isMining ? "text-primary" : "text-destructive"}
         />
       </div>
 

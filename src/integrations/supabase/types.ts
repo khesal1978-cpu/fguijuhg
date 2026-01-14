@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_tasks: {
+        Row: {
+          created_at: string
+          id: string
+          is_claimed: boolean
+          is_completed: boolean
+          last_updated: string
+          progress: number
+          reward: number
+          target: number
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          last_updated?: string
+          progress?: number
+          reward: number
+          target: number
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          last_updated?: string
+          progress?: number
+          reward?: number
+          target?: number
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_plays: {
+        Row: {
+          cost: number
+          created_at: string
+          game_type: string
+          id: string
+          reward: number
+          user_id: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          game_type: string
+          id?: string
+          reward?: number
+          user_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          game_type?: string
+          id?: string
+          reward?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_plays_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mining_sessions: {
         Row: {
           created_at: string
@@ -203,6 +285,7 @@ export type Database = {
     }
     Functions: {
       claim_mining_reward: { Args: { session_id: string }; Returns: Json }
+      claim_task_reward: { Args: { task_id: string }; Returns: Json }
       get_leaderboard: {
         Args: { time_period?: string }
         Returns: {
@@ -214,6 +297,8 @@ export type Database = {
           user_id: string
         }[]
       }
+      play_scratch_card: { Args: { scratch_cost?: number }; Returns: Json }
+      play_spin_wheel: { Args: { spin_cost?: number }; Returns: Json }
       start_mining_session: { Args: never; Returns: Json }
     }
     Enums: {

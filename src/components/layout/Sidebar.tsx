@@ -8,11 +8,13 @@ import {
   Settings,
   LogOut,
   Hexagon,
+  Gamepad2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Gamepad2, label: "Games", path: "/games" },
   { icon: Users, label: "Team", path: "/team" },
   { icon: Wallet, label: "Wallet", path: "/wallet" },
   { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
