@@ -10,7 +10,6 @@ import Dashboard from "./pages/Dashboard";
 import Wallet from "./pages/Wallet";
 import Team from "./pages/Team";
 import Games from "./pages/Games";
-import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -30,7 +29,6 @@ const App = () => (
               <Route path="/games" element={<Games />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/team" element={<Team />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

@@ -1,15 +1,26 @@
 import { motion } from "framer-motion";
-import { Bell, Users, Zap, Copy, Share2, Plus, Sparkles, Loader2, Gift } from "lucide-react";
+import { Users, Zap, Copy, Share2, Plus, Sparkles, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReferrals } from "@/hooks/useReferrals";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+};
 
 export default function Team() {
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const { referrals, stats, loading: referralsLoading } = useReferrals();
-  const { leaderboard, loading: leaderboardLoading } = useLeaderboard();
 
   const copyReferralCode = () => {
     if (profile?.referral_code) {
@@ -38,13 +49,18 @@ export default function Team() {
     window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, "_blank");
   };
 
-  // Find current user's rank
-  const userRank = leaderboard.find((entry) => entry.user_id === user?.id);
-
   return (
-    <div className="flex flex-col h-full">
+    <motion.div 
+      className="flex flex-col h-full"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <header className="h-16 sm:h-20 shrink-0 px-4 md:px-8 flex items-center justify-between z-10 bg-card/50 backdrop-blur-sm border-b border-border">
+      <motion.header 
+        className="h-16 sm:h-20 shrink-0 px-4 md:px-8 flex items-center justify-between z-10"
+        variants={itemVariants}
+      >
         <div className="flex flex-col">
           <h1 className="text-lg sm:text-xl font-display font-bold text-foreground">
             Team
@@ -53,21 +69,17 @@ export default function Team() {
             Referrals & Network
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button className="relative p-2 rounded-full text-muted-foreground hover:bg-secondary transition-colors">
-            <Bell className="size-5" />
-          </button>
-        </div>
-      </header>
+      </motion.header>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 z-10 scrollbar-hide">
         <div className="max-w-[1400px] mx-auto flex flex-col gap-6 sm:gap-8">
           {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <motion.div className="grid grid-cols-3 gap-2 sm:gap-4" variants={itemVariants}>
             <motion.div
-              className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-border shadow-card"
-              whileHover={{ y: -2 }}
+              className="bg-gradient-to-br from-card to-card/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-border shadow-card"
+              whileHover={{ y: -2, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 400 }}
             >
               <p className="text-muted-foreground text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">
                 Team
@@ -78,8 +90,9 @@ export default function Team() {
             </motion.div>
 
             <motion.div
-              className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-border shadow-card"
-              whileHover={{ y: -2 }}
+              className="bg-gradient-to-br from-card to-card/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-border shadow-card"
+              whileHover={{ y: -2, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 400 }}
             >
               <p className="text-muted-foreground text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">
                 Active
@@ -90,8 +103,9 @@ export default function Team() {
             </motion.div>
 
             <motion.div
-              className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-border shadow-card"
-              whileHover={{ y: -2 }}
+              className="bg-gradient-to-br from-card to-card/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-border shadow-card"
+              whileHover={{ y: -2, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 400 }}
             >
               <p className="text-muted-foreground text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">
                 Earned
@@ -100,32 +114,38 @@ export default function Team() {
                 {stats.totalEarnings}
               </h3>
             </motion.div>
-          </div>
+          </motion.div>
 
           {/* Hero Referral Card */}
           <motion.div
-            className="rounded-2xl sm:rounded-3xl overflow-hidden relative shadow-glow bg-card border border-border"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl sm:rounded-3xl overflow-hidden relative shadow-glow bg-gradient-to-br from-card via-card to-card/80 border border-border"
+            variants={itemVariants}
           >
             {/* Decorative background */}
-            <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-accent to-transparent" />
-            <div className="absolute -right-20 -top-20 size-64 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-accent/50 to-transparent" />
+            <div className="absolute -right-20 -top-20 size-72 bg-gradient-to-bl from-primary/15 to-transparent rounded-full blur-3xl" />
+            <div className="absolute -left-10 bottom-0 size-48 bg-gradient-to-tr from-gold/10 to-transparent rounded-full blur-2xl" />
 
-            <div className="p-4 sm:p-6 md:p-10 relative z-10">
+            <div className="p-5 sm:p-6 md:p-10 relative z-10">
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/30">
+                <motion.div 
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-gold/15 to-gold/5 border border-gold/30"
+                  whileHover={{ scale: 1.05 }}
+                >
                   <Sparkles className="size-3 sm:size-4 text-gold-dark" />
                   <span className="text-[10px] sm:text-xs font-bold text-gold-dark uppercase tracking-wide">
                     You get +25 CASET
                   </span>
-                </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30">
+                </motion.div>
+                <motion.div 
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/30"
+                  whileHover={{ scale: 1.05 }}
+                >
                   <Gift className="size-3 sm:size-4 text-primary" />
                   <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wide">
                     Friend gets +50 CASET
                   </span>
-                </div>
+                </motion.div>
               </div>
 
               <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground mb-3 leading-tight">
@@ -139,9 +159,11 @@ export default function Team() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
-                <div
+                <motion.div
                   onClick={copyReferralCode}
-                  className="flex-1 bg-secondary border border-border rounded-xl px-4 py-3 flex items-center justify-between group hover:border-primary transition-colors cursor-pointer"
+                  className="flex-1 bg-gradient-to-r from-secondary to-secondary/50 border border-border rounded-xl px-4 py-3.5 flex items-center justify-between group hover:border-primary/50 transition-all duration-300 cursor-pointer"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex flex-col">
                     <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
@@ -154,10 +176,10 @@ export default function Team() {
                     </span>
                   </div>
                   <Copy className="size-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
+                </motion.div>
                 <Button 
                   onClick={shareReferralLink}
-                  className="bg-primary hover:bg-primary-dark text-primary-foreground px-6 py-3 rounded-xl font-bold shadow-glow"
+                  className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-primary-foreground px-6 py-3 rounded-xl font-bold shadow-glow transition-all duration-300"
                 >
                   <Share2 className="size-4 mr-2" />
                   Share
@@ -165,153 +187,91 @@ export default function Team() {
               </div>
 
               {/* Share on X Button */}
-              <Button
-                onClick={shareOnX}
-                variant="outline"
-                className="w-full sm:w-auto border-border hover:border-foreground hover:bg-secondary"
-              >
-                <svg className="size-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-                Share on X
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  onClick={shareOnX}
+                  variant="outline"
+                  className="w-full sm:w-auto border-border hover:border-foreground hover:bg-secondary transition-all duration-300"
+                >
+                  <svg className="size-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  Share on X
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
 
-          {/* Team Grid & Leaderboard */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Team Members */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
-              <h3 className="text-lg font-display font-bold text-foreground">
-                My Team ({referrals.length})
-              </h3>
+          {/* Team Members Grid */}
+          <motion.div className="flex flex-col gap-4" variants={itemVariants}>
+            <h3 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
+              <Users className="size-5 text-primary" />
+              My Team ({referrals.length})
+            </h3>
 
-              {referralsLoading ? (
-                <div className="p-8 flex justify-center">
-                  <Loader2 className="size-6 animate-spin text-primary" />
-                </div>
-              ) : referrals.length === 0 ? (
-                <div className="bg-secondary/50 border-2 border-dashed border-border p-6 sm:p-8 rounded-xl flex flex-col items-center justify-center text-center">
-                  <div className="size-12 rounded-full bg-card shadow-card flex items-center justify-center mb-3">
-                    <Plus className="size-6 text-primary" />
-                  </div>
-                  <p className="text-sm font-bold text-muted-foreground mb-1">
-                    No team members yet
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Share your code to grow your team!
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {referrals.map((referral) => (
-                    <motion.div
-                      key={referral.id}
-                      className="bg-card p-4 rounded-xl border border-border hover:border-primary/50 hover:shadow-glow transition-all"
-                      whileHover={{ y: -2 }}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="relative">
-                          <div className="size-10 sm:size-12 rounded-full bg-gradient-to-br from-primary/50 to-primary" />
-                          <div
-                            className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-card ${
-                              referral.is_active ? "bg-primary" : "bg-muted"
-                            }`}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-sm text-foreground truncate">
-                            {referral.referred_profile?.display_name || "Miner"}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">
-                            Joined {new Date(referral.created_at).toLocaleDateString()}
-                          </p>
-                          <div className="flex items-center gap-1 text-xs font-bold text-primary bg-accent px-2 py-1 rounded-md w-fit mt-2">
-                            <Zap className="size-3" />
-                            +{Number(referral.bonus_earned).toFixed(0)} earned
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Leaderboard */}
-            <div className="bg-card rounded-2xl shadow-card border border-border flex flex-col max-h-[400px] lg:max-h-none overflow-hidden">
-              <div className="p-4 border-b border-border">
-                <h3 className="text-lg font-display font-bold text-foreground">
-                  Leaderboard
-                </h3>
+            {referralsLoading ? (
+              <div className="p-8 flex justify-center">
+                <Loader2 className="size-6 animate-spin text-primary" />
               </div>
-
-              {/* Rows */}
-              <div className="flex-1 overflow-y-auto scrollbar-hide">
-                {leaderboardLoading ? (
-                  <div className="p-8 flex justify-center">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                  </div>
-                ) : leaderboard.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground text-sm">
-                    No miners yet
-                  </div>
-                ) : (
-                  leaderboard.slice(0, 10).map((entry) => (
-                    <div
-                      key={entry.user_id}
-                      className={`flex items-center justify-between px-4 py-3 border-b border-border last:border-0 ${
-                        entry.user_id === user?.id ? "bg-accent/50" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`text-sm font-bold ${
-                            entry.rank === 1
-                              ? "text-gold"
-                              : entry.rank === 2
-                              ? "text-muted-foreground"
-                              : entry.rank === 3
-                              ? "text-orange-500"
-                              : "text-muted-foreground"
+            ) : referrals.length === 0 ? (
+              <motion.div 
+                className="bg-gradient-to-br from-secondary/50 to-secondary/20 border-2 border-dashed border-border p-6 sm:p-8 rounded-xl flex flex-col items-center justify-center text-center"
+                whileHover={{ borderColor: "hsl(var(--primary) / 0.3)" }}
+              >
+                <motion.div 
+                  className="size-14 rounded-full bg-gradient-to-br from-card to-secondary shadow-card flex items-center justify-center mb-3"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Plus className="size-6 text-primary" />
+                </motion.div>
+                <p className="text-sm font-bold text-muted-foreground mb-1">
+                  No team members yet
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Share your code to grow your team!
+                </p>
+              </motion.div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {referrals.map((referral, index) => (
+                  <motion.div
+                    key={referral.id}
+                    className="bg-gradient-to-br from-card to-card/50 p-4 rounded-xl border border-border hover:border-primary/30 hover:shadow-glow transition-all duration-300"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -2, scale: 1.02 }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        <div className="size-10 sm:size-12 rounded-full bg-gradient-to-br from-primary/50 to-primary animate-gradient-shift" style={{ backgroundSize: '200% 200%' }} />
+                        <div
+                          className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-card ${
+                            referral.is_active ? "bg-primary animate-pulse" : "bg-muted"
                           }`}
-                        >
-                          #{entry.rank}
-                        </span>
-                        <div className="size-8 rounded-full bg-gradient-to-br from-primary/30 to-primary" />
-                        <span className="text-sm font-semibold text-foreground truncate max-w-[80px] sm:max-w-[120px]">
-                          {entry.user_id === user?.id ? "You" : entry.display_name || "Miner"}
-                        </span>
+                        />
                       </div>
-                      <span className="text-sm font-mono font-bold text-primary">
-                        {Number(entry.total_mined).toLocaleString()}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-foreground truncate">
+                          {referral.referred_profile?.display_name || "Miner"}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          Joined {new Date(referral.created_at).toLocaleDateString()}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs font-bold text-primary bg-gradient-to-r from-primary/15 to-primary/5 px-2 py-1 rounded-md w-fit mt-2 border border-primary/20">
+                          <Zap className="size-3" />
+                          +{Number(referral.bonus_earned).toFixed(0)} earned
+                        </div>
+                      </div>
                     </div>
-                  ))
-                )}
+                  </motion.div>
+                ))}
               </div>
-
-              {/* User Rank */}
-              {userRank && userRank.rank > 10 && (
-                <div className="border-t border-primary/20 bg-accent/50 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-primary">
-                        #{userRank.rank}
-                      </span>
-                      <div className="size-8 rounded-full bg-gradient-to-br from-primary to-gold" />
-                      <span className="text-sm font-bold text-foreground">You</span>
-                    </div>
-                    <span className="text-sm font-mono font-bold text-primary">
-                      {Number(userRank.total_mined).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+            )}
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
