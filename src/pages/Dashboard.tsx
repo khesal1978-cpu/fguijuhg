@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Gauge, Layers, Timer, TrendingUp, Loader2, Coins, Zap } from "lucide-react";
+import { Gauge, Layers, Timer, TrendingUp, Loader2, Coins, Zap, Sparkles } from "lucide-react";
 import { MiningButton } from "@/components/dashboard/MiningButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityItem } from "@/components/dashboard/ActivityItem";
@@ -56,70 +56,81 @@ export default function Dashboard() {
   if (miningLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </div>
+        <motion.div 
+          className="flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-breathe" />
+            <div className="relative size-14 rounded-2xl bg-gradient-to-br from-primary to-accent-foreground flex items-center justify-center">
+              <Loader2 className="size-7 animate-spin text-primary-foreground" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 lg:py-8 max-w-[1200px] mx-auto w-full space-y-5 md:space-y-6">
+    <div className="px-4 py-6 md:px-8 lg:py-8 max-w-[1200px] mx-auto w-full space-y-6 md:space-y-8">
       {/* Header */}
       <motion.header 
-        className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
-        initial={{ opacity: 0, y: -10 }}
+        className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.4 }}
       >
         <div>
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">
             Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Monitor your mining activity
           </p>
         </div>
-        <div 
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+        <motion.div 
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border backdrop-blur-sm ${
             isMining 
-              ? "bg-primary/10 border-primary/20 text-primary" 
+              ? "bg-primary/10 border-primary/30 text-primary" 
               : canClaim 
-                ? "bg-gold/10 border-gold/20 text-gold-dark"
-                : "bg-destructive/10 border-destructive/20 text-destructive"
+                ? "bg-gold/10 border-gold/30 text-gold-dark"
+                : "bg-destructive/10 border-destructive/30 text-destructive"
           }`}
+          animate={{ scale: [1, 1.02, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
         >
-          <span className={`size-1.5 rounded-full ${
+          <span className={`size-2 rounded-full ${
             isMining ? "bg-primary animate-pulse" : canClaim ? "bg-gold" : "bg-destructive"
           }`} />
           {isMining ? "Mining Active" : canClaim ? "Ready to Claim" : "Inactive"}
-        </div>
+        </motion.div>
       </motion.header>
 
       {/* Mining Hero */}
       <motion.section
-        className="glass-card rounded-2xl p-5 sm:p-8 relative overflow-hidden"
-        initial={{ opacity: 0, y: 10 }}
+        className="glass-card rounded-3xl p-6 sm:p-10 relative overflow-hidden"
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
       >
-        {/* Background accents */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gold/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+        {/* Animated background blobs */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-primary/10 to-accent-foreground/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 animate-morph" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-gradient-to-tr from-gold/10 to-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 animate-morph-reverse" />
 
         {/* Live Earnings Badge */}
         <AnimatePresence>
           {isMining && liveEarnings > 0 && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="absolute top-4 right-4 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2 backdrop-blur-sm"
+              initial={{ opacity: 0, scale: 0.8, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-gradient-to-r from-primary/10 to-accent-foreground/10 border border-primary/20 rounded-2xl px-4 py-3 backdrop-blur-sm"
             >
-              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Session</p>
-              <p className="text-sm font-bold text-primary flex items-center gap-1">
-                <Zap className="size-3" />
+              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">This Session</p>
+              <p className="text-base font-bold text-primary flex items-center gap-1.5 font-serif">
+                <Sparkles className="size-4 animate-pulse-soft" />
                 +{liveEarnings.toFixed(4)}
               </p>
             </motion.div>
@@ -127,26 +138,34 @@ export default function Dashboard() {
         </AnimatePresence>
 
         {/* Balance */}
-        <div className="text-center mb-6 sm:mb-8 relative z-10">
-          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
+        <div className="text-center mb-8 sm:mb-10 relative z-10">
+          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-[0.15em] mb-3">
             Current Balance
           </p>
-          <div className="flex items-center justify-center gap-2">
-            <Coins className="size-7 sm:size-9 text-gold animate-bounce-soft" />
-            <span className="text-3xl sm:text-5xl font-display font-bold text-foreground">
+          <div className="flex items-center justify-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <Coins className="size-8 sm:size-11 text-gold" />
+            </motion.div>
+            <span className="text-4xl sm:text-6xl font-serif font-bold text-foreground">
               {Number(profile?.balance || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </span>
-            <span className="text-lg sm:text-2xl font-semibold text-primary">
+            <span className="text-xl sm:text-3xl font-semibold text-primary">
               CASET
             </span>
           </div>
-          <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">
-            <TrendingUp className="size-3" />
-            +{Number(profile?.mining_rate || 10).toFixed(1)}/hr
-          </div>
+          <motion.div 
+            className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-accent to-accent/50 text-accent-foreground text-xs font-medium border border-accent-foreground/10"
+            whileHover={{ scale: 1.05 }}
+          >
+            <TrendingUp className="size-3.5" />
+            +{Number(profile?.mining_rate || 10).toFixed(1)} CASET/hr
+          </motion.div>
         </div>
 
         {/* Mining Button */}
@@ -160,17 +179,25 @@ export default function Dashboard() {
         />
 
         {/* Timer */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
             {canClaim ? (
-              <span className="text-gold font-semibold">✨ Rewards ready to claim!</span>
+              <motion.span 
+                className="text-gold font-semibold flex items-center justify-center gap-2"
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Sparkles className="size-4" />
+                Rewards ready to claim!
+                <Sparkles className="size-4" />
+              </motion.span>
             ) : isMining ? (
               <>
                 Cycle ends in{" "}
-                <span className="text-primary font-bold font-mono">{cycleDisplay}</span>
+                <span className="text-primary font-bold font-mono text-base">{cycleDisplay}</span>
               </>
             ) : (
-              <span className="text-destructive">Tap to start mining</span>
+              <span className="text-destructive font-medium">Tap the button to start mining</span>
             )}
           </p>
         </div>
@@ -178,10 +205,10 @@ export default function Dashboard() {
 
       {/* Stats */}
       <motion.div 
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-        initial={{ opacity: 0, y: 10 }}
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4"
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
       >
         <StatCard
           icon={<Gauge className="size-5" />}
@@ -210,29 +237,33 @@ export default function Dashboard() {
 
       {/* Activity */}
       <motion.section
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.3 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
       >
-        <h2 className="text-base font-display font-semibold text-foreground mb-3">
+        <h2 className="text-lg font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Zap className="size-4 text-primary" />
           Recent Activity
         </h2>
-        <div className="glass-card rounded-xl overflow-hidden">
+        <div className="glass-card rounded-2xl overflow-hidden">
           {txLoading ? (
-            <div className="p-8 flex justify-center">
-              <Loader2 className="size-5 animate-spin text-primary" />
+            <div className="p-10 flex justify-center">
+              <Loader2 className="size-6 animate-spin text-primary" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              No activity yet. Start mining!
+            <div className="p-10 text-center">
+              <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                <Zap className="size-5 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm">No activity yet. Start mining!</p>
             </div>
           ) : (
             transactions.map((tx, index) => (
               <motion.div
                 key={tx.id}
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
+                transition={{ delay: index * 0.05 }}
               >
                 <ActivityItem
                   title={tx.description || tx.type}

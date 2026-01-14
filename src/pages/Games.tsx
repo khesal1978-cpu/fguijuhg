@@ -14,88 +14,95 @@ export default function Games() {
   const [activeTab, setActiveTab] = useState("spin");
 
   return (
-    <div className="px-4 py-5 md:px-8 lg:py-8 max-w-[1200px] mx-auto w-full space-y-5 md:space-y-6">
+    <div className="px-4 py-6 md:px-8 lg:py-8 max-w-[1200px] mx-auto w-full space-y-6 md:space-y-8">
       {/* Header */}
       <motion.header 
         className="flex items-center justify-between"
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.4 }}
       >
         <div>
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground">
             Games
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Play & earn CASET
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full">
-          <Coins className="size-4 text-gold animate-bounce-soft" />
-          <span className="text-sm font-bold text-foreground">
+        <motion.div 
+          className="flex items-center gap-2 px-4 py-2 bg-card/80 backdrop-blur-sm border border-border/50 rounded-full"
+          whileHover={{ scale: 1.03 }}
+        >
+          <Coins className="size-5 text-gold animate-bounce-subtle" />
+          <span className="text-sm font-bold text-foreground font-serif">
             {Number(profile?.balance || 0).toFixed(0)}
           </span>
-        </div>
+        </motion.div>
       </motion.header>
 
       {/* Balance Card */}
       <motion.section
-        className="glass-card rounded-2xl p-5 relative overflow-hidden"
-        initial={{ opacity: 0, y: 10 }}
+        className="glass-card rounded-3xl p-6 relative overflow-hidden"
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-primary/10 to-accent-foreground/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 animate-morph" />
         
         <div className="flex items-center justify-between relative z-10">
           <div>
-            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">
               Your Balance
             </p>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+              <span className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
                 {Number(profile?.balance || 0).toFixed(2)}
               </span>
-              <span className="text-base font-semibold text-primary">CASET</span>
+              <span className="text-lg font-semibold text-primary">CASET</span>
             </div>
           </div>
-          <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Gamepad2 className="size-7 text-primary" />
-          </div>
+          <motion.div 
+            className="size-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent-foreground/10 flex items-center justify-center border border-primary/20"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          >
+            <Gamepad2 className="size-8 text-primary" />
+          </motion.div>
         </div>
       </motion.section>
 
       {/* Games Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Games Section */}
         <motion.div 
           className="lg:col-span-2"
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full h-11 bg-card border border-border rounded-xl p-1 mb-4">
+            <TabsList className="w-full h-12 bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-1.5 mb-5">
               <TabsTrigger
                 value="spin"
-                className="flex-1 h-9 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium text-sm transition-all"
+                className="flex-1 h-9 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent-foreground data-[state=active]:text-primary-foreground font-medium text-sm transition-all duration-300"
               >
                 <Sparkles className="size-4 mr-2" />
                 Spin Wheel
               </TabsTrigger>
               <TabsTrigger
                 value="scratch"
-                className="flex-1 h-9 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium text-sm transition-all"
+                className="flex-1 h-9 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent-foreground data-[state=active]:text-primary-foreground font-medium text-sm transition-all duration-300"
               >
                 <TicketPercent className="size-4 mr-2" />
                 Scratch Card
               </TabsTrigger>
             </TabsList>
 
-            <div className="glass-card rounded-2xl p-5 sm:p-6">
+            <div className="glass-card rounded-3xl p-6 sm:p-8">
               <TabsContent value="spin" className="m-0">
-                <div className="text-center mb-5">
-                  <h2 className="text-lg font-display font-bold text-foreground mb-1">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-serif font-bold text-foreground mb-2">
                     Spin the Wheel
                   </h2>
                   <p className="text-sm text-muted-foreground">
@@ -105,30 +112,34 @@ export default function Games() {
                 <SpinWheel onSpin={playSpin} spinning={spinning} cost={5} />
                 
                 {/* Odds */}
-                <div className="mt-6 p-4 bg-muted/50 rounded-xl border border-border">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                <div className="mt-8 p-5 bg-gradient-to-r from-muted/50 to-accent/30 rounded-2xl border border-border/50">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                     Win Chances
                   </p>
                   <div className="grid grid-cols-5 gap-2 text-center">
                     {[
                       { value: '10', chance: '70%' },
                       { value: '20', chance: '20%' },
-                      { value: '50', chance: '7%', gold: true },
+                      { value: '50', chance: '7%', highlight: true },
                       { value: '100', chance: '2%' },
-                      { value: '500', chance: '1%', gold: true },
+                      { value: '500', chance: '1%', highlight: true },
                     ].map((item, i) => (
-                      <div key={i} className={`p-2 bg-card rounded-lg border ${item.gold ? 'border-gold/20' : 'border-border'}`}>
-                        <p className={`text-sm font-bold ${item.gold ? 'text-gold' : 'text-foreground'}`}>{item.value}</p>
-                        <p className="text-[10px] text-muted-foreground">{item.chance}</p>
-                      </div>
+                      <motion.div 
+                        key={i} 
+                        className={`p-3 bg-card rounded-xl border ${item.highlight ? 'border-gold/30 bg-gradient-to-br from-gold/5 to-gold/10' : 'border-border/50'}`}
+                        whileHover={{ scale: 1.05, y: -2 }}
+                      >
+                        <p className={`text-base font-serif font-bold ${item.highlight ? 'text-gold' : 'text-foreground'}`}>{item.value}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{item.chance}</p>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="scratch" className="m-0">
-                <div className="text-center mb-5">
-                  <h2 className="text-lg font-display font-bold text-foreground mb-1">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-serif font-bold text-foreground mb-2">
                     Scratch & Win
                   </h2>
                   <p className="text-sm text-muted-foreground">
@@ -138,20 +149,24 @@ export default function Games() {
                 <ScratchCard onScratch={playScratch} scratching={scratching} cost={3} />
                 
                 {/* Odds */}
-                <div className="mt-6 p-4 bg-muted/50 rounded-xl border border-border">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                <div className="mt-8 p-5 bg-gradient-to-r from-muted/50 to-accent/30 rounded-2xl border border-border/50">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                     Win Chances
                   </p>
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="grid grid-cols-3 gap-3 text-center">
                     {[
                       { value: '5', chance: '70%' },
                       { value: '10', chance: '20%' },
-                      { value: '30', chance: '10%', gold: true },
+                      { value: '30', chance: '10%', highlight: true },
                     ].map((item, i) => (
-                      <div key={i} className={`p-2 bg-card rounded-lg border ${item.gold ? 'border-gold/20' : 'border-border'}`}>
-                        <p className={`text-sm font-bold ${item.gold ? 'text-gold' : 'text-foreground'}`}>{item.value}</p>
-                        <p className="text-[10px] text-muted-foreground">{item.chance}</p>
-                      </div>
+                      <motion.div 
+                        key={i} 
+                        className={`p-3 bg-card rounded-xl border ${item.highlight ? 'border-gold/30 bg-gradient-to-br from-gold/5 to-gold/10' : 'border-border/50'}`}
+                        whileHover={{ scale: 1.05, y: -2 }}
+                      >
+                        <p className={`text-base font-serif font-bold ${item.highlight ? 'text-gold' : 'text-foreground'}`}>{item.value}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{item.chance}</p>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
@@ -162,11 +177,11 @@ export default function Games() {
 
         {/* Tasks Panel */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <div className="glass-card rounded-2xl p-4 sm:p-5 sticky top-4">
+          <div className="glass-card rounded-3xl p-5 sm:p-6 sticky top-4">
             <TasksPanel tasks={tasks} loading={loading} onClaimTask={claimTask} />
           </div>
         </motion.div>
