@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2 } from "lucide-react";
+import { Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,39 +49,62 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl animate-float" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gold/5 blur-3xl animate-float-delayed" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        {/* Large morphing blobs */}
+        <div className="absolute top-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-primary/10 to-accent-foreground/5 blur-3xl animate-morph" />
+        <div className="absolute bottom-[-15%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-gold/10 to-primary/5 blur-3xl animate-morph-reverse" />
+        
+        {/* Floating particles */}
+        <div className="absolute top-1/4 left-1/3 w-3 h-3 bg-primary/30 rounded-full animate-float" />
+        <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-accent-foreground/40 rounded-full animate-float delay-500" />
+        <div className="absolute bottom-1/3 left-1/4 w-4 h-4 bg-gold/20 rounded-full animate-float delay-1000" />
+        
+        {/* Breathing ring */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] border border-primary/5 rounded-full animate-breathe" />
       </div>
 
       <motion.div
-        className="relative w-full max-w-md"
-        initial={{ opacity: 0, y: 20 }}
+        className="relative w-full max-w-md z-10"
+        initial={{ opacity: 0, y: 25 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="flex items-center justify-center size-12 rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-glow">
-            <Hexagon className="size-6 text-primary-foreground" />
+        <motion.div 
+          className="flex items-center justify-center gap-3 mb-10"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent-foreground rounded-2xl blur-lg opacity-50 animate-breathe" />
+            <div className="relative flex items-center justify-center size-14 rounded-2xl bg-gradient-to-br from-primary to-accent-foreground shadow-glow">
+              <Hexagon className="size-7 text-primary-foreground" />
+            </div>
           </div>
           <div>
-            <h1 className="font-display font-bold text-2xl text-foreground">
+            <h1 className="font-serif font-bold text-3xl text-foreground">
               PingCaset
             </h1>
-            <p className="text-xs text-primary font-medium tracking-wide">
+            <p className="text-xs text-primary font-semibold tracking-[0.2em]">
               MINING HUB
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Auth Card */}
-        <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-glow">
-          <h2 className="text-xl font-display font-bold text-foreground text-center mb-2">
+        <motion.div 
+          className="glass-card rounded-3xl p-7 md:p-9 shadow-glow"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <h2 className="text-2xl font-serif font-bold text-foreground text-center mb-2">
             {isLogin ? "Welcome Back" : "Join the Mining"}
           </h2>
-          <p className="text-sm text-muted-foreground text-center mb-6">
+          <p className="text-sm text-muted-foreground text-center mb-7">
             {isLogin
               ? "Sign in to continue mining"
               : "Create an account to start earning"}
@@ -89,65 +112,75 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <motion.div 
+                className="relative"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Display Name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="pl-10 h-12 rounded-xl bg-secondary border-border"
+                  className="pl-12 h-13 rounded-xl bg-muted/50 border-border/50 focus:border-primary/50 transition-all"
                   required={!isLogin}
                 />
-              </div>
+              </motion.div>
             )}
 
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
               <Input
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 h-12 rounded-xl bg-secondary border-border"
+                className="pl-12 h-13 rounded-xl bg-muted/50 border-border/50 focus:border-primary/50 transition-all"
                 required
               />
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
               <Input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 h-12 rounded-xl bg-secondary border-border"
+                className="pl-12 h-13 rounded-xl bg-muted/50 border-border/50 focus:border-primary/50 transition-all"
                 required
                 minLength={6}
               />
             </div>
 
             {!isLogin && (
-              <div className="relative">
-                <Gift className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <motion.div 
+                className="relative"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+              >
+                <Gift className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Referral Code (optional)"
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                  className="pl-10 h-12 rounded-xl bg-secondary border-border"
+                  className="pl-12 h-13 rounded-xl bg-muted/50 border-border/50 focus:border-primary/50 transition-all"
                 />
                 {referralCode && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
-                    +500 Bonus!
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-primary font-semibold flex items-center gap-1">
+                    <Sparkles className="size-3" />
+                    +50 Bonus!
                   </span>
                 )}
-              </div>
+              </motion.div>
             )}
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-primary hover:bg-primary-dark text-primary-foreground font-bold shadow-glow"
+              className="w-full h-13 rounded-xl gradient-primary text-primary-foreground font-bold text-base shadow-glow mt-2"
               disabled={loading}
             >
               {loading ? (
@@ -161,18 +194,21 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-7 text-center">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300"
             >
               {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
+                ? "Don't have an account? "
+                : "Already have an account? "}
+              <span className="font-semibold text-primary">
+                {isLogin ? "Sign up" : "Sign in"}
+              </span>
             </button>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );
