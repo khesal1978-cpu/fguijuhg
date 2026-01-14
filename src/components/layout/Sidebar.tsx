@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   Wallet,
-  Trophy,
   Settings,
   LogOut,
   Hexagon,
@@ -17,7 +16,6 @@ const navItems = [
   { icon: Gamepad2, label: "Games", path: "/games" },
   { icon: Users, label: "Team", path: "/team" },
   { icon: Wallet, label: "Wallet", path: "/wallet" },
-  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
 ];
 
 export function Sidebar() {
@@ -25,12 +23,16 @@ export function Sidebar() {
   const { profile, signOut } = useAuth();
 
   return (
-    <aside className="w-64 flex-shrink-0 hidden lg:flex flex-col h-full bg-card border-r border-border">
+    <aside className="w-64 flex-shrink-0 hidden lg:flex flex-col h-full bg-card/80 backdrop-blur-xl border-r border-border">
       {/* Logo Area */}
       <div className="h-20 flex items-center gap-3 px-6 border-b border-border">
-        <div className="flex items-center justify-center size-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-glow">
+        <motion.div 
+          className="flex items-center justify-center size-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-glow"
+          whileHover={{ scale: 1.05, rotate: 5 }}
+          transition={{ type: "spring", stiffness: 400 }}
+        >
           <Hexagon className="size-5 text-primary-foreground" />
-        </div>
+        </motion.div>
         <div>
           <h1 className="font-display font-bold text-lg leading-tight tracking-tight text-foreground">
             PingCaset
@@ -42,30 +44,42 @@ export function Sidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 flex flex-col gap-2 p-4 overflow-y-auto">
-        {navItems.map((item) => {
+      <nav className="flex-1 flex flex-col gap-1.5 p-4 overflow-y-auto">
+        {navItems.map((item, index) => {
           const isActive = location.pathname === item.path;
           return (
-            <Link
+            <motion.div
               key={item.path}
-              to={item.path}
-              className={`group relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
             >
-              {isActive && (
+              <Link
+                to={item.path}
+                className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                  isActive
+                    ? "bg-gradient-to-r from-primary/10 to-primary/5 text-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-primary to-primary-dark rounded-r-full"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                  />
+                )}
                 <motion.div
-                  layoutId="activeTab"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full"
-                />
-              )}
-              <item.icon
-                className={`size-5 ${isActive ? "text-primary" : ""}`}
-              />
-              <span className="font-medium text-sm">{item.label}</span>
-            </Link>
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <item.icon
+                    className={`size-5 transition-colors duration-300 ${isActive ? "text-primary" : "group-hover:text-primary"}`}
+                  />
+                </motion.div>
+                <span className="font-medium text-sm">{item.label}</span>
+              </Link>
+            </motion.div>
           );
         })}
 
@@ -73,8 +87,8 @@ export function Sidebar() {
         <div className="mt-auto pt-4 border-t border-border">
           <Link
             to="/settings"
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 ${
-              location.pathname === "/settings" ? "bg-accent text-accent-foreground" : ""
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-300 ${
+              location.pathname === "/settings" ? "bg-gradient-to-r from-primary/10 to-transparent text-foreground" : ""
             }`}
           >
             <Settings className="size-5" />
@@ -85,10 +99,11 @@ export function Sidebar() {
 
       {/* User Profile */}
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border">
-          <div
-            className="size-10 rounded-full bg-gradient-to-br from-primary to-gold"
-          />
+        <motion.div 
+          className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-secondary to-secondary/50 border border-border hover:border-primary/30 transition-all duration-300"
+          whileHover={{ scale: 1.02 }}
+        >
+          <div className="size-10 rounded-full bg-gradient-to-br from-primary to-gold animate-gradient-shift" style={{ backgroundSize: '200% 200%' }} />
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate">
               {profile?.display_name || "Miner"}
@@ -97,10 +112,15 @@ export function Sidebar() {
               {profile?.is_premium ? "Pro Plan" : `Level ${profile?.level || 1}`}
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Mining Status */}
-        <div className="mt-3 bg-accent/50 rounded-xl p-3 border border-border">
+        <motion.div 
+          className="mt-3 bg-gradient-to-r from-accent to-accent/50 rounded-xl p-3 border border-primary/10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Mining Power
@@ -118,16 +138,18 @@ export function Sidebar() {
               %
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Logout Button */}
-        <button
+        <motion.button
           onClick={signOut}
-          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors"
+          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <LogOut className="size-4" />
           Logout
-        </button>
+        </motion.button>
       </div>
     </aside>
   );
