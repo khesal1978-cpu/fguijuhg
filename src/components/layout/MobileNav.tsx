@@ -5,15 +5,15 @@ import {
   Users,
   Wallet,
   Trophy,
-  Settings,
+  Gamepad2,
 } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Home", path: "/" },
+  { icon: Gamepad2, label: "Games", path: "/games" },
   { icon: Users, label: "Team", path: "/team" },
   { icon: Wallet, label: "Wallet", path: "/wallet" },
   { icon: Trophy, label: "Rank", path: "/leaderboard" },
-  { icon: Settings, label: "More", path: "/settings" },
 ];
 
 export function MobileNav() {
@@ -28,7 +28,7 @@ export function MobileNav() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-colors min-w-[60px] ${
+              className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-colors min-w-[56px] ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground active:text-foreground"

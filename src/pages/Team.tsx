@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Bell, Users, Zap, Copy, Share2, Plus, Sparkles, Loader2 } from "lucide-react";
+import { Bell, Users, Zap, Copy, Share2, Plus, Sparkles, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,13 +23,19 @@ export default function Team() {
     if (navigator.share) {
       navigator.share({
         title: "Join PingCaset",
-        text: "Start mining crypto with me!",
+        text: "Start mining crypto with me! You'll get 50 CASET bonus!",
         url: link,
       });
     } else {
       navigator.clipboard.writeText(link);
       toast.success("Referral link copied!");
     }
+  };
+
+  const shareOnX = () => {
+    const link = `${window.location.origin}/auth?ref=${profile?.referral_code}`;
+    const text = encodeURIComponent(`Join me on PingCaset and start mining crypto! Use my code ${profile?.referral_code} to get 50 CASET bonus! 🚀💰`);
+    window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, "_blank");
   };
 
   // Find current user's rank
@@ -107,11 +113,19 @@ export default function Team() {
             <div className="absolute -right-20 -top-20 size-64 bg-primary/10 rounded-full blur-3xl" />
 
             <div className="p-4 sm:p-6 md:p-10 relative z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/30 w-fit mb-4">
-                <Sparkles className="size-3 sm:size-4 text-gold-dark" />
-                <span className="text-[10px] sm:text-xs font-bold text-gold-dark uppercase tracking-wide">
-                  Earn +50 per referral
-                </span>
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/30">
+                  <Sparkles className="size-3 sm:size-4 text-gold-dark" />
+                  <span className="text-[10px] sm:text-xs font-bold text-gold-dark uppercase tracking-wide">
+                    You get +25 CASET
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30">
+                  <Gift className="size-3 sm:size-4 text-primary" />
+                  <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wide">
+                    Friend gets +50 CASET
+                  </span>
+                </div>
               </div>
 
               <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-foreground mb-3 leading-tight">
@@ -119,11 +133,12 @@ export default function Team() {
               </h2>
 
               <p className="text-muted-foreground mb-6 max-w-md text-sm leading-relaxed">
-                Share your code. Both you and your friend get{" "}
-                <strong className="text-foreground">bonus CASET</strong>!
+                Share your code. You earn{" "}
+                <strong className="text-gold">25 CASET</strong> and your friend gets{" "}
+                <strong className="text-primary">50 CASET</strong> bonus!
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
                 <div
                   onClick={copyReferralCode}
                   className="flex-1 bg-secondary border border-border rounded-xl px-4 py-3 flex items-center justify-between group hover:border-primary transition-colors cursor-pointer"
@@ -133,7 +148,9 @@ export default function Team() {
                       Your Code
                     </span>
                     <span className="text-base sm:text-lg font-mono font-bold text-foreground tracking-widest">
-                      {profile?.referral_code || "LOADING..."}
+                      {profile?.referral_code || (
+                        <Loader2 className="size-4 animate-spin inline" />
+                      )}
                     </span>
                   </div>
                   <Copy className="size-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -146,6 +163,18 @@ export default function Team() {
                   Share
                 </Button>
               </div>
+
+              {/* Share on X Button */}
+              <Button
+                onClick={shareOnX}
+                variant="outline"
+                className="w-full sm:w-auto border-border hover:border-foreground hover:bg-secondary"
+              >
+                <svg className="size-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+                Share on X
+              </Button>
             </div>
           </motion.div>
 

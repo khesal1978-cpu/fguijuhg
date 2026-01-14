@@ -190,3 +190,12 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@keyframes coin-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(10deg); }
+}
+
+.animate-coin-float {
+  animation: coin-float 2s ease-in-out infinite;
+}
