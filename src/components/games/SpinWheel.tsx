@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles, Coins, Frown } from "lucide-react";
+import { Loader2, Sparkles, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,13 +10,10 @@ interface SpinWheelProps {
   cost: number;
 }
 
-// 8 segments: 3 unlucky, 2x10, 1x20, 1x50, 1x100+500 combined visual
+// 5 segments: 10, 20, 50, 100, 500 coins (no unlucky)
 const SEGMENTS = [
-  { value: 0, label: "💀", color: "hsl(0 0% 20%)", isUnlucky: true },
   { value: 10, label: "10", color: "hsl(262 83% 58%)" },
-  { value: 0, label: "💀", color: "hsl(0 0% 25%)", isUnlucky: true },
   { value: 20, label: "20", color: "hsl(262 83% 45%)" },
-  { value: 0, label: "💀", color: "hsl(0 0% 20%)", isUnlucky: true },
   { value: 50, label: "50", color: "hsl(45 100% 50%)" },
   { value: 100, label: "100", color: "hsl(262 83% 35%)" },
   { value: 500, label: "500", color: "hsl(45 100% 45%)" },
@@ -41,13 +38,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
     if (response.success && response.reward !== undefined) {
       // Find segment index for this reward
-      let segmentIndex = SEGMENTS.findIndex((s) => s.value === response.reward);
-      
-      // If unlucky (0), pick a random unlucky segment
-      if (response.reward === 0) {
-        const unluckyIndices = SEGMENTS.map((s, i) => s.isUnlucky ? i : -1).filter(i => i !== -1);
-        segmentIndex = unluckyIndices[Math.floor(Math.random() * unluckyIndices.length)];
-      }
+      const segmentIndex = SEGMENTS.findIndex((s) => s.value === response.reward);
       
       const segmentAngle = 360 / SEGMENTS.length;
       const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
@@ -70,7 +61,6 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
   };
 
   const canSpin = (profile?.balance || 0) >= cost && !spinning && !isSpinning;
-  const isUnlucky = result === 0;
 
   return (
     <div className="flex flex-col items-center gap-5">
@@ -119,12 +109,12 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                       x={textX}
                       y={textY}
                       fill="white"
-                      fontSize={segment.isUnlucky ? "16" : "12"}
+                      fontSize="14"
                       fontWeight="bold"
                       textAnchor="middle"
                       dominantBaseline="middle"
                       transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
-                      style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+                      style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)", fontFamily: "'Space Grotesk', sans-serif" }}
                     >
                       {segment.label}
                     </text>
@@ -160,21 +150,11 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                   animate={{ scale: [0, 1.2, 1] }}
                   transition={{ delay: 0.1 }}
                 >
-                  {isUnlucky ? (
-                    <Frown className="size-8 text-muted-foreground mx-auto mb-1" />
-                  ) : (
-                    <Sparkles className="size-8 text-primary mx-auto mb-1" />
-                  )}
+                  <Sparkles className="size-8 text-primary mx-auto mb-1" />
                 </motion.div>
-                <p className="text-muted-foreground text-xs font-medium">
-                  {isUnlucky ? "Unlucky!" : "You won!"}
-                </p>
-                <p className={`text-3xl font-display font-bold ${isUnlucky ? "text-muted-foreground" : "text-foreground"}`}>
-                  {isUnlucky ? "0" : `+${result}`}
-                </p>
-                <p className={`font-bold text-sm ${isUnlucky ? "text-muted-foreground" : "text-primary"}`}>
-                  {isUnlucky ? "Try again!" : "coins"}
-                </p>
+                <p className="text-muted-foreground text-xs font-medium">You won!</p>
+                <p className="text-3xl font-display font-bold text-foreground">+{result}</p>
+                <p className="font-bold text-sm text-primary">coins</p>
               </div>
             </motion.div>
           )}
