@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles, Coins } from "lucide-react";
+import { Loader2, Sparkles, Coins, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,19 +10,21 @@ interface SpinWheelProps {
   cost: number;
 }
 
-// 5 segments: 10, 20, 50, 100, 500 coins (no unlucky)
+// 6 segments: Unlucky(0), 10, 20, 50, 100 coins
 const SEGMENTS = [
+  { value: 0, label: "💀", color: "hsl(0 0% 20%)", isUnlucky: true },
   { value: 10, label: "10", color: "hsl(262 83% 58%)" },
   { value: 20, label: "20", color: "hsl(262 83% 45%)" },
   { value: 50, label: "50", color: "hsl(45 100% 50%)" },
   { value: 100, label: "100", color: "hsl(262 83% 35%)" },
-  { value: 500, label: "500", color: "hsl(45 100% 45%)" },
+  { value: 0, label: "💀", color: "hsl(0 0% 25%)", isUnlucky: true },
 ];
 
 export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
   const { profile } = useAuth();
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<number | null>(null);
+  const [isUnlucky, setIsUnlucky] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
@@ -32,13 +34,24 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
     setShowResult(false);
     setResult(null);
+    setIsUnlucky(false);
     setIsSpinning(true);
 
     const response = await onSpin();
 
     if (response.success && response.reward !== undefined) {
+      const reward = response.reward;
+      
       // Find segment index for this reward
-      const segmentIndex = SEGMENTS.findIndex((s) => s.value === response.reward);
+      let segmentIndex: number;
+      if (reward === 0) {
+        // Randomly pick one of the unlucky segments
+        segmentIndex = Math.random() < 0.5 ? 0 : 5;
+        setIsUnlucky(true);
+      } else {
+        segmentIndex = SEGMENTS.findIndex((s) => s.value === reward && !s.isUnlucky);
+        if (segmentIndex === -1) segmentIndex = 1; // fallback to 10
+      }
       
       const segmentAngle = 360 / SEGMENTS.length;
       const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
@@ -48,7 +61,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
       const newRotation = rotation + spins * 360 + (360 - targetAngle);
 
       setRotation(newRotation);
-      setResult(response.reward);
+      setResult(reward);
 
       // Show result after spin completes
       setTimeout(() => {
@@ -109,7 +122,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                       x={textX}
                       y={textY}
                       fill="white"
-                      fontSize="14"
+                      fontSize={segment.isUnlucky ? "18" : "14"}
                       fontWeight="bold"
                       textAnchor="middle"
                       dominantBaseline="middle"
@@ -145,16 +158,32 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
               className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm rounded-full z-30"
             >
               <div className="text-center">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: [0, 1.2, 1] }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Sparkles className="size-8 text-primary mx-auto mb-1" />
-                </motion.div>
-                <p className="text-muted-foreground text-xs font-medium">You won!</p>
-                <p className="text-3xl font-display font-bold text-foreground">+{result}</p>
-                <p className="font-bold text-sm text-primary">coins</p>
+                {isUnlucky ? (
+                  <>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.2, 1] }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <Skull className="size-10 text-muted-foreground mx-auto mb-1" />
+                    </motion.div>
+                    <p className="text-2xl font-display font-bold text-muted-foreground">Unlucky!</p>
+                    <p className="text-sm text-muted-foreground/70">Better luck next time</p>
+                  </>
+                ) : (
+                  <>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.2, 1] }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <Sparkles className="size-8 text-primary mx-auto mb-1" />
+                    </motion.div>
+                    <p className="text-muted-foreground text-xs font-medium">You won!</p>
+                    <p className="text-3xl font-display font-bold text-foreground">+{result}</p>
+                    <p className="font-bold text-sm text-primary">coins</p>
+                  </>
+                )}
               </div>
             </motion.div>
           )}

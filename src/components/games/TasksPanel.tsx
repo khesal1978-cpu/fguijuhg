@@ -124,7 +124,7 @@ export function TasksPanel({ tasks, loading, onClaimTask }: TasksPanelProps) {
                   <Button
                     size="sm"
                     onClick={() => onClaimTask(task.id)}
-                    className="w-full h-7 mt-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs"
+                    className="w-full h-7 mt-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold text-xs"
                   >
                     <CheckCircle2 className="size-3 mr-1" />
                     Claim Reward
