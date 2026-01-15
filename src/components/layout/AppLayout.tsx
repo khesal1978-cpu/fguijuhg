@@ -1,7 +1,5 @@
 import { Outlet, Navigate } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
-import { ParticlesBackground } from "./ParticlesBackground";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -15,20 +13,13 @@ export function AppLayout() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col items-center gap-4"
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center gap-3"
         >
-          <div className="relative">
-            {/* Morphing blob background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent-foreground/20 rounded-full blur-xl animate-morph" />
-            <div className="relative size-16 rounded-2xl bg-gradient-to-br from-primary to-accent-foreground flex items-center justify-center shadow-glow">
-              <Loader2 className="size-8 animate-spin text-primary-foreground" />
-            </div>
+          <div className="relative size-12 rounded-2xl bg-primary flex items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-primary-foreground" />
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">Loading</p>
-            <p className="text-xs text-muted-foreground">Please wait...</p>
-          </div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </motion.div>
       </div>
     );
@@ -39,16 +30,16 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <Sidebar />
+    <div className="flex h-screen w-full bg-background dark">
       <main className="flex-1 relative overflow-hidden flex flex-col h-full">
-        <ParticlesBackground />
+        {/* Subtle ambient glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
         
         <motion.div 
-          className="relative z-10 flex-1 overflow-y-auto pb-20 lg:pb-0 scrollbar-hide"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
         >
           <Outlet />
         </motion.div>
