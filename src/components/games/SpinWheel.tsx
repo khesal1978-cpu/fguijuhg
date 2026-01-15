@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles, Coins } from "lucide-react";
+import { Loader2, Sparkles, Coins, Frown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,14 +10,15 @@ interface SpinWheelProps {
   cost: number;
 }
 
+// 8 segments: 3 unlucky, 2x10, 1x20, 1x50, 1x100+500 combined visual
 const SEGMENTS = [
+  { value: 0, label: "💀", color: "hsl(0 0% 20%)", isUnlucky: true },
   { value: 10, label: "10", color: "hsl(262 83% 58%)" },
+  { value: 0, label: "💀", color: "hsl(0 0% 25%)", isUnlucky: true },
   { value: 20, label: "20", color: "hsl(262 83% 45%)" },
-  { value: 10, label: "10", color: "hsl(262 83% 58%)" },
+  { value: 0, label: "💀", color: "hsl(0 0% 20%)", isUnlucky: true },
   { value: 50, label: "50", color: "hsl(45 100% 50%)" },
-  { value: 10, label: "10", color: "hsl(262 83% 58%)" },
   { value: 100, label: "100", color: "hsl(262 83% 35%)" },
-  { value: 10, label: "10", color: "hsl(262 83% 58%)" },
   { value: 500, label: "500", color: "hsl(45 100% 45%)" },
 ];
 
@@ -40,7 +41,14 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
     if (response.success && response.reward !== undefined) {
       // Find segment index for this reward
-      const segmentIndex = SEGMENTS.findIndex((s) => s.value === response.reward);
+      let segmentIndex = SEGMENTS.findIndex((s) => s.value === response.reward);
+      
+      // If unlucky (0), pick a random unlucky segment
+      if (response.reward === 0) {
+        const unluckyIndices = SEGMENTS.map((s, i) => s.isUnlucky ? i : -1).filter(i => i !== -1);
+        segmentIndex = unluckyIndices[Math.floor(Math.random() * unluckyIndices.length)];
+      }
+      
       const segmentAngle = 360 / SEGMENTS.length;
       const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
 
@@ -62,6 +70,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
   };
 
   const canSpin = (profile?.balance || 0) >= cost && !spinning && !isSpinning;
+  const isUnlucky = result === 0;
 
   return (
     <div className="flex flex-col items-center gap-5">
@@ -110,7 +119,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                       x={textX}
                       y={textY}
                       fill="white"
-                      fontSize="12"
+                      fontSize={segment.isUnlucky ? "16" : "12"}
                       fontWeight="bold"
                       textAnchor="middle"
                       dominantBaseline="middle"
@@ -151,13 +160,21 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                   animate={{ scale: [0, 1.2, 1] }}
                   transition={{ delay: 0.1 }}
                 >
-                  <Sparkles className="size-8 text-primary mx-auto mb-1" />
+                  {isUnlucky ? (
+                    <Frown className="size-8 text-muted-foreground mx-auto mb-1" />
+                  ) : (
+                    <Sparkles className="size-8 text-primary mx-auto mb-1" />
+                  )}
                 </motion.div>
-                <p className="text-muted-foreground text-xs font-medium">You won!</p>
-                <p className="text-3xl font-display font-bold text-foreground">
-                  +{result}
+                <p className="text-muted-foreground text-xs font-medium">
+                  {isUnlucky ? "Unlucky!" : "You won!"}
                 </p>
-                <p className="text-primary font-bold text-sm">coins</p>
+                <p className={`text-3xl font-display font-bold ${isUnlucky ? "text-muted-foreground" : "text-foreground"}`}>
+                  {isUnlucky ? "0" : `+${result}`}
+                </p>
+                <p className={`font-bold text-sm ${isUnlucky ? "text-muted-foreground" : "text-primary"}`}>
+                  {isUnlucky ? "Try again!" : "coins"}
+                </p>
               </div>
             </motion.div>
           )}
