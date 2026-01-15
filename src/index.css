@@ -44,16 +44,16 @@
 
     --radius: 1rem;
 
-    /* Enhanced Shadows */
-    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
-    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.03);
-    --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.04);
-    --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
-    --shadow-lg: 0 10px 20px -3px rgb(0 0 0 / 0.08), 0 4px 8px -4px rgb(0 0 0 / 0.04);
-    --shadow-xl: 0 20px 30px -5px rgb(0 0 0 / 0.1), 0 8px 12px -6px rgb(0 0 0 / 0.06);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.15);
-    --shadow-glow: 0 0 30px hsl(258 89% 66% / 0.2);
-    --shadow-gold: 0 0 25px hsl(43 96% 56% / 0.25);
+    /* Semantic Shadows */
+    --shadow-2xs: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.06);
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.15);
+    --shadow-glow: 0 0 30px hsl(258 89% 66% / 0.15);
+    --shadow-gold: 0 0 25px hsl(43 96% 56% / 0.2);
 
     /* Glass */
     --glass-bg: hsl(0 0% 100% / 0.75);
@@ -87,8 +87,8 @@
     --secondary: 240 3% 46%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 3% 22%;
-    --muted-foreground: 240 4% 60%;
+    --muted: 240 3% 46%;
+    --muted-foreground: 0 0% 98%;
 
     --accent: 273 86% 20%;
     --accent-foreground: 270 95% 75%;
@@ -110,8 +110,8 @@
     --glass-bg: hsl(240 3% 15% / 0.85);
     --glass-border: hsl(240 5% 33% / 0.6);
 
-    --shadow-glow: 0 0 40px hsl(255 91% 76% / 0.25);
-    --shadow-gold: 0 0 35px hsl(43 96% 56% / 0.3);
+    --shadow-glow: 0 0 40px hsl(255 91% 76% / 0.2);
+    --shadow-gold: 0 0 35px hsl(43 96% 56% / 0.25);
 
     --sidebar-background: 240 4% 12%;
     --sidebar-foreground: 240 4% 65%;
@@ -199,21 +199,22 @@
 
 /* Smooth scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.2);
+  background: hsl(var(--primary) / 0.3);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.35);
+  background: hsl(var(--primary) / 0.5);
 }
 
 /* ===== KEYFRAME ANIMATIONS ===== */
@@ -288,7 +289,7 @@
 /* Float and bounce */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
+  50% { transform: translateY(-10px); }
 }
 
 @keyframes bounce-subtle {
@@ -299,19 +300,19 @@
 /* Pulse and glow */
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.7; }
 }
 
 @keyframes glow {
   0%, 100% { 
-    box-shadow: 0 0 20px hsl(258 89% 66% / 0.25); 
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.2); 
   }
   50% { 
-    box-shadow: 0 0 45px hsl(258 89% 66% / 0.45); 
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.35); 
   }
 }
 
-/* Rotation */
+/* Rotation (20s for orbiting particles) */
 @keyframes rotate-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -322,13 +323,19 @@
   to { transform: rotate(360deg); }
 }
 
+/* Spin reverse */
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
 /* Shimmer */
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
 
-/* Morph - organic blob morphing */
+/* Morph - organic blob morphing (8-12s cycle) */
 @keyframes morph {
   0%, 100% { 
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
@@ -338,22 +345,22 @@
     border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
   }
   50% { 
-    border-radius: 50% 60% 30% 60% / 30% 60% 70% 40%;
+    border-radius: 50% 60% 30% 60% / 30% 40% 70% 50%;
     transform: rotate(180deg) scale(1.05);
   }
   75% { 
-    border-radius: 60% 40% 60% 30% / 70% 30% 50% 60%;
+    border-radius: 60% 40% 60% 40% / 70% 30% 50% 60%;
   }
 }
 
-/* Breathe - subtle scale + opacity */
+/* Breathe - subtle scale + opacity (4s cycle) */
 @keyframes breathe {
   0%, 100% { 
     transform: scale(1);
     opacity: 0.6;
   }
   50% { 
-    transform: scale(1.08);
+    transform: scale(1.05);
     opacity: 1;
   }
 }
@@ -426,7 +433,7 @@
 }
 
 .animate-spin-reverse {
-  animation: spin 15s linear infinite reverse;
+  animation: spin-reverse 15s linear infinite;
 }
 
 .animate-shimmer {

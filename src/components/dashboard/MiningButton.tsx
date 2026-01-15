@@ -39,7 +39,7 @@ export function MiningButton({
       setTimeout(() => {
         setFloatingCoins((prev) => prev.filter((c) => c.id !== id));
       }, 2500);
-    }, 600);
+    }, 800);
 
     return () => clearInterval(interval);
   }, [isMining]);
@@ -60,13 +60,13 @@ export function MiningButton({
   const isInactive = !isMining && !canClaim && canStart;
 
   return (
-    <div className="relative flex items-center justify-center group cursor-pointer py-4">
+    <div className="relative flex items-center justify-center group cursor-pointer py-6">
       {/* Floating Coins */}
       <AnimatePresence>
         {floatingCoins.map((coin) => (
           <motion.div
             key={coin.id}
-            className="absolute text-gold font-bold text-sm pointer-events-none z-30 flex items-center gap-1"
+            className="absolute text-gold font-bold text-sm pointer-events-none z-30 flex items-center gap-1 font-mono"
             initial={{ opacity: 1, y: 0, x: coin.x, scale: 0.8 }}
             animate={{ opacity: 0, y: -100, x: coin.x + Math.random() * 30 - 15, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -78,32 +78,60 @@ export function MiningButton({
         ))}
       </AnimatePresence>
 
-      {/* Orbiting particles */}
+      {/* Morphing blob backgrounds */}
+      <div className={`absolute w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] rounded-full animate-morph ${
+        canClaim
+          ? "bg-gradient-to-br from-gold/10 to-gold/5"
+          : isInactive
+          ? "bg-gradient-to-br from-destructive/10 to-destructive/5"
+          : "bg-gradient-to-br from-primary/10 to-accent-foreground/8"
+      }`} style={{ filter: "blur(40px)" }} />
+      
+      <div className={`absolute w-[240px] h-[240px] sm:w-[280px] sm:h-[280px] rounded-full animate-morph-reverse ${
+        canClaim
+          ? "bg-gradient-to-tr from-gold/8 to-transparent"
+          : isInactive
+          ? "bg-gradient-to-tr from-destructive/8 to-transparent"
+          : "bg-gradient-to-tr from-accent-foreground/8 to-transparent"
+      }`} style={{ filter: "blur(30px)", animationDelay: "2s" }} />
+
+      {/* Orbiting particles - only when mining */}
       {isMining && (
         <>
           <div className="absolute w-[300px] h-[300px] sm:w-[340px] sm:h-[340px] animate-spin-20">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary/60 rounded-full" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-accent-foreground/50 rounded-full" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary/50 rounded-full" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-accent-foreground/40 rounded-full" />
           </div>
           <div className="absolute w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] animate-spin-reverse">
-            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-1.5 h-1.5 bg-gold/60 rounded-full" />
-            <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 bg-primary/40 rounded-full" />
+            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-1.5 h-1.5 bg-gold/50 rounded-full" />
+            <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 bg-primary/30 rounded-full" />
           </div>
         </>
       )}
+
+      {/* Breathing rings */}
+      <div className={`absolute w-[250px] h-[250px] sm:w-[290px] sm:h-[290px] rounded-full border animate-breathe ${
+        canClaim ? "border-gold/15" : isInactive ? "border-destructive/10" : "border-primary/15"
+      }`} />
+      <div 
+        className={`absolute w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] rounded-full border animate-breathe ${
+          canClaim ? "border-gold/8" : isInactive ? "border-destructive/5" : "border-primary/8"
+        }`}
+        style={{ animationDelay: "2s" }}
+      />
 
       {/* Progress Ring SVG */}
       <div className="absolute w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] -rotate-90">
         <svg className="w-full h-full">
           {/* Track */}
           <circle
-            className={isInactive ? "text-destructive/20" : "text-border"}
+            className={isInactive ? "text-destructive/15" : "text-border"}
             cx="50%"
             cy="50%"
             r="45%"
             fill="transparent"
             stroke="currentColor"
-            strokeWidth="6"
+            strokeWidth="5"
           />
           {/* Progress */}
           <motion.circle
@@ -113,7 +141,7 @@ export function MiningButton({
             r="45%"
             fill="transparent"
             stroke="currentColor"
-            strokeWidth="6"
+            strokeWidth="5"
             strokeLinecap="round"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
@@ -124,58 +152,51 @@ export function MiningButton({
         {/* Progress marker */}
         {progress > 0 && (
           <motion.div 
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-card border-4 border-primary rounded-full z-10"
-            animate={{ scale: [1, 1.2, 1] }}
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-card border-3 border-primary rounded-full z-10"
+            animate={{ scale: [1, 1.15, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
       </div>
 
-      {/* Outer glow rings */}
+      {/* Outer glow */}
       <motion.div
         className={`absolute w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] rounded-full ${
           canClaim
-            ? "bg-gold/15"
+            ? "bg-gold/12"
             : isInactive
-            ? "bg-destructive/10"
+            ? "bg-destructive/8"
             : "bg-primary/10"
         }`}
         animate={{
-          scale: isPressed ? 1.15 : [1, 1.08, 1],
-          opacity: [0.5, 0.8, 0.5],
+          scale: isPressed ? 1.12 : [1, 1.06, 1],
+          opacity: [0.5, 0.75, 0.5],
         }}
         transition={{
           duration: 3,
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        style={{ filter: "blur(20px)" }}
+        style={{ filter: "blur(25px)" }}
       />
-
-      {/* Morphing blob behind button */}
-      <div className={`absolute w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] rounded-full animate-morph ${
-        canClaim
-          ? "bg-gradient-to-br from-gold/20 to-gold/5"
-          : isInactive
-          ? "bg-gradient-to-br from-destructive/15 to-destructive/5"
-          : "bg-gradient-to-br from-primary/15 to-accent-foreground/10"
-      }`} style={{ filter: "blur(30px)" }} />
-
-      {/* Breathing ring */}
-      <div className={`absolute w-[240px] h-[240px] sm:w-[280px] sm:h-[280px] rounded-full border animate-breathe ${
-        canClaim ? "border-gold/20" : isInactive ? "border-destructive/15" : "border-primary/15"
-      }`} />
 
       {/* Main Button */}
       <motion.button
-        className={`relative w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full flex flex-col items-center justify-center z-20 overflow-hidden border-4 border-card/50 ${
+        className={`relative w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full flex flex-col items-center justify-center z-20 overflow-hidden border-2 border-card/30 ${
           canClaim
-            ? "bg-gradient-to-br from-gold via-gold to-gold-dark shadow-gold"
+            ? "bg-gradient-to-br from-gold via-gold to-gold-dark"
             : isInactive
-            ? "bg-gradient-to-br from-destructive/80 via-destructive to-destructive shadow-[0_0_30px_hsl(0_72%_51%/0.3)]"
-            : "bg-gradient-to-br from-primary via-primary to-accent-foreground shadow-glow"
+            ? "bg-gradient-to-br from-destructive/80 via-destructive to-destructive"
+            : "bg-gradient-to-br from-primary via-primary to-accent-foreground"
         }`}
-        whileHover={{ scale: 1.03 }}
+        style={{
+          boxShadow: canClaim 
+            ? "var(--shadow-gold)" 
+            : isInactive 
+            ? "0 0 30px hsl(0 72% 51% / 0.2)"
+            : "var(--shadow-glow)"
+        }}
+        whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onTapStart={() => setIsPressed(true)}
         onTap={() => {
@@ -192,36 +213,36 @@ export function MiningButton({
         <div className="relative z-10 flex flex-col items-center gap-1">
           <motion.div
             animate={isMining ? { 
-              scale: [1, 1.15, 1],
-              rotate: [0, 5, -5, 0],
-            } : { scale: [1, 1.08, 1] }}
+              scale: [1, 1.12, 1],
+              rotate: [0, 3, -3, 0],
+            } : { scale: [1, 1.06, 1] }}
             transition={{ duration: isMining ? 0.8 : 2.5, repeat: Infinity }}
           >
             {canClaim ? (
-              <Check className="size-12 sm:size-14 text-primary-foreground drop-shadow-lg" />
+              <Check className="size-12 sm:size-14 text-primary-foreground drop-shadow-md" />
             ) : isInactive ? (
-              <Pause className="size-12 sm:size-14 text-primary-foreground drop-shadow-lg" />
+              <Pause className="size-12 sm:size-14 text-primary-foreground drop-shadow-md" />
             ) : (
-              <Zap className="size-12 sm:size-14 text-primary-foreground fill-current drop-shadow-lg" />
+              <Zap className="size-12 sm:size-14 text-primary-foreground fill-current drop-shadow-md" />
             )}
           </motion.div>
-          <span className="text-primary-foreground font-serif font-bold text-lg sm:text-xl tracking-wide drop-shadow-md">
+          <span className="text-primary-foreground font-serif font-bold text-lg sm:text-xl tracking-wide drop-shadow-sm">
             {getButtonText()}
           </span>
-          <span className="text-primary-foreground/80 text-xs font-medium tracking-wide">
+          <span className="text-primary-foreground/80 text-xs font-medium tracking-wide font-mono">
             {getButtonSubtext()}
           </span>
         </div>
 
         {/* Shine sweep effect */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent"
+          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent"
           initial={{ x: "-150%", skewX: "-15deg" }}
           animate={{ x: "150%" }}
           transition={{
             duration: 2.5,
             repeat: Infinity,
-            repeatDelay: 4,
+            repeatDelay: 5,
             ease: "easeInOut",
           }}
         />
@@ -232,12 +253,12 @@ export function MiningButton({
         {isPressed && (
           <motion.div
             className={`absolute w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full border-2 ${
-              canClaim ? "border-gold/60" : isInactive ? "border-destructive/50" : "border-primary/60"
+              canClaim ? "border-gold/50" : isInactive ? "border-destructive/40" : "border-primary/50"
             }`}
             initial={{ scale: 0.9, opacity: 1 }}
-            animate={{ scale: 1.6, opacity: 0 }}
+            animate={{ scale: 1.5, opacity: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           />
         )}
       </AnimatePresence>
