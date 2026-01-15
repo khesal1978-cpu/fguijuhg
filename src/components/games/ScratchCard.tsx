@@ -132,7 +132,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
               Buy a card to scratch
             </p>
             <p className="text-xs text-muted-foreground/70">
-              Win up to 100 coins
+              Win 5, 10 or 30 coins!
             </p>
           </motion.div>
         ) : (

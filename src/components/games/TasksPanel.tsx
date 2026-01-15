@@ -22,17 +22,17 @@ const TASK_CONFIG: Record<string, { icon: typeof Calendar; title: string; descri
   daily_login: {
     icon: Calendar,
     title: "Daily Login",
-    description: "Log in to earn coins",
+    description: "Log in to earn 3 coins",
   },
   invite_friends: {
     icon: Users,
-    title: "Invite Friends",
-    description: "Refer 10 friends to earn",
+    title: "Invite 10 Friends",
+    description: "Refer 10 friends to earn 50 coins",
   },
   play_games: {
     icon: Gamepad2,
-    title: "Play Games",
-    description: "Play 50 games to earn",
+    title: "Play 50 Games",
+    description: "Play 50 games to earn 100 coins",
   },
 };
 
