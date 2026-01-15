@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, RotateCcw, Coins } from "lucide-react";
+import { Sparkles, RotateCcw, Coins, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,12 +17,14 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
   const [scratched, setScratched] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [reward, setReward] = useState<number | null>(null);
+  const [isUnlucky, setIsUnlucky] = useState(false);
   const [scratchProgress, setScratchProgress] = useState(0);
 
   const resetCard = () => {
     setScratched(false);
     setRevealed(false);
     setReward(null);
+    setIsUnlucky(false);
     setScratchProgress(0);
   };
 
@@ -70,6 +72,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
 
     if (response.success && response.reward !== undefined) {
       setReward(response.reward);
+      setIsUnlucky(response.reward === 0);
       setScratched(true);
       setTimeout(() => initCanvas(), 50);
     }
@@ -132,7 +135,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
               Buy a card to scratch
             </p>
             <p className="text-xs text-muted-foreground/70">
-              Win 5, 10 or 30 coins!
+              Win 5, 10, 30 or 100 coins!
             </p>
           </motion.div>
         ) : (
@@ -147,21 +150,40 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
                     animate={{ scale: 1, opacity: 1 }}
                     className="text-center"
                   >
-                    <Sparkles className="size-6 text-primary mx-auto mb-1" />
-                    <p className="text-muted-foreground text-xs font-medium">You won!</p>
-                    <p className="text-3xl font-display font-bold text-foreground">
-                      +{reward}
-                    </p>
-                    <p className="text-primary font-bold text-sm">coins</p>
+                    {isUnlucky ? (
+                      <>
+                        <Skull className="size-8 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-2xl font-display font-bold text-muted-foreground">Unlucky!</p>
+                        <p className="text-sm text-muted-foreground/70">Better luck next time</p>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="size-6 text-primary mx-auto mb-1" />
+                        <p className="text-muted-foreground text-xs font-medium">You won!</p>
+                        <p className="text-3xl font-display font-bold text-foreground">
+                          +{reward}
+                        </p>
+                        <p className="text-primary font-bold text-sm">coins</p>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
               {!revealed && reward !== null && (
                 <div className="text-center opacity-20">
-                  <p className="text-3xl font-display font-bold text-foreground">
-                    +{reward}
-                  </p>
-                  <p className="text-primary font-bold text-sm">coins</p>
+                  {isUnlucky ? (
+                    <>
+                      <Skull className="size-8 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-xl font-display font-bold text-muted-foreground">💀</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-display font-bold text-foreground">
+                        +{reward}
+                      </p>
+                      <p className="text-primary font-bold text-sm">coins</p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
