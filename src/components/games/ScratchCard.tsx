@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, RotateCcw, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,14 +18,12 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
   const [revealed, setRevealed] = useState(false);
   const [reward, setReward] = useState<number | null>(null);
   const [scratchProgress, setScratchProgress] = useState(0);
-  const [cardReady, setCardReady] = useState(false);
 
   const resetCard = () => {
     setScratched(false);
     setRevealed(false);
     setReward(null);
     setScratchProgress(0);
-    setCardReady(false);
   };
 
   const initCanvas = () => {
@@ -42,29 +40,27 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
 
     // Create gradient background
     const gradient = ctx.createLinearGradient(0, 0, rect.width, rect.height);
-    gradient.addColorStop(0, "hsl(160, 70%, 40%)");
-    gradient.addColorStop(1, "hsl(160, 60%, 30%)");
+    gradient.addColorStop(0, "hsl(262 83% 58%)");
+    gradient.addColorStop(1, "hsl(262 83% 40%)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, rect.width, rect.height);
 
-    // Add pattern
-    ctx.fillStyle = "rgba(255,255,255,0.1)";
-    for (let i = 0; i < 20; i++) {
+    // Add sparkle pattern
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    for (let i = 0; i < 15; i++) {
       const x = Math.random() * rect.width;
       const y = Math.random() * rect.height;
       ctx.beginPath();
-      ctx.arc(x, y, 2 + Math.random() * 4, 0, Math.PI * 2);
+      ctx.arc(x, y, 1 + Math.random() * 3, 0, Math.PI * 2);
       ctx.fill();
     }
 
     // Add text
-    ctx.font = "bold 16px Poppins, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.font = "bold 14px Inter, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("SCRATCH HERE", rect.width / 2, rect.height / 2);
-
-    setCardReady(true);
   };
 
   const handleBuyCard = async () => {
@@ -75,7 +71,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
     if (response.success && response.reward !== undefined) {
       setReward(response.reward);
       setScratched(true);
-      initCanvas();
+      setTimeout(() => initCanvas(), 50);
     }
   };
 
@@ -102,7 +98,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
 
     ctx.globalCompositeOperation = "destination-out";
     ctx.beginPath();
-    ctx.arc(x, y, 30, 0, Math.PI * 2);
+    ctx.arc(x, y, 25, 0, Math.PI * 2);
     ctx.fill();
 
     // Calculate scratch progress
@@ -114,7 +110,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
     const progress = (transparent / (imageData.data.length / 4)) * 100;
     setScratchProgress(progress);
 
-    if (progress > 50 && !revealed) {
+    if (progress > 45 && !revealed) {
       setRevealed(true);
     }
   };
@@ -122,28 +118,28 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
   const canBuy = (profile?.balance || 0) >= cost && !scratching && !scratched;
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4">
       {/* Card Container */}
-      <div className="relative w-[280px] h-[180px] sm:w-[320px] sm:h-[200px]">
+      <div className="relative w-[260px] h-[160px]">
         {!scratched ? (
           // Unscratched card preview
           <motion.div
-            className="w-full h-full rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3"
-            whileHover={{ scale: 1.02 }}
+            className="w-full h-full rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-dashed border-primary/20 flex flex-col items-center justify-center gap-2"
+            whileHover={{ scale: 1.01 }}
           >
-            <Coins className="size-12 text-primary/50" />
+            <Coins className="size-10 text-primary/40" />
             <p className="text-muted-foreground font-medium text-sm">
-              Buy a card to scratch!
+              Buy a card to scratch
             </p>
-            <p className="text-xs text-muted-foreground">
-              Win up to 30 CASET
+            <p className="text-xs text-muted-foreground/70">
+              Win up to 100 coins
             </p>
           </motion.div>
         ) : (
           // Active scratch card
           <div className="relative w-full h-full">
             {/* Reward underneath */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold/20 to-accent/30 border border-border flex flex-col items-center justify-center">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 to-accent/20 border border-border flex flex-col items-center justify-center">
               <AnimatePresence>
                 {revealed && reward !== null && (
                   <motion.div
@@ -151,21 +147,21 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
                     animate={{ scale: 1, opacity: 1 }}
                     className="text-center"
                   >
-                    <Sparkles className="size-8 text-gold mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm font-medium">You won!</p>
-                    <p className="text-4xl font-display font-bold text-foreground">
+                    <Sparkles className="size-6 text-primary mx-auto mb-1" />
+                    <p className="text-muted-foreground text-xs font-medium">You won!</p>
+                    <p className="text-3xl font-display font-bold text-foreground">
                       +{reward}
                     </p>
-                    <p className="text-primary font-bold">CASET</p>
+                    <p className="text-primary font-bold text-sm">coins</p>
                   </motion.div>
                 )}
               </AnimatePresence>
               {!revealed && reward !== null && (
-                <div className="text-center opacity-30">
-                  <p className="text-4xl font-display font-bold text-foreground">
+                <div className="text-center opacity-20">
+                  <p className="text-3xl font-display font-bold text-foreground">
                     +{reward}
                   </p>
-                  <p className="text-primary font-bold">CASET</p>
+                  <p className="text-primary font-bold text-sm">coins</p>
                 </div>
               )}
             </div>
@@ -174,7 +170,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
             {!revealed && (
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 w-full h-full rounded-2xl cursor-crosshair touch-none"
+                className="absolute inset-0 w-full h-full rounded-xl cursor-crosshair touch-none"
                 onMouseDown={() => setIsScratching(true)}
                 onMouseUp={() => setIsScratching(false)}
                 onMouseLeave={() => setIsScratching(false)}
@@ -190,12 +186,12 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
 
       {/* Progress indicator */}
       {scratched && !revealed && (
-        <div className="w-full max-w-[280px]">
+        <div className="w-full max-w-[260px]">
           <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Scratch progress</span>
+            <span>Scratching...</span>
             <span>{Math.round(scratchProgress)}%</span>
           </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-primary rounded-full"
               initial={{ width: 0 }}
@@ -210,14 +206,14 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
         <Button
           onClick={handleBuyCard}
           disabled={!canBuy}
-          className="w-full max-w-[200px] h-12 rounded-xl bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-primary-foreground font-bold text-lg shadow-glow disabled:opacity-50"
+          className="w-full max-w-[180px] h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:shadow-none"
         >
           {scratching ? (
             <span className="animate-pulse">Buying...</span>
           ) : (
             <>
-              <Coins className="size-5 mr-2" />
-              Buy ({cost} CASET)
+              <Coins className="size-4 mr-2" />
+              Buy • {cost} coins
             </>
           )}
         </Button>
@@ -225,20 +221,20 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
         <Button
           onClick={resetCard}
           variant="outline"
-          className="w-full max-w-[200px] h-12 rounded-xl font-bold"
+          className="w-full max-w-[180px] h-10 rounded-xl font-medium"
         >
-          <RotateCcw className="size-5 mr-2" />
+          <RotateCcw className="size-4 mr-2" />
           Play Again
         </Button>
       ) : (
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">
+        <p className="text-muted-foreground text-xs font-medium animate-pulse">
           Scratch to reveal your prize!
         </p>
       )}
 
       {(profile?.balance || 0) < cost && !scratched && !scratching && (
-        <p className="text-destructive text-sm font-medium">
-          Not enough CASET!
+        <p className="text-destructive text-xs font-medium">
+          Not enough coins
         </p>
       )}
     </div>
