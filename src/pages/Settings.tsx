@@ -1,5 +1,8 @@
 import { motion } from "framer-motion";
-import { User, Bell, Shield, LogOut, ChevronRight, Zap, Award, Loader2 } from "lucide-react";
+import { 
+  User, Bell, Shield, LogOut, ChevronRight, Zap, Award, Loader2,
+  FileText, Lock, HelpCircle, Trash2, KeyRound, Fingerprint
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -21,11 +24,63 @@ export default function Settings() {
     );
   }
 
-  const settingsItems = [
-    { icon: User, title: "Edit Profile", subtitle: "Update display name" },
-    { icon: Bell, title: "Notifications", subtitle: "Manage alerts" },
-    { icon: Shield, title: "Security", subtitle: "Password & 2FA" },
+  interface SettingItem {
+    icon: typeof User;
+    title: string;
+    subtitle: string;
+    onClick: () => void;
+    disabled?: boolean;
+    highlight?: boolean;
+  }
+
+  const generalSettings: SettingItem[] = [
+    { icon: User, title: "Edit Profile", subtitle: "Update display name", onClick: () => {} },
+    { icon: Bell, title: "Notifications", subtitle: "Manage alerts", onClick: () => {} },
+    { icon: Shield, title: "Security", subtitle: "Password & 2FA", onClick: () => {} },
   ];
+
+  const accountControls: SettingItem[] = [
+    { icon: KeyRound, title: "Change Passcode", subtitle: "Update your password", onClick: () => {} },
+    { icon: Fingerprint, title: "View PingCaset ID", subtitle: profile?.referral_code || "Loading...", onClick: () => {} },
+    { icon: Trash2, title: "Request Account Deletion", subtitle: "Coming soon", onClick: () => {}, disabled: true },
+  ];
+
+  const legalSettings: SettingItem[] = [
+    { icon: FileText, title: "Terms & Conditions", subtitle: "Mining & referral rules", onClick: () => navigate("/terms") },
+    { icon: Lock, title: "Privacy Policy", subtitle: "Data usage & protection", onClick: () => navigate("/privacy") },
+    { icon: HelpCircle, title: "Help Center", subtitle: "AI-powered support", onClick: () => navigate("/help"), highlight: true },
+  ];
+
+  const renderSettingsList = (items: SettingItem[], title: string) => (
+    <motion.div
+      className="space-y-2"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <p className="text-xs font-medium text-muted-foreground px-1">{title}</p>
+      <div className="card-dark divide-y divide-border">
+        {items.map((item, i) => (
+          <button 
+            key={i}
+            className={`w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={item.disabled ? undefined : item.onClick}
+            disabled={item.disabled}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`size-9 rounded-lg flex items-center justify-center ${item.highlight ? 'bg-primary/20' : 'bg-muted'}`}>
+                <item.icon className={`size-4 ${item.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+              </div>
+              <div className="text-left">
+                <p className={`text-sm font-medium ${item.highlight ? 'text-primary' : 'text-foreground'}`}>{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+              </div>
+            </div>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
@@ -57,7 +112,7 @@ export default function Settings() {
               Level {profile?.level || 1} • {profile?.is_premium ? "⭐ PRO" : "Free"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Code: {profile?.referral_code}
+              ID: {profile?.referral_code}
             </p>
           </div>
         </div>
@@ -78,31 +133,12 @@ export default function Settings() {
         </div>
       </motion.div>
 
-      {/* Settings List */}
-      <motion.div 
-        className="card-dark divide-y divide-border"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        {settingsItems.map((item, i) => (
-          <button 
-            key={i}
-            className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="size-9 rounded-lg bg-muted flex items-center justify-center">
-                <item.icon className="size-4 text-muted-foreground" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-              </div>
-            </div>
-            <ChevronRight className="size-4 text-muted-foreground" />
-          </button>
-        ))}
-      </motion.div>
+      {/* Settings Sections */}
+      <div className="space-y-4">
+        {renderSettingsList(generalSettings, "General")}
+        {renderSettingsList(accountControls, "Account")}
+        {renderSettingsList(legalSettings, "Support & Legal")}
+      </div>
 
       {/* Logout */}
       <motion.div

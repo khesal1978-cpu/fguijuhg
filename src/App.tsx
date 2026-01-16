@@ -11,6 +11,9 @@ import Wallet from "./pages/Wallet";
 import Team from "./pages/Team";
 import Games from "./pages/Games";
 import Settings from "./pages/Settings";
+import TermsConditions from "./pages/TermsConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +33,9 @@ const App = () => (
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/team" element={<Team />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/terms" element={<TermsConditions />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/help" element={<HelpCenter />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
