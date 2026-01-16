@@ -42,7 +42,7 @@ export function MiningButton({
 
   const getButtonState = () => {
     if (loading) return { text: "...", sub: "Loading", color: "bg-muted" };
-    if (canClaim) return { text: "CLAIM", sub: "Tap to collect", color: "bg-gold" };
+    if (canClaim) return { text: "CLAIM", sub: "Tap to collect", color: "bg-success" };
     if (isMining) return { text: "MINING", sub: `+${(miningRate / 3600).toFixed(4)}/s`, color: "bg-primary" };
     return { text: "START", sub: "6 Hour Cycle", color: "bg-primary" };
   };
@@ -70,7 +70,7 @@ export function MiningButton({
 
       {/* Outer glow ring */}
       {(isMining || canClaim) && (
-        <div className={`absolute w-48 h-48 rounded-full ${canClaim ? 'bg-gold/10' : 'bg-primary/10'} animate-pulse-ring`} />
+        <div className={`absolute w-48 h-48 rounded-full ${canClaim ? 'bg-success/10' : 'bg-primary/10'} animate-pulse-ring`} />
       )}
 
       {/* Progress ring */}
@@ -86,7 +86,7 @@ export function MiningButton({
             strokeWidth="4"
           />
           <motion.circle
-            className={canClaim ? "text-gold" : isInactive ? "text-muted-foreground" : "text-primary"}
+            className={canClaim ? "text-success" : isInactive ? "text-muted-foreground" : "text-primary"}
             cx="50%"
             cy="50%"
             r="70"
@@ -105,11 +105,11 @@ export function MiningButton({
       <motion.button
         className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center z-20 ${
           canClaim 
-            ? "bg-gradient-to-br from-gold to-amber-500" 
+            ? "bg-gradient-to-br from-success to-emerald-500" 
             : isInactive 
             ? "bg-muted" 
             : "bg-gradient-to-br from-primary to-violet-600"
-        } ${(isMining || canClaim) ? 'btn-glow' : ''}`}
+        } ${(isMining || canClaim) ? (canClaim ? 'shadow-[0_0_30px_-5px_hsl(142_70%_45%/0.5)]' : 'btn-glow') : ''}`}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
         onTapStart={() => setIsPressed(true)}
@@ -157,7 +157,7 @@ export function MiningButton({
       <AnimatePresence>
         {isPressed && (
           <motion.div
-            className={`absolute w-36 h-36 rounded-full border-2 ${canClaim ? 'border-gold/50' : 'border-primary/50'}`}
+            className={`absolute w-36 h-36 rounded-full border-2 ${canClaim ? 'border-success/50' : 'border-primary/50'}`}
             initial={{ scale: 1, opacity: 1 }}
             animate={{ scale: 1.4, opacity: 0 }}
             exit={{ opacity: 0 }}
