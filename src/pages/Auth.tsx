@@ -166,6 +166,29 @@ export default function Auth() {
             </button>
           </div>
         </div>
+
+        {/* Microsoft for Startups Badge */}
+        <motion.div
+          className="mt-8 flex items-center justify-center gap-2 text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <span className="text-xs">Supported by</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border">
+            <svg 
+              viewBox="0 0 23 23" 
+              className="size-4"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path fill="#f25022" d="M1 1h10v10H1z"/>
+              <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+              <path fill="#7fba00" d="M12 1h10v10H12z"/>
+              <path fill="#ffb900" d="M12 12h10v10H12z"/>
+            </svg>
+            <span className="text-xs font-medium text-foreground">Microsoft for Startups</span>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );
