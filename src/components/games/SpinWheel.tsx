@@ -45,7 +45,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
       // Find segment index for this reward
       let segmentIndex: number;
       if (reward === 0) {
-        // Randomly pick one of the unlucky segments
+        // Randomly pick one of the unlucky segments (index 0 or 5)
         segmentIndex = Math.random() < 0.5 ? 0 : 5;
         setIsUnlucky(true);
       } else {
@@ -53,12 +53,29 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
         if (segmentIndex === -1) segmentIndex = 1; // fallback to 10
       }
       
-      const segmentAngle = 360 / SEGMENTS.length;
+      const numSegments = SEGMENTS.length; // 6 segments
+      const segmentAngle = 360 / numSegments; // 60 degrees per segment
+      
+      // The pointer is at the top (0 degrees in CSS rotation terms)
+      // Segment 0 starts at the top and goes clockwise
+      // To land on segment N, we need to rotate so that segment N is at the pointer
+      // Since we rotate the wheel clockwise, to bring segment N to the top:
+      // - Segment N starts at (N * segmentAngle) degrees from initial position
+      // - We need to rotate past it, so the center of segment N is at 0 degrees (top)
+      // - Center of segment N is at (N * segmentAngle) + (segmentAngle / 2)
+      // - To bring that to top, we rotate by -(that angle), but CSS rotation is clockwise positive
+      // - So we do: 360 - (N * segmentAngle + segmentAngle/2) to land on segment N
+      
+      // Add some randomness within the segment (avoid always hitting dead center)
+      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.7);
+      
+      // Calculate the angle to land on this segment's center
       const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
-
+      
       // Spin multiple rotations plus land on target
-      const spins = 5 + Math.random() * 3;
-      const newRotation = rotation + spins * 360 + (360 - targetAngle);
+      // We rotate clockwise, so to land on segment N at top, we add (360 - targetAngle)
+      const spins = 5 + Math.floor(Math.random() * 3);
+      const newRotation = rotation + spins * 360 + (360 - targetAngle) + randomOffset;
 
       setRotation(newRotation);
       setResult(reward);
