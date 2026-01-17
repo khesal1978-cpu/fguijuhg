@@ -300,6 +300,7 @@ export type Database = {
       play_scratch_card: { Args: { scratch_cost?: number }; Returns: Json }
       play_spin_wheel: { Args: { spin_cost?: number }; Returns: Json }
       start_mining_session: { Args: never; Returns: Json }
+      track_daily_login: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never

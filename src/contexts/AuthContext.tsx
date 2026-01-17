@@ -37,6 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data;
   };
 
+  const trackDailyLogin = async () => {
+    try {
+      await supabase.rpc("track_daily_login");
+    } catch (err) {
+      console.error("Failed to track daily login:", err);
+    }
+  };
+
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
@@ -52,7 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (session?.user) {
           // Use setTimeout to prevent potential deadlock
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => {
+            fetchProfile(session.user.id);
+            // Track daily login when user signs in or session is restored
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+              trackDailyLogin();
+            }
+          }, 0);
         } else {
           setProfile(null);
         }
@@ -66,6 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        // Track daily login on initial page load
+        trackDailyLogin();
       }
       setLoading(false);
     });
