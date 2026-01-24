@@ -1154,6 +1154,26 @@ export const claimPendingBonuses = async (userId: string): Promise<{ claimed: nu
   }
 };
 
+// Subscribe to pending bonuses count (for notification badge)
+export const subscribeToPendingBonuses = (
+  userId: string, 
+  callback: (count: number, total: number) => void
+): (() => void) => {
+  const q = query(
+    collection(db, 'pending_bonuses'),
+    where('user_id', '==', userId)
+  );
+  
+  return onSnapshot(q, (snap) => {
+    const unclaimed = snap.docs.filter(d => !d.data().is_claimed);
+    const total = unclaimed.reduce((sum, d) => sum + (d.data().amount || 0), 0);
+    callback(unclaimed.length, total);
+  }, (error) => {
+    console.error('[REFERRAL] Error subscribing to pending bonuses:', error);
+    callback(0, 0);
+  });
+};
+
 // Referral Functions
 export const getReferrals = async (userId: string): Promise<Referral[]> => {
   console.log('[REFERRAL] Fetching referrals where referrer_id =', userId);
