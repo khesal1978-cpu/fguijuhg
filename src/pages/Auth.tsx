@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   Mail, Lock, User, Gift, ArrowRight, Loader2, 
-  AlertTriangle, Key, Copy, Check, ChevronLeft, Zap, Sparkles, Shield
+  AlertTriangle, Key, Copy, Check, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,83 +12,14 @@ import { toast } from "sonner";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
+// Lazy load 3D globe for performance
+const Globe3D = lazy(() => import("@/components/auth/Globe3D"));
+
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
-// Node positions on the globe (percentage positions)
-const globeNodes = [
-  { x: 45, y: 55, delay: 0, size: 1.4 },
-  { x: 55, y: 48, delay: 0.3, size: 1.2 },
-  { x: 62, y: 58, delay: 0.5, size: 1.3 },
-  { x: 70, y: 50, delay: 0.2, size: 1.1 },
-  { x: 78, y: 62, delay: 0.7, size: 1.0 },
-  { x: 52, y: 68, delay: 0.4, size: 0.9 },
-  { x: 40, y: 62, delay: 0.8, size: 1.1 },
-  { x: 58, y: 42, delay: 0.6, size: 1.0 },
-  { x: 68, y: 68, delay: 0.9, size: 0.8 },
-  { x: 48, y: 45, delay: 1.0, size: 0.9 },
-  { x: 75, y: 55, delay: 0.35, size: 1.2 },
-  { x: 35, y: 52, delay: 0.55, size: 1.0 },
-];
-
-// Connection lines between nodes
-const connections = [
-  { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 },
-  { from: 3, to: 4 }, { from: 1, to: 5 }, { from: 0, to: 6 },
-  { from: 7, to: 3 }, { from: 5, to: 8 }, { from: 9, to: 0 },
-  { from: 10, to: 4 }, { from: 11, to: 6 },
-];
-
-// Globe Node with glow effect
-const GlobeNode = ({ x, y, delay, size = 1 }: { x: number; y: number; delay: number; size?: number }) => {
-  return (
-    <motion.div
-      className="absolute -translate-x-1/2 -translate-y-1/2"
-      style={{ left: `${x}%`, top: `${y}%` }}
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: delay + 0.5, type: "spring", stiffness: 200, damping: 20 }}
-    >
-      {/* Outer glow */}
-      <motion.div
-        className="absolute rounded-full bg-primary/40"
-        style={{ 
-          width: 20 * size, 
-          height: 20 * size,
-          left: -10 * size,
-          top: -10 * size,
-          filter: 'blur(4px)'
-        }}
-        animate={{ 
-          scale: [1, 1.5, 1],
-          opacity: [0.4, 0.2, 0.4]
-        }}
-        transition={{ 
-          duration: 2.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: delay * 0.5
-        }}
-      />
-      {/* Core dot */}
-      <motion.div 
-        className="rounded-full bg-primary shadow-lg"
-        style={{ 
-          width: 8 * size, 
-          height: 8 * size, 
-          marginLeft: -4 * size, 
-          marginTop: -4 * size,
-          boxShadow: '0 0 12px 3px hsl(var(--primary) / 0.5)'
-        }}
-        animate={{ opacity: [0.9, 1, 0.9] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      />
-    </motion.div>
-  );
-};
-
-// 3D Globe Visualization
-const GlobeVisualization = () => {
-  const [activeCount, setActiveCount] = useState(0);
+// Animated counter for user count
+const AnimatedCounter = () => {
+  const [count, setCount] = useState(0);
   
   useEffect(() => {
     const target = 24897;
@@ -100,10 +31,10 @@ const GlobeVisualization = () => {
     const timer = setInterval(() => {
       current += increment;
       if (current >= target) {
-        setActiveCount(target);
+        setCount(target);
         clearInterval(timer);
       } else {
-        setActiveCount(Math.floor(current));
+        setCount(Math.floor(current));
       }
     }, duration / steps);
     
@@ -111,246 +42,31 @@ const GlobeVisualization = () => {
   }, []);
   
   return (
-    <motion.div 
-      className="relative w-full max-w-sm mx-auto aspect-square"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, delay: 0.2 }}
-    >
-      {/* Globe background - gradient sphere effect */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div 
-          className="w-[85%] h-[85%] rounded-full relative overflow-hidden"
-          style={{
-            background: 'radial-gradient(ellipse at 30% 30%, hsl(262, 83%, 40%) 0%, hsl(262, 83%, 25%) 40%, hsl(262, 60%, 12%) 70%, transparent 100%)',
-            boxShadow: '0 0 80px 20px hsl(262, 83%, 30% / 0.3), inset 0 0 60px 10px hsl(262, 83%, 50% / 0.1)'
-          }}
-        >
-          {/* Surface highlight */}
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: 'radial-gradient(ellipse at 25% 25%, hsl(262, 83%, 70% / 0.2) 0%, transparent 50%)'
-            }}
-          />
-          
-          {/* Grid lines on globe - curved effect */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-            {/* Horizontal curves */}
-            {[20, 35, 50, 65, 80].map((y, i) => (
-              <motion.ellipse
-                key={`h-${i}`}
-                cx="50"
-                cy={y}
-                rx={Math.sin((y / 100) * Math.PI) * 45}
-                ry="2"
-                fill="none"
-                stroke="hsl(var(--primary) / 0.15)"
-                strokeWidth="0.3"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.5, delay: 0.3 + i * 0.1 }}
-              />
-            ))}
-            {/* Vertical curves */}
-            {[30, 50, 70].map((x, i) => (
-              <motion.ellipse
-                key={`v-${i}`}
-                cx={x}
-                cy="50"
-                rx="3"
-                ry="40"
-                fill="none"
-                stroke="hsl(var(--primary) / 0.15)"
-                strokeWidth="0.3"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 1.5, delay: 0.5 + i * 0.1 }}
-              />
-            ))}
-          </svg>
-        </div>
-      </div>
-      
-      {/* Connection lines */}
-      <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-        {connections.map((conn, i) => {
-          const from = globeNodes[conn.from];
-          const to = globeNodes[conn.to];
-          return (
-            <motion.line
-              key={i}
-              x1={`${from.x}%`}
-              y1={`${from.y}%`}
-              x2={`${to.x}%`}
-              y2={`${to.y}%`}
-              stroke="hsl(var(--primary) / 0.4)"
-              strokeWidth="1"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.8 + i * 0.05 }}
-            />
-          );
-        })}
-      </svg>
-      
-      {/* Nodes overlay */}
-      <div className="absolute inset-0" style={{ zIndex: 2 }}>
-        {globeNodes.map((node, i) => (
-          <GlobeNode key={i} x={node.x} y={node.y} delay={node.delay} size={node.size} />
-        ))}
-      </div>
-      
-      {/* Counter badge at bottom */}
-      <motion.div
-        className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/80 backdrop-blur-md border border-border rounded-full px-4 py-2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, type: "spring", stiffness: 100 }}
-        style={{ zIndex: 3 }}
-      >
-        <motion.div 
-          className="size-2 rounded-full bg-success"
-          animate={{ opacity: [1, 0.5, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        <span className="text-sm font-bold text-foreground tabular-nums">
-          {activeCount.toLocaleString()}
-        </span>
-        <span className="text-xs text-muted-foreground">users mining now</span>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// Subtle Floating Element Component - Premium minimal style
-const FloatingElement = ({ 
-  children, 
-  delay = 0, 
-  duration = 6,
-  x = 0,
-  y = 0,
-  size = "md"
-}: { 
-  children: React.ReactNode; 
-  delay?: number; 
-  duration?: number;
-  x?: number;
-  y?: number;
-  size?: "sm" | "md" | "lg";
-}) => {
-  const sizeClasses = {
-    sm: "size-10",
-    md: "size-14",
-    lg: "size-16"
-  };
-
-  return (
     <motion.div
-      className={`absolute ${sizeClasses[size]} rounded-xl bg-card/60 backdrop-blur-md border border-border/50 flex items-center justify-center`}
-      style={{ 
-        left: `calc(50% + ${x}px)`, 
-        top: `calc(40% + ${y}px)`,
-      }}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ 
-        opacity: 0.8, 
-        scale: 1, 
-        y: [-6, 6, -6]
-      }}
-      transition={{ 
-        opacity: { delay, duration: 0.6 },
-        scale: { delay, duration: 0.6, type: "spring", stiffness: 100 },
-        y: { delay: delay + 0.5, duration, repeat: Infinity, ease: "easeInOut" }
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-// Swipeable Button Component
-const SwipeButton = ({ onComplete }: { onComplete: () => void }) => {
-  const constraintsRef = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const thumbWidth = 56;
-  const maxDrag = containerWidth - thumbWidth - 8;
-  
-  const background = useTransform(
-    x,
-    [0, maxDrag],
-    ["hsl(262, 83%, 65%)", "hsl(142, 70%, 45%)"]
-  );
-  
-  const arrowOpacity = useTransform(x, [0, maxDrag * 0.5], [1, 0]);
-  const checkOpacity = useTransform(x, [maxDrag * 0.5, maxDrag], [0, 1]);
-
-  useEffect(() => {
-    if (constraintsRef.current) {
-      setContainerWidth(constraintsRef.current.offsetWidth);
-    }
-  }, []);
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > maxDrag * 0.7) {
-      animate(x, maxDrag, { type: "spring", stiffness: 400, damping: 40 });
-      setTimeout(onComplete, 300);
-    } else {
-      animate(x, 0, { type: "spring", stiffness: 400, damping: 40 });
-    }
-  };
-
-  return (
-    <motion.div
-      ref={constraintsRef}
-      className="relative w-full h-14 rounded-full bg-card border border-border overflow-hidden"
+      className="flex items-center justify-center gap-2 bg-background/80 backdrop-blur-md border border-border rounded-full px-5 py-2.5"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7 }}
+      transition={{ delay: 1.2, type: "spring", stiffness: 100 }}
     >
-      {/* Subtle shimmer effect */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div 
-          className="absolute inset-y-0 w-1/4 bg-gradient-to-r from-transparent via-foreground/[0.03] to-transparent"
-          animate={{ x: ["-100%", "500%"] }}
-          transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-        />
-      </div>
-      
-      {/* Text */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-muted-foreground font-medium text-sm">Swipe to Get Started</span>
-        <motion.div 
-          className="ml-2 flex gap-1"
-          animate={{ x: [0, 4, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <ArrowRight className="size-4 text-muted-foreground" />
-        </motion.div>
-      </div>
-      
-      {/* Draggable thumb */}
-      <motion.div
-        className="absolute top-1 left-1 size-12 rounded-full cursor-grab active:cursor-grabbing flex items-center justify-center"
-        style={{ x, background }}
-        drag="x"
-        dragConstraints={{ left: 0, right: maxDrag }}
-        dragElastic={0}
-        onDragEnd={handleDragEnd}
-        whileTap={{ scale: 0.95 }}
-      >
-        <motion.div style={{ opacity: arrowOpacity }} className="absolute">
-          <ArrowRight className="size-5 text-primary-foreground" />
-        </motion.div>
-        <motion.div style={{ opacity: checkOpacity }} className="absolute">
-          <Check className="size-5 text-primary-foreground" />
-        </motion.div>
-      </motion.div>
+      <motion.div 
+        className="size-2.5 rounded-full bg-success"
+        animate={{ opacity: [1, 0.5, 1] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
+      <span className="text-base font-bold text-foreground tabular-nums">
+        {count.toLocaleString()}
+      </span>
+      <span className="text-sm text-muted-foreground">users mining now</span>
     </motion.div>
   );
 };
 
+// Decorative star positions (fixed to avoid hydration issues)
+const starPositions = [
+  { left: 18, top: 12 }, { left: 82, top: 8 }, { left: 25, top: 28 },
+  { left: 75, top: 22 }, { left: 12, top: 38 }, { left: 88, top: 35 },
+  { left: 45, top: 5 }, { left: 55, top: 15 },
+];
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -519,69 +235,78 @@ export default function Auth() {
   if (screen === "welcome") {
     return (
       <div className="min-h-screen bg-background flex flex-col dark overflow-hidden">
-        {/* Subtle background glow */}
+        {/* Background glow effect */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
+          <div 
+            className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
+            style={{
+              background: 'radial-gradient(circle, hsl(262, 83%, 35% / 0.25) 0%, transparent 70%)',
+              filter: 'blur(60px)',
+            }}
+          />
         </div>
 
-        {/* Decorative stars/sparkles */}
+        {/* Decorative stars */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(8)].map((_, i) => (
+          {starPositions.map((pos, i) => (
             <motion.div
               key={i}
-              className="absolute size-1 rounded-full bg-foreground/40"
-              style={{
-                left: `${15 + Math.random() * 70}%`,
-                top: `${10 + Math.random() * 40}%`,
-              }}
-              animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+              className="absolute size-1 rounded-full bg-foreground/50"
+              style={{ left: `${pos.left}%`, top: `${pos.top}%` }}
+              animate={{ opacity: [0.3, 0.9, 0.3], scale: [0.8, 1.2, 0.8] }}
               transition={{
-                duration: 2 + Math.random() * 2,
+                duration: 2.5 + i * 0.3,
                 repeat: Infinity,
-                delay: Math.random() * 2,
+                delay: i * 0.2,
               }}
             />
           ))}
         </div>
 
         {/* Main content */}
-        <div className="flex-1 relative flex flex-col items-center justify-center px-6 pt-8 z-10">
+        <div className="flex-1 relative flex flex-col px-6 pt-10 z-10">
+          {/* Headline at top */}
           <motion.div
-            className="relative z-10 text-center w-full max-w-sm"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ delay: 0.1 }}
+            className="text-center mb-2"
           >
-            {/* Headline */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-3"
-            >
-              <h1 className="text-3xl md:text-4xl font-display font-bold leading-tight text-foreground">
-                Be early.
-                <br />
-                Mine <span className="text-primary">CASET</span>
-                <br />
-                before listing.
-              </h1>
-            </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.25 }}
-              className="text-muted-foreground text-sm mb-8"
-            >
-              No hardware. No fees.
+            <h1 className="text-3xl md:text-4xl font-display font-bold leading-tight text-foreground">
+              Be early.
               <br />
-              Just time-based mining.
-            </motion.p>
-
-            {/* 3D Globe Visualization */}
-            <GlobeVisualization />
+              Mine CASET
+              <br />
+              before listing.
+            </h1>
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25 }}
+            className="text-muted-foreground text-sm text-center mb-4"
+          >
+            No hardware. No fees.
+            <br />
+            Just time-based mining.
+          </motion.p>
+
+          {/* 3D Globe */}
+          <div className="flex-1 flex flex-col items-center justify-center -mt-4">
+            <Suspense fallback={
+              <div className="w-full max-w-sm aspect-square flex items-center justify-center">
+                <div className="size-48 rounded-full bg-primary/20 animate-pulse" />
+              </div>
+            }>
+              <Globe3D />
+            </Suspense>
+            
+            {/* Counter badge below globe */}
+            <div className="mt-4">
+              <AnimatedCounter />
+            </div>
+          </div>
         </div>
 
         {/* Bottom CTA area */}
@@ -591,12 +316,12 @@ export default function Auth() {
             onClick={() => setScreen("landing")}
             className="w-full h-14 rounded-full font-semibold text-base text-primary-foreground flex items-center justify-center gap-2"
             style={{
-              background: 'linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(262, 83%, 45%) 100%)',
-              boxShadow: '0 4px 20px hsl(262, 83%, 50% / 0.4)'
+              background: 'linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(262, 83%, 42%) 100%)',
+              boxShadow: '0 4px 24px hsl(262, 83%, 50% / 0.45)'
             }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.5 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -606,29 +331,29 @@ export default function Auth() {
 
           {/* Secondary text */}
           <motion.p
-            className="text-center text-sm text-muted-foreground/70"
+            className="text-center text-sm text-muted-foreground/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.75 }}
+            transition={{ delay: 0.65 }}
           >
             Swipe or tap to start
           </motion.p>
 
           {/* Microsoft Badge */}
           <motion.div 
-            className="flex items-center justify-center gap-2 pt-2"
+            className="flex items-center justify-center pt-1"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
+            transition={{ delay: 0.8 }}
           >
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 border border-border backdrop-blur-sm">
-              <svg viewBox="0 0 23 23" className="size-3.5" xmlns="http://www.w3.org/2000/svg">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/60 border border-border backdrop-blur-sm">
+              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#f25022" d="M1 1h10v10H1z"/>
                 <path fill="#00a4ef" d="M1 12h10v10H1z"/>
                 <path fill="#7fba00" d="M12 1h10v10H12z"/>
                 <path fill="#ffb900" d="M12 12h10v10H12z"/>
               </svg>
-              <span className="text-xs font-medium text-muted-foreground">Microsoft for Startups</span>
+              <span className="text-sm font-medium text-muted-foreground">Microsoft for Startups</span>
             </div>
           </motion.div>
         </div>
