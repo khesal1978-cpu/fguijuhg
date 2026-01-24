@@ -95,23 +95,30 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      console.log('Google sign-in started with referral code:', referralCode);
       const result = await signInWithGoogle();
       const user = result.user;
+      console.log('Google sign-in successful, user:', user.uid);
+      
       const existingProfile = await getProfile(user.uid);
+      console.log('Existing profile check:', existingProfile ? 'found' : 'not found');
       
       if (!existingProfile) {
+        console.log('Creating new profile with referral code:', referralCode);
         await createProfile(
           user.uid,
           user.displayName || 'Miner',
-          referralCode,
+          referralCode || undefined,
           { recoveryEmail: user.email || undefined }
         );
+        console.log('Profile created successfully');
         toast.success("Account created!");
       } else {
         toast.success("Welcome back!");
       }
       navigate("/");
     } catch (err: any) {
+      console.error('Google sign-in error:', err);
       if (err?.code === 'auth/popup-closed-by-user') {
         toast.error("Sign-in cancelled");
       } else {
