@@ -142,10 +142,10 @@ export default function HelpCenter() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-9 rounded-xl"
+          className="size-9 rounded-xl bg-white/[0.08] border border-white/[0.1]"
           onClick={() => navigate("/settings")}
         >
-          <ArrowLeft className="size-5" />
+          <ArrowLeft className="size-5 text-foreground" />
         </Button>
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
@@ -259,7 +259,7 @@ export default function HelpCenter() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything..."
-            className="flex-1 rounded-xl bg-muted border-0"
+            className="flex-1 rounded-xl bg-white/[0.08] border border-white/[0.1] text-foreground placeholder:text-foreground/40"
             disabled={isLoading}
           />
           <Button
