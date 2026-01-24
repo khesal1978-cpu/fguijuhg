@@ -148,8 +148,8 @@ export default function HelpCenter() {
           <ArrowLeft className="size-5" />
         </Button>
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-full gradient-primary flex items-center justify-center">
-            <Bot className="size-5 text-primary-foreground" />
+          <div className="size-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center">
+            <Bot className="size-5 text-white" />
           </div>
           <div>
             <h1 className="text-base font-display font-bold text-foreground">PingCaset Assistant</h1>
@@ -170,8 +170,8 @@ export default function HelpCenter() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="size-16 rounded-full gradient-primary mx-auto flex items-center justify-center">
-                <Sparkles className="size-8 text-primary-foreground" />
+              <div className="size-16 rounded-full bg-gradient-to-br from-primary to-purple-500 mx-auto flex items-center justify-center">
+                <Sparkles className="size-8 text-white" />
               </div>
               <div>
                 <h2 className="text-lg font-display font-bold text-foreground">
@@ -212,8 +212,8 @@ export default function HelpCenter() {
                 exit={{ opacity: 0 }}
               >
                 {message.role === "assistant" && (
-                  <div className="size-8 rounded-full gradient-primary flex-shrink-0 flex items-center justify-center">
-                    <Bot className="size-4 text-primary-foreground" />
+                  <div className="size-8 rounded-full bg-gradient-to-br from-primary to-purple-500 flex-shrink-0 flex items-center justify-center">
+                    <Bot className="size-4 text-white" />
                   </div>
                 )}
                 <div
@@ -240,8 +240,8 @@ export default function HelpCenter() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="size-8 rounded-full gradient-primary flex-shrink-0 flex items-center justify-center">
-                <Bot className="size-4 text-primary-foreground" />
+              <div className="size-8 rounded-full bg-gradient-to-br from-primary to-purple-500 flex-shrink-0 flex items-center justify-center">
+                <Bot className="size-4 text-white" />
               </div>
               <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
