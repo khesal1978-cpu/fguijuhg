@@ -4,15 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2, 
   AlertTriangle, Key, Copy, Check, Sparkles, Zap, Shield, ChevronLeft,
-  Search, RefreshCw
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { firebaseSignUp, firebaseSignIn, createProfile, signInWithGoogle, findUniqueIdByEmail, getProfile, db } from "@/lib/firebase";
+import { firebaseSignUp, firebaseSignIn, createProfile, signInWithGoogle, getProfile, db } from "@/lib/firebase";
 import { toast } from "sonner";
-import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
-type AuthScreen = "welcome" | "login" | "register" | "recover";
+type AuthScreen = "welcome" | "login" | "register" | "recover" | "unique-id-setup";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -24,10 +24,9 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [referralCode, setReferralCode] = useState(searchParams.get("ref") || "");
-  const [useUniqueId, setUseUniqueId] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"email" | "unique-id">("email");
   const [uniqueId, setUniqueId] = useState("");
   const [generatedId, setGeneratedId] = useState("");
-  const [showIdWarning, setShowIdWarning] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [foundUniqueId, setFoundUniqueId] = useState<string | null>(null);
@@ -45,13 +44,13 @@ export default function Auth() {
   const handleCreateUniqueId = () => {
     const newId = generateUniqueId();
     setGeneratedId(newId);
-    setShowIdWarning(true);
+    setScreen("unique-id-setup");
   };
 
   const copyGeneratedId = () => {
     navigator.clipboard.writeText(generatedId);
     setIdCopied(true);
-    toast.success("ID copied! Save it somewhere safe.");
+    toast.success("ID copied to clipboard!");
     setTimeout(() => setIdCopied(false), 2000);
   };
 
@@ -60,30 +59,25 @@ export default function Auth() {
     try {
       const result = await signInWithGoogle();
       const user = result.user;
-      
-      // Check if profile exists
       const existingProfile = await getProfile(user.uid);
       
       if (!existingProfile) {
-        // Create new profile for Google user
         await createProfile(
           user.uid,
           user.displayName || 'Miner',
           referralCode,
           { recoveryEmail: user.email || undefined }
         );
-        toast.success("Account created! Happy mining!");
+        toast.success("Account created!");
       } else {
         toast.success("Welcome back!");
       }
-      
       navigate("/");
     } catch (err: any) {
-      console.error("Google sign-in error:", err);
       if (err?.code === 'auth/popup-closed-by-user') {
         toast.error("Sign-in cancelled");
       } else {
-        toast.error(err?.message || "Failed to sign in with Google");
+        toast.error(err?.message || "Failed to sign in");
       }
     } finally {
       setLoading(false);
@@ -96,7 +90,6 @@ export default function Auth() {
     setFoundUniqueId(null);
 
     try {
-      // Search for profile with this recovery email
       const q = query(
         collection(db, 'profiles'),
         where('recovery_email', '==', recoveryEmail.toLowerCase())
@@ -115,8 +108,7 @@ export default function Auth() {
         toast.error("No account found with this email");
       }
     } catch (err: any) {
-      console.error("Recovery error:", err);
-      toast.error("Failed to search for account");
+      toast.error("Failed to search");
     } finally {
       setLoading(false);
     }
@@ -128,43 +120,47 @@ export default function Auth() {
 
     try {
       if (screen === "login") {
-        // Login with Firebase
-        const loginEmail = useUniqueId ? `${uniqueId.toLowerCase()}@pingcaset.id` : email;
+        const loginEmail = loginMethod === "unique-id" 
+          ? `${uniqueId.toLowerCase()}@pingcaset.id` 
+          : email;
         await firebaseSignIn(loginEmail, password);
-        
         toast.success("Welcome back!");
         navigate("/");
-      } else {
-        // Register with Firebase
-        const isUniqueIdSignup = !!generatedId;
-        const signupEmail = isUniqueIdSignup ? `${generatedId.toLowerCase()}@pingcaset.id` : email;
-        const userCredential = await firebaseSignUp(signupEmail, password);
-        
-        // Create profile in Firestore with optional recovery email
+      } else if (screen === "register") {
+        const userCredential = await firebaseSignUp(email, password);
         await createProfile(
           userCredential.user.uid,
-          displayName || generatedId || 'Miner',
+          displayName || 'Miner',
+          referralCode,
+          { recoveryEmail: email }
+        );
+        toast.success("Account created!");
+        navigate("/");
+      } else if (screen === "unique-id-setup") {
+        const signupEmail = `${generatedId.toLowerCase()}@pingcaset.id`;
+        const userCredential = await firebaseSignUp(signupEmail, password);
+        await createProfile(
+          userCredential.user.uid,
+          displayName || generatedId,
           referralCode,
           { 
-            uniqueId: isUniqueIdSignup ? generatedId : undefined,
-            recoveryEmail: isUniqueIdSignup ? linkRecoveryEmail || undefined : email
+            uniqueId: generatedId,
+            recoveryEmail: linkRecoveryEmail || undefined
           }
         );
-        
-        toast.success("Account created! Happy mining!");
+        toast.success("Account created!");
         navigate("/");
       }
     } catch (err: any) {
-      console.error("Auth error:", err);
       const errorMessage = err?.message || "An error occurred";
       if (errorMessage.includes("email-already-in-use")) {
-        toast.error("This email is already registered");
+        toast.error("This account already exists");
       } else if (errorMessage.includes("invalid-credential") || errorMessage.includes("wrong-password")) {
-        toast.error("Invalid email or password");
+        toast.error("Invalid credentials");
       } else if (errorMessage.includes("user-not-found")) {
-        toast.error("No account found with this email");
+        toast.error("Account not found");
       } else if (errorMessage.includes("weak-password")) {
-        toast.error("Password should be at least 6 characters");
+        toast.error("Password must be 6+ characters");
       } else {
         toast.error(errorMessage);
       }
@@ -173,123 +169,74 @@ export default function Auth() {
     }
   };
 
-  // Welcome/Get Started Screen
+  const resetToWelcome = () => {
+    setScreen("welcome");
+    setGeneratedId("");
+    setLoginMethod("email");
+    setFoundUniqueId(null);
+    setRecoveryEmail("");
+    setLinkRecoveryEmail("");
+  };
+
+  // Welcome Screen
   if (screen === "welcome") {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 dark">
-        {/* Background Effects */}
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-violet-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[100px]" />
         </div>
 
         <motion.div
-          className="relative z-10 w-full max-w-sm text-center"
+          className="relative z-10 w-full max-w-xs text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
         >
           {/* Logo */}
           <motion.div
-            className="flex items-center justify-center gap-3 mb-8"
+            className="mx-auto size-20 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-2xl shadow-primary/40 mb-6"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring" }}
+            transition={{ type: "spring", delay: 0.1 }}
           >
-            <div className="size-16 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-2xl shadow-primary/30">
-              <Hexagon className="size-9 text-white" />
-            </div>
+            <Hexagon className="size-10 text-white" />
           </motion.div>
 
-          <motion.h1
-            className="text-3xl font-display font-bold text-foreground mb-2"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            PingCaset
-          </motion.h1>
+          <h1 className="text-2xl font-display font-bold text-foreground mb-1">PingCaset</h1>
+          <p className="text-primary text-xs font-semibold tracking-[0.25em] mb-6">MINING HUB</p>
           
-          <motion.p
-            className="text-primary font-semibold tracking-[0.3em] text-xs mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            MINING HUB
-          </motion.p>
+          <p className="text-muted-foreground text-sm mb-8">
+            Earn CASET tokens through mining. No hardware needed.
+          </p>
 
-          <motion.p
-            className="text-muted-foreground text-sm leading-relaxed mb-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Earn CASET tokens through time-based mining. 
-            No hardware required — just your time.
-          </motion.p>
-
-          {/* Features */}
-          <motion.div
-            className="grid grid-cols-3 gap-3 mb-10"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
+          {/* Feature Pills */}
+          <div className="flex justify-center gap-2 mb-8">
             {[
-              { icon: Zap, label: "10 CASET", sub: "per session" },
-              { icon: Sparkles, label: "4 Sessions", sub: "per day" },
-              { icon: Shield, label: "Secure", sub: "& fair" },
+              { icon: Zap, label: "10 CASET/session" },
+              { icon: Sparkles, label: "4x Daily" },
+              { icon: Shield, label: "Secure" },
             ].map((item, i) => (
-              <div key={i} className="p-3 rounded-xl bg-card/50 border border-border/50">
-                <item.icon className="size-5 text-primary mx-auto mb-1" />
-                <p className="text-xs font-semibold text-foreground">{item.label}</p>
-                <p className="text-[10px] text-muted-foreground">{item.sub}</p>
+              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs">
+                <item.icon className="size-3.5 text-primary" />
+                <span className="text-muted-foreground">{item.label}</span>
               </div>
             ))}
-          </motion.div>
+          </div>
 
-          {/* CTA Buttons */}
-          <motion.div
-            className="space-y-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+          {/* CTA */}
+          <Button
+            onClick={() => setScreen("register")}
+            className="w-full h-12 rounded-xl gradient-primary font-semibold shadow-lg shadow-primary/30 mb-3"
           >
-            <Button
-              onClick={() => setScreen("register")}
-              className="w-full h-14 rounded-2xl gradient-primary font-bold text-lg shadow-xl shadow-primary/30"
-            >
-              Get Started
-              <ArrowRight className="size-5 ml-2" />
-            </Button>
+            Get Started
+            <ArrowRight className="size-4 ml-2" />
+          </Button>
 
-            <button
-              onClick={() => setScreen("login")}
-              className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Already have an account? <span className="text-primary font-medium">Sign in</span>
-            </button>
-          </motion.div>
-
-          {/* Microsoft Badge */}
-          <motion.div
-            className="mt-12 flex items-center justify-center gap-2 text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
+          <button
+            onClick={() => setScreen("login")}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <span className="text-xs">Supported by</span>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border">
-              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#f25022" d="M1 1h10v10H1z"/>
-                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
-                <path fill="#7fba00" d="M12 1h10v10H12z"/>
-                <path fill="#ffb900" d="M12 12h10v10H12z"/>
-              </svg>
-              <span className="text-xs font-medium text-foreground">Microsoft for Startups</span>
-            </div>
-          </motion.div>
+            Already have an account? <span className="text-primary">Sign in</span>
+          </button>
         </motion.div>
       </div>
     );
@@ -298,82 +245,59 @@ export default function Auth() {
   // Recovery Screen
   if (screen === "recover") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
         </div>
 
         <motion.div
-          className="relative w-full max-w-sm z-10"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
+          className="relative w-full max-w-xs z-10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          <button
-            onClick={() => {
-              setScreen("login");
-              setFoundUniqueId(null);
-              setRecoveryEmail("");
-            }}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-          >
-            <ChevronLeft className="size-4" />
-            Back to Login
+          <button onClick={() => setScreen("login")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+            <ChevronLeft className="size-4" /> Back
           </button>
 
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="size-10 rounded-xl bg-primary flex items-center justify-center">
-              <RefreshCw className="size-5 text-primary-foreground" />
+          <div className="text-center mb-6">
+            <div className="mx-auto size-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
+              <Search className="size-6 text-primary" />
             </div>
-            <div>
-              <h1 className="font-display font-bold text-xl text-foreground">Recover ID</h1>
-              <p className="text-[10px] text-primary font-medium tracking-widest">ACCOUNT RECOVERY</p>
-            </div>
+            <h1 className="text-xl font-display font-bold text-foreground">Find Your ID</h1>
+            <p className="text-sm text-muted-foreground mt-1">Enter your linked recovery email</p>
           </div>
 
-          <div className="card-dark p-6">
-            <h2 className="text-lg font-display font-bold text-foreground text-center mb-1">
-              Find Your Unique ID
-            </h2>
-            <p className="text-sm text-muted-foreground text-center mb-6">
-              Enter the Gmail you linked during signup
-            </p>
-
+          <div className="bg-card rounded-2xl border border-border p-5">
             {foundUniqueId ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="space-y-4"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 text-center">
-                  <p className="text-xs text-muted-foreground mb-2">Your Unique ID</p>
-                  <p className="text-2xl font-mono font-bold text-primary">{foundUniqueId}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Your Unique ID</p>
+                  <p className="text-xl font-mono font-bold text-primary">{foundUniqueId}</p>
                 </div>
                 
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(foundUniqueId);
-                    toast.success("ID copied!");
-                  }}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Copy className="size-4 mr-2" />
-                  Copy ID
-                </Button>
-
-                <Button
-                  onClick={() => {
-                    setScreen("login");
-                    setUseUniqueId(true);
-                    setUniqueId(foundUniqueId);
-                    setFoundUniqueId(null);
-                  }}
-                  className="w-full gradient-primary"
-                >
-                  <Key className="size-4 mr-2" />
-                  Login with this ID
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(foundUniqueId);
+                      toast.success("Copied!");
+                    }}
+                    className="text-sm"
+                  >
+                    <Copy className="size-4 mr-1.5" /> Copy
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setScreen("login");
+                      setLoginMethod("unique-id");
+                      setUniqueId(foundUniqueId);
+                      setFoundUniqueId(null);
+                    }}
+                    className="gradient-primary text-sm"
+                  >
+                    Login <ArrowRight className="size-4 ml-1.5" />
+                  </Button>
+                </div>
               </motion.div>
             ) : (
               <form onSubmit={handleRecoverUniqueId} className="space-y-4">
@@ -381,27 +305,15 @@ export default function Auth() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     type="email"
-                    placeholder="Enter your recovery Gmail"
+                    placeholder="your@gmail.com"
                     value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value)}
-                    className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
+                    className="pl-10 h-11 bg-muted/30 border-border"
                     required
                   />
                 </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-12 gradient-primary font-bold rounded-xl"
-                >
-                  {loading ? (
-                    <Loader2 className="size-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Search className="size-4 mr-2" />
-                      Find My ID
-                    </>
-                  )}
+                <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary">
+                  {loading ? <Loader2 className="size-4 animate-spin" /> : "Find My ID"}
                 </Button>
               </form>
             )}
@@ -411,63 +323,149 @@ export default function Auth() {
     );
   }
 
-  // Login/Register Screen
+  // Unique ID Setup Screen
+  if (screen === "unique-id-setup") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
+        </div>
+
+        <motion.div
+          className="relative w-full max-w-xs z-10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <button onClick={resetToWelcome} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+            <ChevronLeft className="size-4" /> Back
+          </button>
+
+          <div className="text-center mb-6">
+            <div className="mx-auto size-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
+              <Key className="size-6 text-primary" />
+            </div>
+            <h1 className="text-xl font-display font-bold text-foreground">Your Unique ID</h1>
+            <p className="text-sm text-muted-foreground mt-1">Save this - it's your login credential</p>
+          </div>
+
+          <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+            {/* ID Display */}
+            <div className="p-4 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 border border-primary/30">
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-mono font-bold text-primary">{generatedId}</p>
+                <Button size="sm" variant="ghost" onClick={copyGeneratedId} className="text-primary h-8 w-8 p-0">
+                  {idCopied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="flex gap-2.5 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="size-4 text-destructive shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                <span className="text-destructive font-medium">Save this ID!</span> Lost IDs without recovery email cannot be recovered.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Display Name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="pl-10 h-10 bg-muted/30 border-border"
+                />
+              </div>
+
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Recovery Email (optional)"
+                  value={linkRecoveryEmail}
+                  onChange={(e) => setLinkRecoveryEmail(e.target.value)}
+                  className="pl-10 h-10 bg-muted/30 border-border"
+                />
+              </div>
+
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="Create Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 h-10 bg-muted/30 border-border"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div className="relative">
+                <Gift className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Referral Code (optional)"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  className="pl-10 h-10 bg-muted/30 border-border"
+                />
+              </div>
+
+              <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary font-semibold">
+                {loading ? <Loader2 className="size-4 animate-spin" /> : "Create Account"}
+              </Button>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Login / Register Screen
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
-      {/* Background glow */}
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
       </div>
 
       <motion.div
-        className="relative w-full max-w-sm z-10"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
+        className="relative w-full max-w-xs z-10"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
       >
-        {/* Back Button */}
-        <button
-          onClick={() => {
-            setScreen("welcome");
-            setGeneratedId("");
-            setShowIdWarning(false);
-            setUseUniqueId(false);
-          }}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ChevronLeft className="size-4" />
-          Back
+        <button onClick={resetToWelcome} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <ChevronLeft className="size-4" /> Back
         </button>
 
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="size-10 rounded-xl bg-primary flex items-center justify-center">
-            <Hexagon className="size-5 text-primary-foreground" />
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="size-11 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
+            <Hexagon className="size-6 text-white" />
           </div>
           <div>
-            <h1 className="font-display font-bold text-xl text-foreground">PingCaset</h1>
-            <p className="text-[10px] text-primary font-medium tracking-widest">MINING HUB</p>
+            <h1 className="font-display font-bold text-lg text-foreground">
+              {screen === "login" ? "Welcome Back" : "Create Account"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {screen === "login" ? "Sign in to continue" : "Start your journey"}
+            </p>
           </div>
         </div>
 
         {/* Auth Card */}
-        <div className="card-dark p-6">
-          <h2 className="text-lg font-display font-bold text-foreground text-center mb-1">
-            {screen === "login" ? "Welcome Back" : "Create Account"}
-          </h2>
-          <p className="text-sm text-muted-foreground text-center mb-6">
-            {screen === "login" ? "Sign in to continue mining" : "Start your mining journey"}
-          </p>
-
-          {/* Google Sign In Button */}
+        <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+          {/* Google Button */}
           <Button
             type="button"
             variant="outline"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full h-11 mb-4 border-border hover:bg-muted/50"
+            className="w-full h-11 border-border hover:bg-muted/50"
           >
-            <svg className="size-5 mr-2" viewBox="0 0 24 24">
+            <svg className="size-4 mr-2" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -476,194 +474,92 @@ export default function Auth() {
             Continue with Google
           </Button>
 
-          <div className="relative mb-4">
+          {/* Divider */}
+          <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-card text-muted-foreground">or</span>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-card text-xs text-muted-foreground">or</span>
             </div>
           </div>
 
           {/* Login Method Toggle (Login only) */}
           {screen === "login" && (
-            <div className="flex gap-2 mb-4 p-1 bg-muted/50 rounded-xl">
+            <div className="flex p-1 bg-muted/30 rounded-lg">
               <button
                 type="button"
-                onClick={() => setUseUniqueId(false)}
-                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  !useUniqueId ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                onClick={() => setLoginMethod("email")}
+                className={`flex-1 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  loginMethod === "email" ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                 }`}
               >
-                <Mail className="size-4 inline mr-1.5" />
-                Email
+                <Mail className="size-3.5" /> Email
               </button>
               <button
                 type="button"
-                onClick={() => setUseUniqueId(true)}
-                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  useUniqueId ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                onClick={() => setLoginMethod("unique-id")}
+                className={`flex-1 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  loginMethod === "unique-id" ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                 }`}
               >
-                <Key className="size-4 inline mr-1.5" />
-                Unique ID
+                <Key className="size-3.5" /> Unique ID
               </button>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             {screen === "register" && (
-              <>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Display Name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
-                    required={!generatedId}
-                  />
-                </div>
-
-                {/* Unique ID Option for Signup */}
-                {!generatedId ? (
-                  <>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
-                        required={!generatedId}
-                      />
-                    </div>
-
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-border" />
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="px-2 bg-card text-muted-foreground">or</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCreateUniqueId}
-                      className="w-full h-11 border-primary/30 text-primary hover:bg-primary/10"
-                    >
-                      <Key className="size-4 mr-2" />
-                      Create Unique ID (No Email)
-                    </Button>
-                  </>
-                ) : (
-                  <AnimatePresence>
-                    {showIdWarning && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="space-y-3"
-                      >
-                        {/* Generated ID Display */}
-                        <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
-                          <p className="text-xs text-muted-foreground mb-2">Your Unique ID</p>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xl font-mono font-bold text-primary">{generatedId}</p>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={copyGeneratedId}
-                              className="text-primary"
-                            >
-                              {idCopied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Optional Recovery Email */}
-                        <div className="p-4 rounded-xl bg-muted/30 border border-border">
-                          <p className="text-xs font-medium text-foreground mb-2 flex items-center gap-1.5">
-                            <Mail className="size-3.5 text-primary" />
-                            Link Gmail for Recovery (Optional)
-                          </p>
-                          <Input
-                            type="email"
-                            placeholder="your@gmail.com"
-                            value={linkRecoveryEmail}
-                            onChange={(e) => setLinkRecoveryEmail(e.target.value)}
-                            className="h-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground text-sm"
-                          />
-                          <p className="text-[10px] text-muted-foreground mt-2">
-                            This lets you recover your ID if forgotten
-                          </p>
-                        </div>
-
-                        {/* Warning */}
-                        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30">
-                          <div className="flex gap-3">
-                            <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-semibold text-destructive mb-1">Important Warning</p>
-                              <ul className="text-xs text-muted-foreground space-y-1">
-                                <li className="text-foreground">• Save this ID somewhere safe</li>
-                                <li className="text-foreground">• This is your ONLY way to login</li>
-                                <li>• Without recovery email, lost ID = <span className="text-destructive font-medium">PERMANENT LOSS</span></li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setGeneratedId("");
-                            setShowIdWarning(false);
-                            setLinkRecoveryEmail("");
-                          }}
-                          className="w-full text-muted-foreground"
-                        >
-                          Use Email Instead
-                        </Button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                )}
-              </>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Display Name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="pl-10 h-10 bg-muted/30 border-border"
+                  required
+                />
+              </div>
             )}
 
-            {screen === "login" && (
+            {screen === "login" ? (
+              loginMethod === "unique-id" ? (
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="PC-XXXXXXXX"
+                    value={uniqueId}
+                    onChange={(e) => setUniqueId(e.target.value.toUpperCase())}
+                    className="pl-10 h-10 bg-muted/30 border-border font-mono"
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 h-10 bg-muted/30 border-border"
+                    required
+                  />
+                </div>
+              )
+            ) : (
               <div className="relative">
-                {useUniqueId ? (
-                  <>
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Your Unique ID (e.g. PC-ABCD1234)"
-                      value={uniqueId}
-                      onChange={(e) => setUniqueId(e.target.value.toUpperCase())}
-                      className="pl-10 h-11 bg-muted/50 border-border font-mono text-foreground placeholder:text-muted-foreground"
-                      required
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
-                      required
-                    />
-                  </>
-                )}
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 h-10 bg-muted/30 border-border"
+                  required
+                />
               </div>
             )}
 
@@ -674,7 +570,7 @@ export default function Auth() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
+                className="pl-10 h-10 bg-muted/30 border-border"
                 required
                 minLength={6}
               />
@@ -688,61 +584,60 @@ export default function Auth() {
                   placeholder="Referral Code (optional)"
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                  className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
+                  className="pl-10 h-10 bg-muted/30 border-border"
                 />
               </div>
             )}
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 gradient-primary font-bold rounded-xl shadow-lg shadow-primary/25"
-            >
-              {loading ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : screen === "login" ? (
-                "Sign In"
-              ) : (
-                "Create Account"
-              )}
+            <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary font-semibold">
+              {loading ? <Loader2 className="size-4 animate-spin" /> : screen === "login" ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
-          {/* Forgot Unique ID link */}
-          {screen === "login" && useUniqueId && (
+          {/* Unique ID Signup Option (Register only) */}
+          {screen === "register" && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-3 bg-card text-xs text-muted-foreground">or</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleCreateUniqueId}
+                className="w-full h-10 text-primary hover:text-primary hover:bg-primary/10 text-sm"
+              >
+                <Key className="size-4 mr-2" />
+                Create with Unique ID (No Email)
+              </Button>
+            </>
+          )}
+
+          {/* Forgot ID (Login with Unique ID only) */}
+          {screen === "login" && loginMethod === "unique-id" && (
             <button
+              type="button"
               onClick={() => setScreen("recover")}
-              className="w-full mt-3 text-xs text-primary hover:underline"
+              className="w-full text-center text-xs text-primary hover:underline"
             >
               Forgot your Unique ID?
             </button>
           )}
-
-          {/* Toggle Login/Register */}
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            {screen === "login" ? (
-              <>
-                Don't have an account?{" "}
-                <button
-                  onClick={() => setScreen("register")}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sign up
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <button
-                  onClick={() => setScreen("login")}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </p>
         </div>
+
+        {/* Toggle */}
+        <p className="text-center text-sm text-muted-foreground mt-4">
+          {screen === "login" ? (
+            <>Don't have an account? <button onClick={() => setScreen("register")} className="text-primary hover:underline">Sign up</button></>
+          ) : (
+            <>Have an account? <button onClick={() => setScreen("login")} className="text-primary hover:underline">Sign in</button></>
+          )}
+        </p>
       </motion.div>
     </div>
   );
