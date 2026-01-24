@@ -14,104 +14,86 @@ import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
-// Active miner dot positions on world map (realistic positions)
-const minerPositions = [
-  // North America
-  { x: 15, y: 28, delay: 0, size: 1.2 }, { x: 20, y: 32, delay: 0.5, size: 1 }, { x: 12, y: 35, delay: 1.2, size: 0.8 },
-  { x: 22, y: 38, delay: 2.1, size: 1.1 }, { x: 18, y: 42, delay: 0.8, size: 0.9 },
-  // South America  
-  { x: 28, y: 62, delay: 1.5, size: 1 }, { x: 30, y: 70, delay: 0.3, size: 0.8 }, { x: 26, y: 55, delay: 2.4, size: 1.1 },
-  // Europe
-  { x: 48, y: 28, delay: 0.2, size: 1.2 }, { x: 52, y: 32, delay: 1.8, size: 1 }, { x: 46, y: 35, delay: 0.9, size: 0.9 },
-  { x: 50, y: 25, delay: 1.4, size: 0.8 }, { x: 54, y: 30, delay: 2.6, size: 1.1 },
-  // Africa
-  { x: 50, y: 52, delay: 0.7, size: 1 }, { x: 54, y: 48, delay: 1.1, size: 0.9 }, { x: 48, y: 58, delay: 2.0, size: 1.2 },
-  // Asia
-  { x: 65, y: 30, delay: 0.1, size: 1.1 }, { x: 72, y: 35, delay: 0.6, size: 1.3 }, { x: 80, y: 38, delay: 1.3, size: 1 },
-  { x: 70, y: 42, delay: 1.9, size: 0.9 }, { x: 76, y: 28, delay: 0.4, size: 1.2 }, { x: 85, y: 45, delay: 2.2, size: 0.8 },
-  { x: 68, y: 48, delay: 2.8, size: 1 },
-  // Australia
-  { x: 84, y: 65, delay: 0.8, size: 1.1 }, { x: 80, y: 70, delay: 1.6, size: 0.9 },
+// Node positions on the globe (percentage positions)
+const globeNodes = [
+  { x: 45, y: 55, delay: 0, size: 1.4 },
+  { x: 55, y: 48, delay: 0.3, size: 1.2 },
+  { x: 62, y: 58, delay: 0.5, size: 1.3 },
+  { x: 70, y: 50, delay: 0.2, size: 1.1 },
+  { x: 78, y: 62, delay: 0.7, size: 1.0 },
+  { x: 52, y: 68, delay: 0.4, size: 0.9 },
+  { x: 40, y: 62, delay: 0.8, size: 1.1 },
+  { x: 58, y: 42, delay: 0.6, size: 1.0 },
+  { x: 68, y: 68, delay: 0.9, size: 0.8 },
+  { x: 48, y: 45, delay: 1.0, size: 0.9 },
+  { x: 75, y: 55, delay: 0.35, size: 1.2 },
+  { x: 35, y: 52, delay: 0.55, size: 1.0 },
 ];
 
-// Animated Miner Dot with smooth pulse
-const MinerDot = ({ x, y, delay, size = 1 }: { x: number; y: number; delay: number; size?: number }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), delay * 1000 + 800);
-    return () => clearTimeout(timer);
-  }, [delay]);
-  
-  if (!isVisible) return null;
-  
+// Connection lines between nodes
+const connections = [
+  { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 },
+  { from: 3, to: 4 }, { from: 1, to: 5 }, { from: 0, to: 6 },
+  { from: 7, to: 3 }, { from: 5, to: 8 }, { from: 9, to: 0 },
+  { from: 10, to: 4 }, { from: 11, to: 6 },
+];
+
+// Globe Node with glow effect
+const GlobeNode = ({ x, y, delay, size = 1 }: { x: number; y: number; delay: number; size?: number }) => {
   return (
     <motion.div
       className="absolute -translate-x-1/2 -translate-y-1/2"
       style={{ left: `${x}%`, top: `${y}%` }}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      transition={{ delay: delay + 0.5, type: "spring", stiffness: 200, damping: 20 }}
     >
-      {/* Outer pulse ring */}
+      {/* Outer glow */}
       <motion.div
-        className="absolute rounded-full bg-primary/30"
+        className="absolute rounded-full bg-primary/40"
         style={{ 
-          width: 16 * size, 
-          height: 16 * size,
-          left: -8 * size,
-          top: -8 * size
-        }}
-        animate={{ 
-          scale: [1, 2.5, 1],
-          opacity: [0.4, 0, 0.4]
-        }}
-        transition={{ 
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeOut",
-          delay: delay * 0.5
-        }}
-      />
-      {/* Inner glow */}
-      <motion.div
-        className="absolute rounded-full bg-primary/50"
-        style={{ 
-          width: 8 * size, 
-          height: 8 * size,
-          left: -4 * size,
-          top: -4 * size
+          width: 20 * size, 
+          height: 20 * size,
+          left: -10 * size,
+          top: -10 * size,
+          filter: 'blur(4px)'
         }}
         animate={{ 
           scale: [1, 1.5, 1],
-          opacity: [0.6, 0.3, 0.6]
+          opacity: [0.4, 0.2, 0.4]
         }}
         transition={{ 
-          duration: 2,
+          duration: 2.5,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: delay * 0.3
+          delay: delay * 0.5
         }}
       />
       {/* Core dot */}
       <motion.div 
-        className="rounded-full bg-primary"
-        style={{ width: 4 * size, height: 4 * size, marginLeft: -2 * size, marginTop: -2 * size }}
-        animate={{ opacity: [0.8, 1, 0.8] }}
+        className="rounded-full bg-primary shadow-lg"
+        style={{ 
+          width: 8 * size, 
+          height: 8 * size, 
+          marginLeft: -4 * size, 
+          marginTop: -4 * size,
+          boxShadow: '0 0 12px 3px hsl(var(--primary) / 0.5)'
+        }}
+        animate={{ opacity: [0.9, 1, 0.9] }}
         transition={{ duration: 1.5, repeat: Infinity }}
       />
     </motion.div>
   );
 };
 
-// Realistic World Map with Active Miners
-const ActiveMinersMap = () => {
+// 3D Globe Visualization
+const GlobeVisualization = () => {
   const [activeCount, setActiveCount] = useState(0);
   
   useEffect(() => {
     const target = 24897;
-    const duration = 2500;
-    const steps = 80;
+    const duration = 2000;
+    const steps = 60;
     const increment = target / steps;
     let current = 0;
     
@@ -130,139 +112,112 @@ const ActiveMinersMap = () => {
   
   return (
     <motion.div 
-      className="relative w-full max-w-md mx-auto"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
+      className="relative w-full max-w-sm mx-auto aspect-square"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.8, delay: 0.2 }}
     >
-      {/* Map container with subtle border */}
-      <div className="relative aspect-[2/1] rounded-2xl overflow-hidden bg-card/30 border border-border/50 p-4">
-        {/* World map SVG - Realistic simplified outline */}
-        <svg
-          viewBox="0 0 1000 500"
-          className="w-full h-full"
-          preserveAspectRatio="xMidYMid slice"
+      {/* Globe background - gradient sphere effect */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div 
+          className="w-[85%] h-[85%] rounded-full relative overflow-hidden"
+          style={{
+            background: 'radial-gradient(ellipse at 30% 30%, hsl(262, 83%, 40%) 0%, hsl(262, 83%, 25%) 40%, hsl(262, 60%, 12%) 70%, transparent 100%)',
+            boxShadow: '0 0 80px 20px hsl(262, 83%, 30% / 0.3), inset 0 0 60px 10px hsl(262, 83%, 50% / 0.1)'
+          }}
         >
-          <defs>
-            <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--muted))" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="hsl(var(--muted))" stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          
-          {/* North America */}
-          <motion.path
-            d="M50,120 L80,90 L120,80 L160,85 L200,75 L240,90 L270,120 L280,160 L260,200 L240,220 L200,240 L180,260 L160,250 L140,230 L120,240 L100,220 L80,200 L60,180 L50,150 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.2 }}
+          {/* Surface highlight */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse at 25% 25%, hsl(262, 83%, 70% / 0.2) 0%, transparent 50%)'
+            }}
           />
           
-          {/* South America */}
-          <motion.path
-            d="M200,280 L230,270 L260,290 L280,330 L300,380 L290,420 L260,450 L230,460 L200,440 L190,400 L200,360 L190,320 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.4 }}
-          />
-          
-          {/* Europe */}
-          <motion.path
-            d="M440,100 L480,90 L520,100 L550,120 L560,150 L540,180 L500,190 L460,180 L440,160 L430,130 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.3 }}
-          />
-          
-          {/* Africa */}
-          <motion.path
-            d="M440,200 L500,190 L560,210 L580,260 L570,320 L540,380 L500,400 L460,390 L440,350 L430,300 L440,250 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.5 }}
-          />
-          
-          {/* Asia */}
-          <motion.path
-            d="M560,80 L620,70 L700,80 L780,100 L850,130 L880,180 L870,230 L840,270 L780,290 L720,280 L660,250 L620,220 L580,180 L560,140 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.2 }}
-          />
-          
-          {/* India/Southeast Asia */}
-          <motion.path
-            d="M680,250 L720,240 L760,260 L780,300 L760,340 L720,350 L680,330 L670,290 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.6 }}
-          />
-          
-          {/* Australia */}
-          <motion.path
-            d="M800,340 L860,330 L920,350 L940,400 L920,440 L860,450 L810,430 L790,390 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.7 }}
-          />
-          
-          {/* Japan */}
-          <motion.path
-            d="M880,140 L910,130 L930,160 L920,200 L890,210 L870,180 Z"
-            fill="url(#landGradient)"
-            stroke="hsl(var(--border))"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.4 }}
-          />
-        </svg>
-        
-        {/* Miner dots overlay */}
-        <div className="absolute inset-4">
-          {minerPositions.map((pos, i) => (
-            <MinerDot key={i} x={pos.x} y={pos.y} delay={pos.delay} size={pos.size} />
-          ))}
+          {/* Grid lines on globe - curved effect */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            {/* Horizontal curves */}
+            {[20, 35, 50, 65, 80].map((y, i) => (
+              <motion.ellipse
+                key={`h-${i}`}
+                cx="50"
+                cy={y}
+                rx={Math.sin((y / 100) * Math.PI) * 45}
+                ry="2"
+                fill="none"
+                stroke="hsl(var(--primary) / 0.15)"
+                strokeWidth="0.3"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1.5, delay: 0.3 + i * 0.1 }}
+              />
+            ))}
+            {/* Vertical curves */}
+            {[30, 50, 70].map((x, i) => (
+              <motion.ellipse
+                key={`v-${i}`}
+                cx={x}
+                cy="50"
+                rx="3"
+                ry="40"
+                fill="none"
+                stroke="hsl(var(--primary) / 0.15)"
+                strokeWidth="0.3"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1.5, delay: 0.5 + i * 0.1 }}
+              />
+            ))}
+          </svg>
         </div>
       </div>
       
-      {/* Counter badge */}
+      {/* Connection lines */}
+      <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
+        {connections.map((conn, i) => {
+          const from = globeNodes[conn.from];
+          const to = globeNodes[conn.to];
+          return (
+            <motion.line
+              key={i}
+              x1={`${from.x}%`}
+              y1={`${from.y}%`}
+              x2={`${to.x}%`}
+              y2={`${to.y}%`}
+              stroke="hsl(var(--primary) / 0.4)"
+              strokeWidth="1"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.8 + i * 0.05 }}
+            />
+          );
+        })}
+      </svg>
+      
+      {/* Nodes overlay */}
+      <div className="absolute inset-0" style={{ zIndex: 2 }}>
+        {globeNodes.map((node, i) => (
+          <GlobeNode key={i} x={node.x} y={node.y} delay={node.delay} size={node.size} />
+        ))}
+      </div>
+      
+      {/* Counter badge at bottom */}
       <motion.div
-        className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-card border border-border rounded-full px-5 py-2 shadow-lg"
+        className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/80 backdrop-blur-md border border-border rounded-full px-4 py-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.8, type: "spring", stiffness: 100 }}
+        transition={{ delay: 1.5, type: "spring", stiffness: 100 }}
+        style={{ zIndex: 3 }}
       >
         <motion.div 
           className="size-2 rounded-full bg-success"
           animate={{ opacity: [1, 0.5, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         />
-        <span className="text-base font-bold text-foreground tabular-nums">
+        <span className="text-sm font-bold text-foreground tabular-nums">
           {activeCount.toLocaleString()}
         </span>
-        <span className="text-sm text-muted-foreground">mining now</span>
+        <span className="text-xs text-muted-foreground">users mining now</span>
       </motion.div>
     </motion.div>
   );
@@ -560,125 +515,120 @@ export default function Auth() {
     setLinkRecoveryEmail("");
   };
 
-  // Welcome Screen - Premium Minimal
+  // Welcome Screen - Premium with 3D Globe
   if (screen === "welcome") {
     return (
       <div className="min-h-screen bg-background flex flex-col dark overflow-hidden">
-        {/* Subtle background gradient - deeply integrated */}
+        {/* Subtle background glow */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[60%] bg-gradient-to-b from-primary/[0.08] via-primary/[0.03] to-transparent" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
         </div>
 
-        {/* Floating Elements - Subtle and premium */}
+        {/* Decorative stars/sparkles */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <FloatingElement x={-90} y={-60} delay={0.4} duration={7} size="lg">
-            <Zap className="size-6 text-primary/70" />
-          </FloatingElement>
-          <FloatingElement x={80} y={-20} delay={0.6} duration={8} size="md">
-            <Sparkles className="size-5 text-muted-foreground" />
-          </FloatingElement>
-          <FloatingElement x={-60} y={70} delay={0.8} duration={6} size="sm">
-            <Shield className="size-4 text-primary/60" />
-          </FloatingElement>
-          <FloatingElement x={100} y={90} delay={0.5} duration={7.5} size="sm">
-            <div className="text-sm font-semibold text-muted-foreground">₿</div>
-          </FloatingElement>
-        </div>
-
-        {/* Decorative ring - very subtle */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <motion.div 
-            className="size-72 rounded-full border border-border/30"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          />
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute size-1 rounded-full bg-foreground/40"
+              style={{
+                left: `${15 + Math.random() * 70}%`,
+                top: `${10 + Math.random() * 40}%`,
+              }}
+              animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+              transition={{
+                duration: 2 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
         </div>
 
         {/* Main content */}
-        <div className="flex-1 relative flex flex-col items-center justify-center px-6 pt-12 z-10">
+        <div className="flex-1 relative flex flex-col items-center justify-center px-6 pt-8 z-10">
           <motion.div
-            className="relative z-10 text-center"
+            className="relative z-10 text-center w-full max-w-sm"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Logo - Clean shadow */}
-            <motion.img 
-              src={pingcasetLogo} 
-              alt="PingCaset" 
-              className="mx-auto size-20 rounded-2xl mb-8"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 100, delay: 0.1 }}
-            />
-
-            {/* World Map with Active Miners */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="mb-6"
-            >
-              <ActiveMinersMap />
-            </motion.div>
-
-            {/* Headline - Clean typography */}
+            {/* Headline */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
-              className="mb-2"
+              transition={{ delay: 0.1 }}
+              className="mb-3"
             >
-              <h2 className="text-xl md:text-2xl font-semibold leading-tight text-foreground">
-                Join thousands who are
+              <h1 className="text-3xl md:text-4xl font-display font-bold leading-tight text-foreground">
+                Be early.
                 <br />
-                already mining <span className="text-primary">CASET</span>
-              </h2>
+                Mine <span className="text-primary">CASET</span>
+                <br />
+                before listing.
+              </h1>
             </motion.div>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="text-muted-foreground text-sm"
+              transition={{ delay: 0.25 }}
+              className="text-muted-foreground text-sm mb-8"
             >
-              Start earning crypto rewards today
+              No hardware. No fees.
+              <br />
+              Just time-based mining.
             </motion.p>
+
+            {/* 3D Globe Visualization */}
+            <GlobeVisualization />
           </motion.div>
         </div>
 
         {/* Bottom CTA area */}
         <div className="relative z-10 px-6 pb-8 space-y-3">
-          {/* Swipeable Button */}
-          <SwipeButton onComplete={() => setScreen("landing")} />
-
-          {/* Or tap button */}
+          {/* Primary CTA Button */}
           <motion.button
             onClick={() => setScreen("landing")}
-            className="w-full text-center text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2"
+            className="w-full h-14 rounded-full font-semibold text-base text-primary-foreground flex items-center justify-center gap-2"
+            style={{
+              background: 'linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(262, 83%, 45%) 100%)',
+              boxShadow: '0 4px 20px hsl(262, 83%, 50% / 0.4)'
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Start Mining Now
+            <ArrowRight className="size-5" />
+          </motion.button>
+
+          {/* Secondary text */}
+          <motion.p
+            className="text-center text-sm text-muted-foreground/70"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.75 }}
+          >
+            Swipe or tap to start
+          </motion.p>
+
+          {/* Microsoft Badge */}
+          <motion.div 
+            className="flex items-center justify-center gap-2 pt-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
           >
-            or tap to continue
-          </motion.button>
-
-          {/* Microsoft Badge - Subtle */}
-          <motion.div 
-            className="flex items-center justify-center gap-2 pt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-          >
-            <span className="text-xs text-muted-foreground/60">Supported by</span>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border">
-              <svg viewBox="0 0 23 23" className="size-3" xmlns="http://www.w3.org/2000/svg">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 border border-border backdrop-blur-sm">
+              <svg viewBox="0 0 23 23" className="size-3.5" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#f25022" d="M1 1h10v10H1z"/>
                 <path fill="#00a4ef" d="M1 12h10v10H1z"/>
                 <path fill="#7fba00" d="M12 1h10v10H12z"/>
                 <path fill="#ffb900" d="M12 12h10v10H12z"/>
               </svg>
-              <span className="text-[10px] font-medium text-muted-foreground">Microsoft for Startups</span>
+              <span className="text-xs font-medium text-muted-foreground">Microsoft for Startups</span>
             </div>
           </motion.div>
         </div>
