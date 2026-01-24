@@ -44,24 +44,24 @@ export default function Games() {
       >
         <button
           onClick={() => setActiveGame("spin")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all ${
             activeGame === "spin"
-              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "card-glass-subtle text-muted-foreground hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+              : "card-glass-strong text-foreground/70 hover:text-foreground"
           }`}
         >
-          <Sparkles className="size-4" />
+          <Sparkles className="size-5" />
           Spin Wheel
         </button>
         <button
           onClick={() => setActiveGame("scratch")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all ${
             activeGame === "scratch"
-              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "card-glass-subtle text-muted-foreground hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+              : "card-glass-strong text-foreground/70 hover:text-foreground"
           }`}
         >
-          <TicketPercent className="size-4" />
+          <TicketPercent className="size-5" />
           Scratch Card
         </button>
       </motion.div>
@@ -72,28 +72,28 @@ export default function Games() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        className="card-glass p-5"
+        className="card-glass-strong p-6"
       >
         {activeGame === "spin" ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="text-center">
-              <h2 className="text-lg font-display font-bold text-foreground">
+              <h2 className="text-xl font-display font-bold text-foreground">
                 Spin the Wheel
               </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Win up to <span className="text-primary font-semibold">500</span> coins!
+              <p className="text-sm text-foreground/60 mt-1">
+                Win up to <span className="text-primary font-bold">500</span> coins!
               </p>
             </div>
             <SpinWheel onSpin={playSpin} spinning={spinning} cost={5} />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="text-center">
-              <h2 className="text-lg font-display font-bold text-foreground">
+              <h2 className="text-xl font-display font-bold text-foreground">
                 Scratch & Win
               </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Win up to <span className="text-primary font-semibold">100</span> coins!
+              <p className="text-sm text-foreground/60 mt-1">
+                Win up to <span className="text-primary font-bold">100</span> coins!
               </p>
             </div>
             <ScratchCard onScratch={playScratch} scratching={scratching} cost={3} />
@@ -106,13 +106,13 @@ export default function Games() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="card-glass p-4"
+        className="card-glass-strong p-5"
       >
-        <div className="flex items-center gap-2 mb-4">
-          <div className="size-8 rounded-lg bg-primary/15 backdrop-blur-sm flex items-center justify-center">
-            <Gift className="size-4 text-primary" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="size-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Gift className="size-5 text-primary" />
           </div>
-          <h3 className="text-base font-display font-bold text-foreground">Daily Tasks</h3>
+          <h3 className="text-lg font-display font-bold text-foreground">Daily Tasks</h3>
         </div>
         <TasksPanel tasks={tasks} loading={loading} onClaimTask={claimTask} />
       </motion.div>
