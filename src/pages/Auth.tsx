@@ -181,9 +181,10 @@ export default function Auth() {
   // Welcome Screen
   if (screen === "welcome") {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 dark">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[100px]" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]" />
         </div>
 
         <motion.div
@@ -193,12 +194,12 @@ export default function Auth() {
         >
           {/* Logo */}
           <motion.div
-            className="mx-auto size-20 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-2xl shadow-primary/40 mb-6"
+            className="mx-auto size-20 rounded-2xl gradient-primary flex items-center justify-center shadow-2xl shadow-primary/30 mb-6"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", delay: 0.1 }}
           >
-            <Hexagon className="size-10 text-white" />
+            <Hexagon className="size-10 text-primary-foreground" />
           </motion.div>
 
           <h1 className="text-2xl font-display font-bold text-foreground mb-1">PingCaset</h1>
@@ -209,13 +210,13 @@ export default function Auth() {
           </p>
 
           {/* Feature Pills */}
-          <div className="flex justify-center gap-2 mb-8">
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
             {[
               { icon: Zap, label: "10 CASET/session" },
               { icon: Sparkles, label: "4x Daily" },
               { icon: Shield, label: "Secure" },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs">
+              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border text-xs">
                 <item.icon className="size-3.5 text-primary" />
                 <span className="text-muted-foreground">{item.label}</span>
               </div>
@@ -245,9 +246,9 @@ export default function Auth() {
   // Recovery Screen
   if (screen === "recover") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6 dark">
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
         </div>
 
         <motion.div
@@ -255,7 +256,7 @@ export default function Auth() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <button onClick={() => setScreen("login")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <button onClick={() => setScreen("login")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
             <ChevronLeft className="size-4" /> Back
           </button>
 
@@ -267,7 +268,7 @@ export default function Auth() {
             <p className="text-sm text-muted-foreground mt-1">Enter your linked recovery email</p>
           </div>
 
-          <div className="bg-card rounded-2xl border border-border p-5">
+          <div className="card-dark p-5">
             {foundUniqueId ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 text-center">
@@ -326,9 +327,9 @@ export default function Auth() {
   // Unique ID Setup Screen
   if (screen === "unique-id-setup") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6 dark">
         <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
         </div>
 
         <motion.div
@@ -336,24 +337,24 @@ export default function Auth() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <button onClick={resetToWelcome} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <button onClick={resetToWelcome} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
             <ChevronLeft className="size-4" /> Back
           </button>
 
           <div className="text-center mb-6">
-            <div className="mx-auto size-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
+            <div className="mx-auto size-12 rounded-xl bg-accent flex items-center justify-center mb-4">
               <Key className="size-6 text-primary" />
             </div>
             <h1 className="text-xl font-display font-bold text-foreground">Your Unique ID</h1>
             <p className="text-sm text-muted-foreground mt-1">Save this - it's your login credential</p>
           </div>
 
-          <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+          <div className="card-dark p-5 space-y-4">
             {/* ID Display */}
-            <div className="p-4 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 border border-primary/30">
+            <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
               <div className="flex items-center justify-between">
                 <p className="text-xl font-mono font-bold text-primary">{generatedId}</p>
-                <Button size="sm" variant="ghost" onClick={copyGeneratedId} className="text-primary h-8 w-8 p-0">
+                <Button size="sm" variant="ghost" onClick={copyGeneratedId} className="text-primary hover:text-primary hover:bg-primary/10 h-8 w-8 p-0">
                   {idCopied ? <Check className="size-4" /> : <Copy className="size-4" />}
                 </Button>
               </div>
@@ -426,9 +427,9 @@ export default function Auth() {
 
   // Login / Register Screen
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6 dark">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[80px]" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]" />
       </div>
 
       <motion.div
@@ -436,14 +437,14 @@ export default function Auth() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <button onClick={resetToWelcome} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+        <button onClick={resetToWelcome} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ChevronLeft className="size-4" /> Back
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="size-11 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
-            <Hexagon className="size-6 text-white" />
+          <div className="size-11 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <Hexagon className="size-6 text-primary-foreground" />
           </div>
           <div>
             <h1 className="font-display font-bold text-lg text-foreground">
@@ -456,7 +457,7 @@ export default function Auth() {
         </div>
 
         {/* Auth Card */}
-        <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="card-dark p-5 space-y-4">
           {/* Google Button */}
           <Button
             type="button"
@@ -486,11 +487,11 @@ export default function Auth() {
 
           {/* Login Method Toggle (Login only) */}
           {screen === "login" && (
-            <div className="flex p-1 bg-muted/30 rounded-lg">
+            <div className="flex p-1 bg-muted/50 rounded-xl">
               <button
                 type="button"
                 onClick={() => setLoginMethod("email")}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
                   loginMethod === "email" ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                 }`}
               >
@@ -499,7 +500,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setLoginMethod("unique-id")}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
                   loginMethod === "unique-id" ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
                 }`}
               >
