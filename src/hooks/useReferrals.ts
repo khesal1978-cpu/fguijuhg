@@ -8,11 +8,21 @@ export function useReferrals() {
   const [loading, setLoading] = useState(true);
 
   const fetchReferrals = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    const data = await getReferrals(user.uid);
-    setReferrals(data);
-    setLoading(false);
+    try {
+      console.log('Fetching referrals for user:', user.uid);
+      const data = await getReferrals(user.uid);
+      console.log('Fetched referrals:', data.length, data);
+      setReferrals(data);
+    } catch (error) {
+      console.error('Error fetching referrals:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -23,7 +33,9 @@ export function useReferrals() {
   useEffect(() => {
     if (!user) return;
 
+    console.log('Subscribing to referrals for user:', user.uid);
     const unsubscribe = subscribeToReferrals(user.uid, (data) => {
+      console.log('Real-time referral update:', data.length, data);
       setReferrals(data);
       setLoading(false);
     });
@@ -45,18 +57,19 @@ export function useReferrals() {
   // Calculate stats
   const stats = useMemo(() => {
     const totalReferrals = referrals.length;
-    const activeReferrals = referrals.filter((r) => r.is_active).length;
-    const totalEarnings = referrals.reduce((sum, r) => sum + r.bonus_earned, 0);
+    // Count all referrals as active for now (is_active field was being set incorrectly)
+    const activeReferrals = referrals.length;
+    const totalEarnings = referrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);
     
     // Direct stats
     const directTotal = directReferrals.length;
-    const directActive = directReferrals.filter((r) => r.is_active).length;
-    const directEarnings = directReferrals.reduce((sum, r) => sum + r.bonus_earned, 0);
+    const directActive = directReferrals.length;
+    const directEarnings = directReferrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);
     
     // Indirect stats
     const indirectTotal = indirectReferrals.length;
-    const indirectActive = indirectReferrals.filter((r) => r.is_active).length;
-    const indirectEarnings = indirectReferrals.reduce((sum, r) => sum + r.bonus_earned, 0);
+    const indirectActive = indirectReferrals.length;
+    const indirectEarnings = indirectReferrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);
     
     return {
       totalReferrals,
