@@ -276,25 +276,25 @@ export const getActiveSession = async (userId: string): Promise<MiningSession | 
 };
 
 export const subscribeToMiningSession = (userId: string, callback: (session: MiningSession | null) => void) => {
+  // Simplified query - filter client-side to avoid composite index requirement
   const q = query(
     collection(db, 'mining_sessions'),
-    where('user_id', '==', userId),
-    where('is_claimed', '==', false),
-    orderBy('created_at', 'desc'),
-    limit(1)
+    where('user_id', '==', userId)
   );
   
   return onSnapshot(q, (snap) => {
     if (snap.empty) {
       callback(null);
-    } else {
-      const session = { id: snap.docs[0].id, ...snap.docs[0].data() } as MiningSession;
-      if (session.is_active) {
-        callback(session);
-      } else {
-        callback(null);
-      }
+      return;
     }
+    
+    // Filter and sort client-side
+    const sessions = snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as MiningSession))
+      .filter(s => s.is_active && !s.is_claimed)
+      .sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
+    
+    callback(sessions[0] || null);
   });
 };
 
@@ -401,27 +401,32 @@ export const claimMiningReward = async (userId: string, sessionId: string): Prom
 
 // Transaction Functions
 export const getTransactions = async (userId: string, limitCount = 10): Promise<Transaction[]> => {
+  // Simplified query - sort client-side to avoid composite index
   const q = query(
     collection(db, 'transactions'),
-    where('user_id', '==', userId),
-    orderBy('created_at', 'desc'),
-    limit(limitCount)
+    where('user_id', '==', userId)
   );
   
   const snap = await getDocs(q);
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+  const transactions = snap.docs
+    .map(doc => ({ id: doc.id, ...doc.data() } as Transaction))
+    .sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis())
+    .slice(0, limitCount);
+  return transactions;
 };
 
 export const subscribeToTransactions = (userId: string, limitCount: number, callback: (transactions: Transaction[]) => void) => {
+  // Simplified query - sort client-side
   const q = query(
     collection(db, 'transactions'),
-    where('user_id', '==', userId),
-    orderBy('created_at', 'desc'),
-    limit(limitCount)
+    where('user_id', '==', userId)
   );
   
   return onSnapshot(q, (snap) => {
-    const transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+    const transactions = snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as Transaction))
+      .sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis())
+      .slice(0, limitCount);
     callback(transactions);
   });
 };
@@ -720,10 +725,10 @@ export const trackDailyLogin = async (userId: string): Promise<{ success: boolea
 
 // Referral Functions
 export const getReferrals = async (userId: string): Promise<Referral[]> => {
+  // Simplified query - sort client-side
   const q = query(
     collection(db, 'referrals'),
-    where('referrer_id', '==', userId),
-    orderBy('created_at', 'desc')
+    where('referrer_id', '==', userId)
   );
   
   const snap = await getDocs(q);
@@ -746,14 +751,16 @@ export const getReferrals = async (userId: string): Promise<Referral[]> => {
     referrals.push(referral);
   }
   
+  // Sort client-side
+  referrals.sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
   return referrals;
 };
 
 export const subscribeToReferrals = (userId: string, callback: (referrals: Referral[]) => void) => {
+  // Simplified query - sort client-side
   const q = query(
     collection(db, 'referrals'),
-    where('referrer_id', '==', userId),
-    orderBy('created_at', 'desc')
+    where('referrer_id', '==', userId)
   );
   
   return onSnapshot(q, async (snap) => {
@@ -776,6 +783,8 @@ export const subscribeToReferrals = (userId: string, callback: (referrals: Refer
       referrals.push(referral);
     }
     
+    // Sort client-side
+    referrals.sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
     callback(referrals);
   });
 };
