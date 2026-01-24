@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import pingcasetLogo from "@/assets/pingcaset-logo.png";
 import globeBackground from "@/assets/globe-background.png";
+import welcomeVideo from "@/assets/welcome-video.mp4";
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
@@ -53,19 +54,14 @@ export default function Auth() {
   
   const [screen, setScreen] = useState<AuthScreen>("welcome");
   const [loading, setLoading] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [referralCode, setReferralCode] = useState(searchParams.get("ref") || "");
   const [loginMethod, setLoginMethod] = useState<"email" | "unique-id">("email");
 
-  // Preload background image
-  useEffect(() => {
-    const img = new Image();
-    img.src = globeBackground;
-    img.onload = () => setImageLoaded(true);
-  }, []);
+  // Video ready state handled via onCanPlay
   const [uniqueId, setUniqueId] = useState("");
   const [generatedId, setGeneratedId] = useState("");
   const [idCopied, setIdCopied] = useState(false);
@@ -377,17 +373,20 @@ export default function Auth() {
       <motion.div 
         className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative"
         initial={{ opacity: 0 }}
-        animate={{ opacity: imageLoaded ? 1 : 0 }}
+        animate={{ opacity: videoLoaded ? 1 : 0 }}
         transition={{ duration: 0.4 }}
       >
-        {/* Globe Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-[center_60%] bg-no-repeat transition-opacity duration-500"
-          style={{ 
-            backgroundImage: `url(${globeBackground})`,
-            opacity: imageLoaded ? 1 : 0
-          }}
-        />
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          onCanPlay={() => setVideoLoaded(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={welcomeVideo} type="video/mp4" />
+        </video>
         
         {/* Dark overlay - darker at top and bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A12]/90 via-transparent to-[#0A0A12]/95" />
