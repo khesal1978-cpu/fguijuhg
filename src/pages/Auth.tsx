@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -11,7 +11,9 @@ import { firebaseSignUp, firebaseSignIn, createProfile, signInWithGoogle, getPro
 import { toast } from "sonner";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import pingcasetLogo from "@/assets/pingcaset-logo.png";
-import globeHero from "@/assets/globe-hero.png";
+
+// Lazy load 3D globe for performance
+const Globe3D = lazy(() => import("@/components/auth/Globe3D"));
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
@@ -324,21 +326,41 @@ export default function Auth() {
         className="min-h-screen flex flex-col dark overflow-hidden relative"
         style={{ background: '#0A0A0F' }}
       >
+        {/* Starfield background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(30)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute size-0.5 rounded-full bg-white/60"
+              style={{
+                left: `${(i * 37) % 100}%`,
+                top: `${(i * 23) % 100}%`,
+              }}
+              animate={{ opacity: [0.2, 0.8, 0.2] }}
+              transition={{
+                duration: 2 + (i % 3),
+                repeat: Infinity,
+                delay: i * 0.1,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Background purple glow */}
         <div 
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
+          className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(123, 63, 228, 0.15) 0%, transparent 70%)',
-            filter: 'blur(80px)',
+            background: 'radial-gradient(circle, rgba(147, 51, 234, 0.2) 0%, transparent 60%)',
+            filter: 'blur(60px)',
           }}
         />
 
         {/* Main Content */}
         <div className="relative z-10 flex-1 flex flex-col">
           {/* Headline Section */}
-          <div className="px-6 pt-12 pb-4">
+          <div className="px-6 pt-10 pb-2">
             <motion.h1 
-              className="text-[28px] md:text-4xl font-display font-bold text-white text-center leading-tight"
+              className="text-[28px] md:text-4xl font-display font-bold text-white text-center leading-[1.2]"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -351,7 +373,7 @@ export default function Auth() {
             </motion.h1>
 
             <motion.p
-              className="text-[#8B8B9E] text-base text-center mt-4 leading-relaxed"
+              className="text-[#7B7B8E] text-[15px] text-center mt-3 leading-relaxed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -362,20 +384,20 @@ export default function Auth() {
             </motion.p>
           </div>
 
-          {/* Globe Image */}
+          {/* 3D Globe */}
           <motion.div 
-            className="flex-1 flex items-center justify-center px-4 -mt-4"
-            initial={{ opacity: 0, scale: 0.95 }}
+            className="flex-1 flex items-center justify-center px-4"
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
           >
-            <div className="relative w-full max-w-[340px]">
-              <img 
-                src={globeHero} 
-                alt="Global Mining Network" 
-                className="w-full h-auto object-contain"
-              />
-            </div>
+            <Suspense fallback={
+              <div className="w-[320px] aspect-square flex items-center justify-center">
+                <div className="size-48 rounded-full bg-primary/20 animate-pulse" />
+              </div>
+            }>
+              <Globe3D />
+            </Suspense>
           </motion.div>
         </div>
 
@@ -411,7 +433,7 @@ export default function Auth() {
 
           {/* Helper text */}
           <motion.p
-            className="text-center text-sm text-[#6B6B7B] mt-3"
+            className="text-center text-sm text-[#5B5B6B] mt-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
@@ -426,14 +448,14 @@ export default function Auth() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A22] border border-[#2A2A35]">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#151519] border border-[#252530]">
               <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#f25022" d="M1 1h10v10H1z"/>
                 <path fill="#00a4ef" d="M1 12h10v10H1z"/>
                 <path fill="#7fba00" d="M12 1h10v10H12z"/>
                 <path fill="#ffb900" d="M12 12h10v10H12z"/>
               </svg>
-              <span className="text-sm text-[#8B8B9E]">Microsoft for Startups</span>
+              <span className="text-sm text-[#7B7B8E]">Microsoft for Startups</span>
             </div>
           </motion.div>
         </div>
