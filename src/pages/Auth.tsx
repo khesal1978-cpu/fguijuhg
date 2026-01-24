@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
-  Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2, 
+  Mail, Lock, User, Gift, ArrowRight, Loader2, 
   AlertTriangle, Key, Copy, Check, Sparkles, Zap, Shield, ChevronLeft,
   Search
 } from "lucide-react";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { firebaseSignUp, firebaseSignIn, createProfile, signInWithGoogle, getProfile, db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 type AuthScreen = "welcome" | "login" | "register" | "recover" | "unique-id-setup";
 
@@ -182,62 +183,120 @@ export default function Auth() {
   if (screen === "welcome") {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 dark">
+        {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]" />
         </div>
 
         <motion.div
-          className="relative z-10 w-full max-w-xs text-center"
+          className="relative z-10 w-full max-w-sm text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
           {/* Logo */}
           <motion.div
-            className="mx-auto size-20 rounded-2xl gradient-primary flex items-center justify-center shadow-2xl shadow-primary/30 mb-6"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
+            className="mb-6"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", delay: 0.1 }}
           >
-            <Hexagon className="size-10 text-primary-foreground" />
+            <img 
+              src={pingcasetLogo} 
+              alt="PingCaset" 
+              className="mx-auto size-24 rounded-2xl shadow-2xl shadow-primary/40"
+            />
           </motion.div>
 
-          <h1 className="text-2xl font-display font-bold text-foreground mb-1">PingCaset</h1>
-          <p className="text-primary text-xs font-semibold tracking-[0.25em] mb-6">MINING HUB</p>
+          <motion.h1 
+            className="text-3xl font-display font-bold text-foreground mb-1"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            PingCaset
+          </motion.h1>
+          <motion.p 
+            className="text-primary text-xs font-semibold tracking-[0.3em] mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            MINING HUB
+          </motion.p>
           
-          <p className="text-muted-foreground text-sm mb-8">
-            Earn CASET tokens through mining. No hardware needed.
-          </p>
+          <motion.p 
+            className="text-muted-foreground text-sm leading-relaxed mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Earn CASET tokens through time-based mining.<br/>
+            No hardware required — just your time.
+          </motion.p>
 
-          {/* Feature Pills */}
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {/* Feature Cards */}
+          <motion.div 
+            className="grid grid-cols-3 gap-3 mb-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
             {[
-              { icon: Zap, label: "10 CASET/session" },
-              { icon: Sparkles, label: "4x Daily" },
-              { icon: Shield, label: "Secure" },
+              { icon: Zap, label: "10 CASET", sub: "per session" },
+              { icon: Sparkles, label: "4 Sessions", sub: "per day" },
+              { icon: Shield, label: "Secure", sub: "& fair" },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border text-xs">
-                <item.icon className="size-3.5 text-primary" />
-                <span className="text-muted-foreground">{item.label}</span>
+              <div key={i} className="p-3 rounded-xl bg-card/50 border border-border/50 backdrop-blur-sm">
+                <item.icon className="size-5 text-primary mx-auto mb-1" />
+                <p className="text-xs font-semibold text-foreground">{item.label}</p>
+                <p className="text-[10px] text-muted-foreground">{item.sub}</p>
               </div>
             ))}
-          </div>
+          </motion.div>
 
-          {/* CTA */}
-          <Button
-            onClick={() => setScreen("register")}
-            className="w-full h-12 rounded-xl gradient-primary font-semibold shadow-lg shadow-primary/30 mb-3"
+          {/* CTA Buttons */}
+          <motion.div 
+            className="space-y-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
           >
-            Get Started
-            <ArrowRight className="size-4 ml-2" />
-          </Button>
+            <Button
+              onClick={() => setScreen("register")}
+              className="w-full h-14 rounded-2xl gradient-primary font-bold text-lg shadow-xl shadow-primary/30"
+            >
+              Get Started
+              <ArrowRight className="size-5 ml-2" />
+            </Button>
 
-          <button
-            onClick={() => setScreen("login")}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            <button
+              onClick={() => setScreen("login")}
+              className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Already have an account? <span className="text-primary font-medium">Sign in</span>
+            </button>
+          </motion.div>
+
+          {/* Microsoft Badge */}
+          <motion.div
+            className="mt-10 flex items-center justify-center gap-2 text-muted-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
           >
-            Already have an account? <span className="text-primary">Sign in</span>
-          </button>
+            <span className="text-xs">Supported by</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border">
+              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#f25022" d="M1 1h10v10H1z"/>
+                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+                <path fill="#7fba00" d="M12 1h10v10H12z"/>
+                <path fill="#ffb900" d="M12 12h10v10H12z"/>
+              </svg>
+              <span className="text-xs font-medium text-foreground">Microsoft for Startups</span>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     );
@@ -261,9 +320,7 @@ export default function Auth() {
           </button>
 
           <div className="text-center mb-6">
-            <div className="mx-auto size-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
-              <Search className="size-6 text-primary" />
-            </div>
+            <img src={pingcasetLogo} alt="PingCaset" className="mx-auto size-14 rounded-xl shadow-lg shadow-primary/20 mb-4" />
             <h1 className="text-xl font-display font-bold text-foreground">Find Your ID</h1>
             <p className="text-sm text-muted-foreground mt-1">Enter your linked recovery email</p>
           </div>
@@ -342,9 +399,7 @@ export default function Auth() {
           </button>
 
           <div className="text-center mb-6">
-            <div className="mx-auto size-12 rounded-xl bg-accent flex items-center justify-center mb-4">
-              <Key className="size-6 text-primary" />
-            </div>
+            <img src={pingcasetLogo} alt="PingCaset" className="mx-auto size-14 rounded-xl shadow-lg shadow-primary/20 mb-4" />
             <h1 className="text-xl font-display font-bold text-foreground">Your Unique ID</h1>
             <p className="text-sm text-muted-foreground mt-1">Save this - it's your login credential</p>
           </div>
@@ -442,18 +497,14 @@ export default function Auth() {
         </button>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="size-11 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
-            <Hexagon className="size-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-display font-bold text-lg text-foreground">
-              {screen === "login" ? "Welcome Back" : "Create Account"}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {screen === "login" ? "Sign in to continue" : "Start your journey"}
-            </p>
-          </div>
+        <div className="text-center mb-6">
+          <img src={pingcasetLogo} alt="PingCaset" className="mx-auto size-16 rounded-xl shadow-lg shadow-primary/20 mb-4" />
+          <h1 className="font-display font-bold text-xl text-foreground">
+            {screen === "login" ? "Welcome Back" : "Create Account"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {screen === "login" ? "Sign in to continue mining" : "Start your mining journey"}
+          </p>
         </div>
 
         {/* Auth Card */}
