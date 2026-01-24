@@ -72,6 +72,7 @@ export default function Auth() {
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [foundUniqueId, setFoundUniqueId] = useState<string | null>(null);
   const [linkRecoveryEmail, setLinkRecoveryEmail] = useState("");
+  const [showReferralInput, setShowReferralInput] = useState(false);
 
   const generateUniqueId = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -608,89 +609,130 @@ export default function Auth() {
   // Login Screen
   if (screen === "login") {
     return (
-      <div 
-        className="min-h-screen flex flex-col p-6 dark"
-        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <button 
-            onClick={resetToLanding} 
-            className="size-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
-            <ChevronLeft className="size-5 text-foreground" />
-          </button>
-          <img src={pingcasetLogo} alt="PingCaset" className="size-10 rounded-lg" />
-          <div className="size-10" />
-        </div>
+      <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
+        {/* Background */}
+        <div className="absolute inset-0 bg-[#050507]" />
+        
+        {/* Top purple glow */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(123, 63, 228, 0.15) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
 
         {/* Content */}
-        <div className="flex-1">
-          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Welcome back</h1>
-          <p className="text-muted-foreground text-sm mb-8">Login to continue mining</p>
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-8 pb-6 overflow-y-auto">
+          {/* Back button */}
+          <button 
+            onClick={resetToLanding} 
+            className="size-10 rounded-full bg-[#1A1A22] border border-[#2A2A35] flex items-center justify-center mb-6"
+          >
+            <ChevronLeft className="size-5 text-white" />
+          </button>
 
-          {/* Method Toggle */}
-          <div className="flex gap-2 p-1 bg-muted rounded-xl mb-6">
-            <button
-              type="button"
-              onClick={() => setLoginMethod("email")}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                loginMethod === "email" 
-                  ? "bg-card text-foreground shadow-sm" 
-                  : "text-muted-foreground"
-              }`}
-            >
-              Email
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginMethod("unique-id")}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                loginMethod === "unique-id" 
-                  ? "bg-card text-foreground shadow-sm" 
-                  : "text-muted-foreground"
-              }`}
-            >
-              Unique ID
-            </button>
+          {/* Headline */}
+          <h1 className="text-[28px] font-display font-bold text-white mb-2">Welcome back</h1>
+          <p className="text-[#7A7A8A] text-[15px] mb-8">Login to continue mining</p>
+
+          {/* Google Button */}
+          <motion.button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full h-[58px] rounded-full font-semibold text-[16px] text-[#0A0A0F] flex items-center justify-center gap-3 mb-6"
+            style={{
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%)',
+            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <svg className="size-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </motion.button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-[#2A2A35]" />
+            <span className="text-[13px] text-[#5A5A6A]">or sign in manually</span>
+            <div className="flex-1 h-px bg-[#2A2A35]" />
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Method Toggle */}
+            <div className="flex gap-2 p-1 bg-[#1A1A22] rounded-2xl mb-2">
+              <button
+                type="button"
+                onClick={() => setLoginMethod("email")}
+                className={`flex-1 py-3 rounded-xl text-[14px] font-medium transition-all ${
+                  loginMethod === "email" 
+                    ? "bg-[#2A2A35] text-white" 
+                    : "text-[#6A6A7A]"
+                }`}
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginMethod("unique-id")}
+                className={`flex-1 py-3 rounded-xl text-[14px] font-medium transition-all ${
+                  loginMethod === "unique-id" 
+                    ? "bg-[#2A2A35] text-white" 
+                    : "text-[#6A6A7A]"
+                }`}
+              >
+                Unique ID
+              </button>
+            </div>
+
             {loginMethod === "email" ? (
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                  <Mail className="size-5 text-[#6A6A7A]" />
+                </div>
                 <Input
                   type="email"
-                  placeholder="Email address"
+                  placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                  className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
                 />
               </div>
             ) : (
               <div className="relative">
-                <Key className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                  <Key className="size-5 text-[#6A6A7A]" />
+                </div>
                 <Input
                   type="text"
                   placeholder="PC-XXXXXXXX"
                   value={uniqueId}
                   onChange={(e) => setUniqueId(e.target.value.toUpperCase())}
                   required
-                  className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground font-mono"
+                  className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px] font-mono"
                 />
               </div>
             )}
 
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                <Lock className="size-5 text-[#6A6A7A]" />
+              </div>
               <Input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
               />
             </div>
 
@@ -698,52 +740,35 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setScreen("recover")}
-                className="text-sm text-primary hover:underline"
+                className="flex items-center gap-2 text-[14px] text-primary"
               >
-                Forgot your Unique ID?
+                <Key className="size-4" />
+                Forgot your Unique ID? <span className="text-[#6A6A7A]">Recover ›</span>
               </button>
             )}
 
-            <Button
+            {/* Submit Button */}
+            <motion.button
               type="submit"
-              className="w-full h-14 rounded-xl font-semibold"
+              disabled={loading}
+              className="w-full h-[58px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2 mt-2"
               style={{
                 background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
+                boxShadow: '0 0 30px rgba(123, 63, 228, 0.4)',
               }}
-              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {loading ? <Loader2 className="size-5 animate-spin" /> : "Login"}
-            </Button>
+              {loading ? <Loader2 className="size-5 animate-spin" /> : (
+                <>Login & Start Mining <ArrowRight className="size-5" /></>
+              )}
+            </motion.button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          {/* Google Sign In */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoogleSignIn}
-            className="w-full h-14 rounded-xl border-border"
-            disabled={loading}
-          >
-            <svg className="size-5 mr-2" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-          </Button>
         </div>
 
         {/* Bottom link */}
-        <div className="text-center pt-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="relative z-10 text-center pb-8 px-6">
+          <p className="text-[15px] text-[#6A6A7A]">
             Don't have an account?{" "}
             <button onClick={() => setScreen("register")} className="text-primary font-medium">
               Sign up
@@ -756,131 +781,177 @@ export default function Auth() {
 
   // Register Screen
   if (screen === "register") {
+    
     return (
-      <div 
-        className="min-h-screen flex flex-col p-6 dark"
-        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <button 
-            onClick={resetToLanding} 
-            className="size-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
-            <ChevronLeft className="size-5 text-foreground" />
-          </button>
-          <img src={pingcasetLogo} alt="PingCaset" className="size-10 rounded-lg" />
-          <div className="size-10" />
-        </div>
+      <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
+        {/* Background */}
+        <div className="absolute inset-0 bg-[#050507]" />
+        
+        {/* Top purple glow */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(123, 63, 228, 0.15) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
 
         {/* Content */}
-        <div className="flex-1">
-          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Create account</h1>
-          <p className="text-muted-foreground text-sm mb-8">Start mining CASET tokens today</p>
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-8 pb-6 overflow-y-auto">
+          {/* Back button */}
+          <button 
+            onClick={resetToLanding} 
+            className="size-10 rounded-full bg-[#1A1A22] border border-[#2A2A35] flex items-center justify-center mb-6"
+          >
+            <ChevronLeft className="size-5 text-white" />
+          </button>
 
+          {/* Headline */}
+          <h1 className="text-[28px] font-display font-bold text-white mb-2">Create your account</h1>
+          <p className="text-[#7A7A8A] text-[15px] mb-8">Start mining CASET in minutes</p>
+
+          {/* Google Button */}
+          <motion.button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full h-[58px] rounded-full font-semibold text-[16px] text-[#0A0A0F] flex items-center justify-center gap-3 mb-6"
+            style={{
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%)',
+            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <svg className="size-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </motion.button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-[#2A2A35]" />
+            <span className="text-[13px] text-[#5A5A6A]">or sign up manually</span>
+            <div className="flex-1 h-px bg-[#2A2A35]" />
+          </div>
+
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Display Name */}
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                <User className="size-5 text-[#6A6A7A]" />
+              </div>
               <Input
                 type="text"
                 placeholder="Display name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
               />
             </div>
 
+            {/* Email */}
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                <Mail className="size-5 text-[#6A6A7A]" />
+              </div>
               <Input
                 type="email"
-                placeholder="Email address"
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
               />
             </div>
 
+            {/* Password */}
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                <Lock className="size-5 text-[#6A6A7A]" />
+              </div>
               <Input
                 type="password"
-                placeholder="Password (6+ characters)"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
               />
             </div>
 
-            <div className="relative">
-              <Gift className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Referral code (optional)"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
-              />
-            </div>
+            {/* Referral Code Toggle */}
+            {!showReferralInput ? (
+              <button
+                type="button"
+                onClick={() => setShowReferralInput(true)}
+                className="flex items-center gap-2 text-[14px] text-primary"
+              >
+                <Key className="size-4" />
+                Have a referral code? <span className="text-[#6A6A7A]">Apply ›</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
+                  <Gift className="size-5 text-[#6A6A7A]" />
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Referral code"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                />
+              </div>
+            )}
 
-            <Button
+            {/* Submit Button */}
+            <motion.button
               type="submit"
-              className="w-full h-14 rounded-xl font-semibold"
+              disabled={loading}
+              className="w-full h-[58px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2 mt-2"
               style={{
                 background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
+                boxShadow: '0 0 30px rgba(123, 63, 228, 0.4)',
               }}
-              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {loading ? <Loader2 className="size-5 animate-spin" /> : "Create Account"}
-            </Button>
+              {loading ? <Loader2 className="size-5 animate-spin" /> : (
+                <>Create Account & Start Mining <ArrowRight className="size-5" /></>
+              )}
+            </motion.button>
           </form>
 
-          {/* Divider */}
+          {/* Advanced Options Divider */}
           <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-border" />
+            <div className="flex-1 h-px bg-[#2A2A35]" />
+            <span className="text-[13px] text-[#5A5A6A]">Advanced options</span>
+            <div className="flex-1 h-px bg-[#2A2A35]" />
           </div>
 
-          {/* Alternative options */}
-          <div className="space-y-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleSignIn}
-              className="w-full h-14 rounded-xl border-border"
-              disabled={loading}
-            >
-              <svg className="size-5 mr-2" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Continue with Google
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCreateUniqueId}
-              className="w-full h-14 rounded-xl border-border"
-            >
-              <Key className="size-5 mr-2" />
-              Create Unique ID instead
-            </Button>
-          </div>
+          {/* Unique ID Option */}
+          <button
+            type="button"
+            onClick={handleCreateUniqueId}
+            className="flex items-center justify-center gap-2 text-[15px] text-primary"
+          >
+            <Key className="size-4" />
+            Create account with Unique ID (no email)
+          </button>
         </div>
 
         {/* Bottom link */}
-        <div className="text-center pt-4">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
+        <div className="relative z-10 text-center pb-8 px-6">
+          <p className="text-[15px] text-[#6A6A7A]">
+            Have an account?{" "}
             <button onClick={() => setScreen("login")} className="text-primary font-medium">
-              Login
+              Sign in
             </button>
           </p>
         </div>
