@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Coins, Users, Zap, Shield, Wallet, TrendingUp, Target, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Coins, Users, Zap, Shield, Wallet, TrendingUp, Target, AlertTriangle, Download, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const sections = [
   {
@@ -88,19 +90,115 @@ const sections = [
   }
 ];
 
+const generateWhitepaperText = () => {
+  let text = `============================================================
+PINGCASET (CASET) WHITE PAPER
+============================================================
+
+Version: 1.1
+Status: Public
+Token Symbol: CASET
+Total Supply: 50,000,000,000 CASET
+Mining Model: Time-Based (4 Sessions / Day)
+
+============================================================
+
+`;
+
+  sections.forEach((section) => {
+    text += `------------------------------------------------------------
+${section.title.toUpperCase()}
+------------------------------------------------------------
+
+${section.content}
+
+`;
+    if (section.list) {
+      section.list.forEach((item) => {
+        text += `• ${item}\n`;
+      });
+      text += "\n";
+    }
+    if (section.highlight) {
+      text += `${section.highlight.label}: ${section.highlight.value}
+${section.highlight.sub}
+
+`;
+    }
+    if (section.table) {
+      text += `Active Referrals | Multiplier
+-----------------|------------
+`;
+      section.table.forEach((row) => {
+        text += `${row.referrals.padEnd(17)}| ${row.multiplier}\n`;
+      });
+      text += "\n";
+    }
+    if (section.allocation) {
+      text += `Category                         | Allocation
+---------------------------------|------------
+`;
+      section.allocation.forEach((item) => {
+        text += `${item.category.padEnd(33)}| ${item.percent} (${item.amount})\n`;
+      });
+      text += "\n";
+    }
+  });
+
+  text += `------------------------------------------------------------
+DISCLAIMER
+------------------------------------------------------------
+
+PingCaset and CASET tokens are not investment products.
+They do not represent equity, dividends, or guaranteed returns.
+Exchange listings are subject to external approval and cannot be guaranteed.
+Users are responsible for complying with local laws and regulations.
+
+============================================================
+END OF WHITE PAPER
+============================================================`;
+
+  return text;
+};
+
 export default function Whitepaper() {
+  const handleDownload = () => {
+    const content = generateWhitepaperText();
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'PingCaset_Whitepaper_v1.1.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Whitepaper downloaded!");
+  };
+
   return (
     <div className="min-h-screen bg-background dark">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-          <Link to="/settings" className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
-            <ArrowLeft className="size-5 text-foreground" />
-          </Link>
-          <div>
-            <h1 className="text-lg font-display font-bold text-foreground">CASET Whitepaper</h1>
-            <p className="text-xs text-muted-foreground">Version 1.1 • Token Symbol: CASET</p>
+        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/settings" className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
+              <ArrowLeft className="size-5 text-foreground" />
+            </Link>
+            <div>
+              <h1 className="text-lg font-display font-bold text-foreground">CASET Whitepaper</h1>
+              <p className="text-xs text-muted-foreground">Version 1.1 • Token Symbol: CASET</p>
+            </div>
           </div>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleDownload}
+            className="gap-1.5"
+          >
+            <Download className="size-4" />
+            <span className="hidden sm:inline">Download</span>
+          </Button>
         </div>
       </div>
 
@@ -136,6 +234,22 @@ export default function Whitepaper() {
           </div>
         </motion.div>
 
+        {/* Download Button - Mobile Prominent */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Button 
+            className="w-full h-12 gap-2"
+            onClick={handleDownload}
+          >
+            <FileText className="size-5" />
+            Download Whitepaper
+            <Download className="size-4" />
+          </Button>
+        </motion.div>
+
         {/* Sections */}
         {sections.map((section, i) => (
           <motion.div
@@ -143,7 +257,7 @@ export default function Whitepaper() {
             className="card-dark p-5 space-y-3"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
+            transition={{ delay: (i + 1) * 0.05 }}
           >
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -218,6 +332,22 @@ export default function Whitepaper() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             PingCaset and CASET tokens are not investment products. They do not represent equity, dividends, or guaranteed returns. Exchange listings are subject to external approval and cannot be guaranteed. Users are responsible for complying with local laws and regulations.
           </p>
+        </motion.div>
+
+        {/* Bottom Download */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Button 
+            variant="outline"
+            className="w-full h-12 gap-2"
+            onClick={handleDownload}
+          >
+            <Download className="size-4" />
+            Save Whitepaper for Offline Reading
+          </Button>
         </motion.div>
       </div>
     </div>
