@@ -202,6 +202,7 @@ export const createProfile = async (
   const now = Timestamp.now();
   const today = new Date().toISOString().split('T')[0];
   
+  // Initialize profile with all fields including burning mechanism
   const newProfile: Profile = {
     id: userId,
     display_name: displayName || 'Miner',
@@ -219,92 +220,112 @@ export const createProfile = async (
     updated_at: now,
     unique_id: options?.uniqueId || null,
     recovery_email: options?.recoveryEmail?.toLowerCase() || null,
-  } as Profile;
+    // Burning mechanism fields
+    burned_amount: 0,
+    recovery_streak: 0,
+    last_mining_at: null,
+    total_burned: 0,
+    total_recovered: 0,
+  };
 
-  // Handle referral
+  // IMPORTANT: Create the user's profile FIRST before any other operations
+  // This ensures the user document exists for Firestore security rules
+  await setDoc(profileRef, newProfile);
+
+  // Handle referral AFTER profile is created
   if (referralCode) {
-    const referrerQuery = query(collection(db, 'profiles'), where('referral_code', '==', referralCode.toUpperCase()));
-    const referrerSnap = await getDocs(referrerQuery);
-    
-    if (!referrerSnap.empty) {
-      const referrerId = referrerSnap.docs[0].id;
-      const referrerProfile = referrerSnap.docs[0].data() as Profile;
-      newProfile.referred_by = referrerId;
-      newProfile.balance = 100; // Welcome bonus for referred user
+    try {
+      const referrerQuery = query(collection(db, 'profiles'), where('referral_code', '==', referralCode.toUpperCase()));
+      const referrerSnap = await getDocs(referrerQuery);
       
-      // Update referrer balance (direct referral bonus: 50)
-      const referrerRef = doc(db, 'profiles', referrerId);
-      await updateDoc(referrerRef, {
-        balance: increment(50),
-        updated_at: now,
-      });
-      
-      // Create DIRECT referral record (level 1)
-      await addDoc(collection(db, 'referrals'), {
-        referrer_id: referrerId,
-        referred_id: userId,
-        bonus_earned: 50,
-        is_active: false,
-        level: 1, // Direct referral
-        created_at: now,
-      });
-      
-      // Create transaction for direct referrer
-      await addDoc(collection(db, 'transactions'), {
-        user_id: referrerId,
-        type: 'referral',
-        amount: 50,
-        description: 'Direct referral bonus',
-        metadata: { level: 1 },
-        created_at: now,
-      });
-      
-      // Check for INDIRECT referral (if the referrer was referred by someone else)
-      if (referrerProfile.referred_by) {
-        const indirectReferrerId = referrerProfile.referred_by;
-        const indirectBonus = 25; // Indirect referral bonus
+      if (!referrerSnap.empty) {
+        const referrerId = referrerSnap.docs[0].id;
+        const referrerProfile = referrerSnap.docs[0].data() as Profile;
         
-        // Update indirect referrer balance
-        const indirectReferrerRef = doc(db, 'profiles', indirectReferrerId);
-        await updateDoc(indirectReferrerRef, {
-          balance: increment(indirectBonus),
+        // Update the new user's profile with referral info and welcome bonus
+        await updateDoc(profileRef, {
+          referred_by: referrerId,
+          balance: 100, // Welcome bonus for referred user
+          updated_at: now,
+        });
+        newProfile.referred_by = referrerId;
+        newProfile.balance = 100;
+        
+        // Update referrer balance (direct referral bonus: 50)
+        const referrerRef = doc(db, 'profiles', referrerId);
+        await updateDoc(referrerRef, {
+          balance: increment(50),
           updated_at: now,
         });
         
-        // Create INDIRECT referral record (level 2)
+        // Create DIRECT referral record (level 1)
         await addDoc(collection(db, 'referrals'), {
-          referrer_id: indirectReferrerId,
+          referrer_id: referrerId,
           referred_id: userId,
-          bonus_earned: indirectBonus,
+          bonus_earned: 50,
           is_active: false,
-          level: 2, // Indirect referral
+          level: 1, // Direct referral
           created_at: now,
         });
         
-        // Create transaction for indirect referrer
+        // Create transaction for direct referrer
         await addDoc(collection(db, 'transactions'), {
-          user_id: indirectReferrerId,
+          user_id: referrerId,
           type: 'referral',
-          amount: indirectBonus,
-          description: 'Indirect referral bonus (2nd level)',
-          metadata: { level: 2 },
+          amount: 50,
+          description: 'Direct referral bonus',
+          metadata: { level: 1 },
+          created_at: now,
+        });
+        
+        // Check for INDIRECT referral (if the referrer was referred by someone else)
+        if (referrerProfile.referred_by) {
+          const indirectReferrerId = referrerProfile.referred_by;
+          const indirectBonus = 25; // Indirect referral bonus
+          
+          // Update indirect referrer balance
+          const indirectReferrerRef = doc(db, 'profiles', indirectReferrerId);
+          await updateDoc(indirectReferrerRef, {
+            balance: increment(indirectBonus),
+            updated_at: now,
+          });
+          
+          // Create INDIRECT referral record (level 2)
+          await addDoc(collection(db, 'referrals'), {
+            referrer_id: indirectReferrerId,
+            referred_id: userId,
+            bonus_earned: indirectBonus,
+            is_active: false,
+            level: 2, // Indirect referral
+            created_at: now,
+          });
+          
+          // Create transaction for indirect referrer
+          await addDoc(collection(db, 'transactions'), {
+            user_id: indirectReferrerId,
+            type: 'referral',
+            amount: indirectBonus,
+            description: 'Indirect referral bonus (2nd level)',
+            metadata: { level: 2 },
+            created_at: now,
+          });
+        }
+        
+        // Create welcome bonus transaction for new user
+        await addDoc(collection(db, 'transactions'), {
+          user_id: userId,
+          type: 'referral',
+          amount: 100,
+          description: 'Welcome bonus from referral',
+          metadata: null,
           created_at: now,
         });
       }
-      
-      // Create welcome bonus transaction for new user
-      await addDoc(collection(db, 'transactions'), {
-        user_id: userId,
-        type: 'referral',
-        amount: 100,
-        description: 'Welcome bonus from referral',
-        metadata: null,
-        created_at: now,
-      });
+    } catch (referralError) {
+      // Log referral error but don't fail the signup
+      console.error('Referral processing error:', referralError);
     }
   }
-
-  await setDoc(profileRef, newProfile);
 
   // Initialize daily tasks
   const tasksData = [
@@ -313,18 +334,22 @@ export const createProfile = async (
     { task_type: 'play_games', target: 50, reward: 100 },
   ];
 
-  for (const task of tasksData) {
-    await addDoc(collection(db, 'daily_tasks'), {
-      user_id: userId,
-      task_type: task.task_type,
-      progress: 0,
-      target: task.target,
-      reward: task.reward,
-      is_completed: false,
-      is_claimed: false,
-      last_updated: today,
-      created_at: now,
-    });
+  try {
+    for (const task of tasksData) {
+      await addDoc(collection(db, 'daily_tasks'), {
+        user_id: userId,
+        task_type: task.task_type,
+        progress: 0,
+        target: task.target,
+        reward: task.reward,
+        is_completed: false,
+        is_claimed: false,
+        last_updated: today,
+        created_at: now,
+      });
+    }
+  } catch (taskError) {
+    console.error('Daily tasks initialization error:', taskError);
   }
 
   return newProfile;
