@@ -2,9 +2,11 @@ import { motion } from "framer-motion";
 import { Gauge, Layers, Timer, Coins, ChevronRight, Zap, Loader2 } from "lucide-react";
 import { MiningButton } from "@/components/dashboard/MiningButton";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { BurnStatusCard } from "@/components/dashboard/BurnStatusCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMining } from "@/hooks/useMining";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useBurning } from "@/hooks/useBurning";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -21,6 +23,7 @@ export default function Dashboard() {
     loading: miningLoading 
   } = useMining();
   const { transactions, loading: txLoading } = useTransactions(3);
+  const { isAtRisk, burnedAmount } = useBurning();
   
   const [liveEarnings, setLiveEarnings] = useState(0);
 
@@ -144,6 +147,11 @@ export default function Dashboard() {
           )}
         </p>
       </motion.div>
+
+      {/* Burn Status - Only show if at risk or has burned tokens */}
+      {(isAtRisk || burnedAmount > 0) && (
+        <BurnStatusCard />
+      )}
 
       {/* Stats */}
       <motion.div 

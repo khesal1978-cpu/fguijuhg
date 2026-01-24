@@ -115,6 +115,12 @@ export interface Profile {
   updated_at: Timestamp;
   unique_id?: string | null;
   recovery_email?: string | null;
+  // Burning mechanism fields
+  burned_amount: number;
+  recovery_streak: number;
+  last_mining_at: Timestamp | null;
+  total_burned: number;
+  total_recovered: number;
 }
 
 export interface MiningSession {
@@ -444,7 +450,112 @@ const getTodaySessionCount = async (userId: string): Promise<number> => {
   }
 };
 
-export const startMiningSession = async (userId: string): Promise<{ success: boolean; error?: string; session_id?: string }> => {
+// Burning mechanism constants
+const BURN_INACTIVITY_HOURS = 48; // Hours of inactivity before burn
+const BURN_PERCENTAGE = 0.10; // 10% of balance burned
+const RECOVERY_SESSIONS = 4; // Sessions needed for recovery
+const RECOVERY_PERCENTAGE = 0.25; // 25% of burned amount recovered per milestone
+
+// Check and apply burn if inactive
+const checkAndApplyBurn = async (userId: string, profile: Profile): Promise<{ burned: boolean; amount: number }> => {
+  const lastMiningAt = profile.last_mining_at;
+  if (!lastMiningAt) {
+    // First time miner, no burn
+    return { burned: false, amount: 0 };
+  }
+
+  const lastMiningDate = lastMiningAt.toDate();
+  const hoursSinceLastMining = (Date.now() - lastMiningDate.getTime()) / (1000 * 60 * 60);
+
+  if (hoursSinceLastMining < BURN_INACTIVITY_HOURS) {
+    // Not inactive long enough
+    return { burned: false, amount: 0 };
+  }
+
+  // Calculate burn amount (10% of current balance)
+  const burnAmount = Math.floor((profile.balance || 0) * BURN_PERCENTAGE * 100) / 100;
+  
+  if (burnAmount <= 0) {
+    return { burned: false, amount: 0 };
+  }
+
+  // Apply burn
+  const profileRef = doc(db, 'profiles', userId);
+  await updateDoc(profileRef, {
+    balance: increment(-burnAmount),
+    burned_amount: increment(burnAmount),
+    total_burned: increment(burnAmount),
+    recovery_streak: 0, // Reset streak on burn
+    updated_at: Timestamp.now(),
+  });
+
+  // Create burn transaction
+  await addDoc(collection(db, 'transactions'), {
+    user_id: userId,
+    type: 'burn',
+    amount: -burnAmount,
+    description: 'Inactivity penalty: tokens burned',
+    metadata: { hours_inactive: Math.floor(hoursSinceLastMining) },
+    created_at: Timestamp.now(),
+  });
+
+  return { burned: true, amount: burnAmount };
+};
+
+// Check and apply recovery after mining
+const checkAndApplyRecovery = async (userId: string, profile: Profile): Promise<{ recovered: boolean; amount: number }> => {
+  const burnedAmount = profile.burned_amount || 0;
+  const newStreak = (profile.recovery_streak || 0) + 1;
+
+  if (burnedAmount <= 0) {
+    // Nothing to recover, just update streak
+    await updateDoc(doc(db, 'profiles', userId), {
+      recovery_streak: newStreak,
+      last_mining_at: Timestamp.now(),
+      updated_at: Timestamp.now(),
+    });
+    return { recovered: false, amount: 0 };
+  }
+
+  // Check if hit recovery milestone (every 4 sessions)
+  if (newStreak % RECOVERY_SESSIONS !== 0) {
+    // Not at milestone yet
+    await updateDoc(doc(db, 'profiles', userId), {
+      recovery_streak: newStreak,
+      last_mining_at: Timestamp.now(),
+      updated_at: Timestamp.now(),
+    });
+    return { recovered: false, amount: 0 };
+  }
+
+  // Calculate recovery (25% of burned amount)
+  const recoveryAmount = Math.floor(burnedAmount * RECOVERY_PERCENTAGE * 100) / 100;
+
+  // Apply recovery
+  const profileRef = doc(db, 'profiles', userId);
+  await updateDoc(profileRef, {
+    balance: increment(recoveryAmount),
+    burned_amount: increment(-recoveryAmount),
+    total_recovered: increment(recoveryAmount),
+    recovery_streak: newStreak,
+    last_mining_at: Timestamp.now(),
+    updated_at: Timestamp.now(),
+  });
+
+  // Create recovery transaction
+  await addDoc(collection(db, 'transactions'), {
+    user_id: userId,
+    type: 'recovery',
+    amount: recoveryAmount,
+    description: `Token recovery: ${newStreak} session streak`,
+    metadata: { streak: newStreak },
+    created_at: Timestamp.now(),
+  });
+
+  return { recovered: true, amount: recoveryAmount };
+};
+
+export const startMiningSession = async (userId: string): Promise<{ success: boolean; error?: string; session_id?: string; burned?: number }> => {
   // Check for existing active session
   const existing = await getActiveSession(userId);
   if (existing) {
@@ -461,6 +572,9 @@ export const startMiningSession = async (userId: string): Promise<{ success: boo
   if (!profile) {
     return { success: false, error: 'Profile not found' };
   }
+
+  // Check and apply burn if inactive
+  const burnResult = await checkAndApplyBurn(userId, profile);
 
   // Calculate reward with referral multiplier
   const activeReferrals = await getActiveReferralCount(userId);
@@ -481,10 +595,16 @@ export const startMiningSession = async (userId: string): Promise<{ success: boo
     created_at: now,
   });
 
-  return { success: true, session_id: sessionRef.id };
+  // Update last_mining_at
+  await updateDoc(doc(db, 'profiles', userId), {
+    last_mining_at: now,
+    updated_at: now,
+  });
+
+  return { success: true, session_id: sessionRef.id, burned: burnResult.amount };
 };
 
-export const claimMiningReward = async (userId: string, sessionId: string): Promise<{ success: boolean; error?: string; amount?: number }> => {
+export const claimMiningReward = async (userId: string, sessionId: string): Promise<{ success: boolean; error?: string; amount?: number; recovered?: number }> => {
   const sessionRef = doc(db, 'mining_sessions', sessionId);
   const sessionSnap = await getDoc(sessionRef);
 
@@ -553,7 +673,13 @@ export const claimMiningReward = async (userId: string, sessionId: string): Prom
     }
   }
 
-  return { success: true, amount: session.earned_amount };
+  // Check and apply recovery after claiming
+  let recoveryResult = { recovered: false, amount: 0 };
+  if (profile) {
+    recoveryResult = await checkAndApplyRecovery(userId, profile);
+  }
+
+  return { success: true, amount: session.earned_amount, recovered: recoveryResult.amount };
 };
 
 // Transaction Functions
