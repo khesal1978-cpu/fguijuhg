@@ -19,7 +19,13 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  profile: null,
+  loading: true,
+  refreshProfile: async () => {},
+  signOut: async () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -27,11 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const data = await getProfile(userId);
-    if (data) {
-      setProfile(data);
+    try {
+      const data = await getProfile(userId);
+      if (data) {
+        setProfile(data);
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
     }
-    return data;
   };
 
   const refreshProfile = async () => {
@@ -41,51 +52,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
-      try {
-        setUser(firebaseUser);
-        
-        if (firebaseUser) {
-          // Check if profile exists
-          let userProfile = await getProfile(firebaseUser.uid);
+    let unsubscribe: (() => void) | undefined;
+    
+    try {
+      unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+        try {
+          setUser(firebaseUser);
           
-          if (!userProfile) {
-            // Profile doesn't exist yet - create it
-            userProfile = await createProfile(firebaseUser.uid, 'Miner');
+          if (firebaseUser) {
+            // Check if profile exists
+            let userProfile = await getProfile(firebaseUser.uid);
+            
+            if (!userProfile) {
+              // Profile doesn't exist yet - create it
+              try {
+                userProfile = await createProfile(firebaseUser.uid, 'Miner');
+              } catch (createError) {
+                console.error('Error creating profile:', createError);
+              }
+            }
+            
+            setProfile(userProfile);
+            
+            // Track daily login (don't await to prevent blocking)
+            trackDailyLogin(firebaseUser.uid).catch(console.error);
+          } else {
+            setProfile(null);
           }
-          
-          setProfile(userProfile);
-          
-          // Track daily login (don't await to prevent blocking)
-          trackDailyLogin(firebaseUser.uid).catch(console.error);
-        } else {
+        } catch (error) {
+          console.error('Auth state change error:', error);
           setProfile(null);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Auth state change error:', error);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error setting up auth listener:', error);
+      setLoading(false);
+    }
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   // Subscribe to profile changes in real-time
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribe = subscribeToProfile(user.uid, (updatedProfile) => {
-      setProfile(updatedProfile);
-    });
+    let unsubscribe: (() => void) | undefined;
+    
+    try {
+      unsubscribe = subscribeToProfile(user.uid, (updatedProfile) => {
+        setProfile(updatedProfile);
+      });
+    } catch (error) {
+      console.error('Error subscribing to profile:', error);
+    }
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [user]);
 
   const signOut = async () => {
-    await firebaseSignOut();
-    setProfile(null);
+    try {
+      await firebaseSignOut();
+      setProfile(null);
+      setUser(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -104,9 +145,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  return useContext(AuthContext);
 }
