@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { 
   User, Bell, Shield, LogOut, ChevronRight, Zap, Award, Loader2,
-  FileText, Lock, HelpCircle, Trash2, KeyRound, Fingerprint
+  FileText, Lock, HelpCircle, Trash2, KeyRound, Fingerprint, ScanFace
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,6 +41,7 @@ export default function Settings() {
 
   const accountControls: SettingItem[] = [
     { icon: KeyRound, title: "Change Passcode", subtitle: "Update your password", onClick: () => {} },
+    { icon: Fingerprint, title: "Face Verification", subtitle: "Manage biometric auth", onClick: () => navigate("/face-auth?mode=settings"), highlight: true },
     { icon: Fingerprint, title: "View PingCaset ID", subtitle: profile?.referral_code || "Loading...", onClick: () => {} },
     { icon: Trash2, title: "Request Account Deletion", subtitle: "Coming soon", onClick: () => {}, disabled: true },
   ];

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,16 +29,16 @@ export default function Auth() {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Welcome back!");
-          navigate("/");
+          toast.success("Credentials verified! Face verification required.");
+          navigate("/face-auth?mode=login");
         }
       } else {
         const { error } = await signUp(email, password, displayName, referralCode);
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Account created!");
-          navigate("/");
+          toast.success("Account created! Set up face verification.");
+          navigate("/face-auth?mode=register");
         }
       }
     } catch (err) {
@@ -155,7 +155,7 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="mt-5 text-center">
+          <div className="mt-5 text-center space-y-2">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -164,6 +164,15 @@ export default function Auth() {
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <span className="font-medium text-primary">{isLogin ? "Sign up" : "Sign in"}</span>
             </button>
+            
+            {isLogin && (
+              <Link 
+                to="/face-auth?mode=recovery"
+                className="block text-sm text-primary hover:underline"
+              >
+                Forgot password? Recover with Face ID
+              </Link>
+            )}
           </div>
         </div>
 
