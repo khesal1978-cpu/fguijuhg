@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -11,9 +11,7 @@ import { firebaseSignUp, firebaseSignIn, createProfile, signInWithGoogle, getPro
 import { toast } from "sonner";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import pingcasetLogo from "@/assets/pingcaset-logo.png";
-
-// Lazy load 3D globe for performance
-const Globe3D = lazy(() => import("@/components/auth/Globe3D"));
+import globeHero from "@/assets/globe-hero.png";
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
@@ -323,102 +321,122 @@ export default function Auth() {
   if (screen === "welcome") {
     return (
       <div 
-        className="min-h-screen flex flex-col dark overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+        className="min-h-screen flex flex-col dark overflow-hidden relative"
+        style={{ background: '#0A0A0F' }}
       >
-        {/* Top Logo */}
-        <motion.div
-          className="pt-8 flex justify-center"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="relative">
-            <div 
-              className="absolute inset-[-30%] rounded-full"
-              style={{
-                background: 'radial-gradient(circle, hsl(262, 83%, 58% / 0.2) 0%, transparent 70%)',
-                filter: 'blur(15px)',
-              }}
-            />
-            <img 
-              src={pingcasetLogo} 
-              alt="PingCaset" 
-              className="relative size-12 rounded-xl"
-            />
+        {/* Background purple glow */}
+        <div 
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(123, 63, 228, 0.15) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex flex-col">
+          {/* Headline Section */}
+          <div className="px-6 pt-12 pb-4">
+            <motion.h1 
+              className="text-[28px] md:text-4xl font-display font-bold text-white text-center leading-tight"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              Be early.
+              <br />
+              Mine CASET
+              <br />
+              before listing.
+            </motion.h1>
+
+            <motion.p
+              className="text-[#8B8B9E] text-base text-center mt-4 leading-relaxed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              No hardware. No fees.
+              <br />
+              Just time-based mining.
+            </motion.p>
           </div>
-        </motion.div>
 
-        {/* Headline + Subtext */}
-        <div className="px-6 pt-6">
-          <motion.h1 
-            className="text-2xl md:text-3xl font-display font-bold text-foreground text-center"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+          {/* Globe Image */}
+          <motion.div 
+            className="flex-1 flex items-center justify-center px-4 -mt-4"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
           >
-            Be early. Mine CASET before listing.
-          </motion.h1>
-
-          <motion.p
-            className="text-muted-foreground/70 text-sm text-center mt-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            No hardware. No fees. Just time-based mining.
-          </motion.p>
-        </div>
-
-        {/* Globe Visual Section */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <Suspense fallback={
-            <div className="w-full max-w-[280px] aspect-square flex items-center justify-center">
-              <div className="size-40 rounded-full bg-primary/10 animate-pulse" />
+            <div className="relative w-full max-w-[340px]">
+              <img 
+                src={globeHero} 
+                alt="Global Mining Network" 
+                className="w-full h-auto object-contain"
+              />
             </div>
-          }>
-            <Globe3D />
-          </Suspense>
-          
-          {/* Mining Status Pill */}
-          <div className="mt-4">
-            <AnimatedCounter />
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom Section */}
-        <motion.div 
-          className="px-6 pb-8 space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
+        <div className="relative z-10 px-6 pb-8">
+          {/* Mining Status Pill */}
+          <motion.div
+            className="flex justify-center mb-5"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <AnimatedCounter />
+          </motion.div>
+
           {/* CTA Button */}
-          <button
+          <motion.button
             onClick={() => setScreen("landing")}
-            className="w-full h-14 rounded-full font-semibold text-base text-primary-foreground flex items-center justify-center gap-2 transition-all hover:opacity-90"
+            className="w-full h-[56px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2"
             style={{
               background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
-              boxShadow: '0 4px 20px rgba(123, 63, 228, 0.4)'
+              boxShadow: '0 4px 24px rgba(123, 63, 228, 0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
             }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             Start Mining Now
             <ArrowRight className="size-5" />
-          </button>
+          </motion.button>
+
+          {/* Helper text */}
+          <motion.p
+            className="text-center text-sm text-[#6B6B7B] mt-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            Swipe or tap to start
+          </motion.p>
 
           {/* Microsoft Badge */}
-          <div className="flex items-center justify-center pt-2">
-            <div className="flex items-center gap-2 opacity-50">
-              <svg viewBox="0 0 23 23" className="size-3.5" xmlns="http://www.w3.org/2000/svg">
+          <motion.div 
+            className="flex items-center justify-center mt-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A22] border border-[#2A2A35]">
+              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#f25022" d="M1 1h10v10H1z"/>
                 <path fill="#00a4ef" d="M1 12h10v10H1z"/>
                 <path fill="#7fba00" d="M12 1h10v10H12z"/>
                 <path fill="#ffb900" d="M12 12h10v10H12z"/>
               </svg>
-              <span className="text-xs text-muted-foreground">Microsoft for Startups</span>
+              <span className="text-sm text-[#8B8B9E]">Microsoft for Startups</span>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     );
   }
