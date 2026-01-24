@@ -91,7 +91,7 @@ export default function Dashboard() {
 
       {/* Balance Card */}
       <motion.div
-        className="card-dark p-5 text-center"
+        className="card-glass p-5 text-center"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
@@ -184,7 +184,7 @@ export default function Dashboard() {
           </Link>
         </div>
         
-        <div className="card-dark divide-y divide-border">
+        <div className="card-glass divide-y divide-white/[0.06]">
           {txLoading ? (
             <div className="p-6 flex justify-center">
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -204,7 +204,7 @@ export default function Dashboard() {
                 transition={{ delay: i * 0.05 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <div className="size-8 rounded-lg bg-primary/15 backdrop-blur-sm flex items-center justify-center">
                     <Zap className="size-4 text-primary" />
                   </div>
                   <div>
@@ -231,7 +231,7 @@ export default function Dashboard() {
         transition={{ delay: 0.3 }}
       >
         <span className="text-xs text-muted-foreground">Supported by</span>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md card-glass-subtle">
           <svg 
             viewBox="0 0 23 23" 
             className="size-4"

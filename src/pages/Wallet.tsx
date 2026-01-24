@@ -30,13 +30,13 @@ export default function Wallet() {
 
       {/* Balance Card */}
       <motion.div
-        className="card-dark p-5 space-y-4"
+        className="card-glass p-5 space-y-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
         <div className="flex items-center gap-2">
-          <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="size-8 rounded-lg bg-primary/15 backdrop-blur-sm flex items-center justify-center">
             <WalletIcon className="size-4 text-primary" />
           </div>
           <span className="text-xs text-muted-foreground font-medium">Total Balance</span>
@@ -59,14 +59,14 @@ export default function Wallet() {
         </div>
 
         {/* Balance Split */}
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
-          <div className="p-3 rounded-xl bg-muted/50">
+        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.06]">
+          <div className="p-3 rounded-xl card-glass-subtle">
             <p className="text-[10px] text-muted-foreground mb-1">Available</p>
             <p className="text-lg font-display font-bold text-foreground">
               {Number(profile?.balance || 0).toLocaleString()}
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-gold/5 border border-gold/20">
+          <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
             <p className="text-[10px] text-muted-foreground mb-1">Pending</p>
             <p className="text-lg font-display font-bold text-foreground">
               {Number(profile?.pending_balance || 0).toLocaleString()}
@@ -75,7 +75,7 @@ export default function Wallet() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-border">
+        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="size-3" />
             Network: PingNet
@@ -103,7 +103,7 @@ export default function Wallet() {
           Activity
         </h2>
 
-        <div className="card-dark divide-y divide-border">
+        <div className="card-glass divide-y divide-white/[0.06]">
           {loading ? (
             <div className="p-6 flex justify-center">
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -123,10 +123,10 @@ export default function Wallet() {
                 transition={{ delay: i * 0.03 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`size-8 rounded-lg flex items-center justify-center ${
+                  <div className={`size-8 rounded-lg backdrop-blur-sm flex items-center justify-center ${
                     tx.type === "referral"
-                      ? "bg-gold/10 text-gold"
-                      : "bg-primary/10 text-primary"
+                      ? "bg-gold/15 text-gold"
+                      : "bg-primary/15 text-primary"
                   }`}>
                     {getTransactionIcon(tx.type)}
                   </div>

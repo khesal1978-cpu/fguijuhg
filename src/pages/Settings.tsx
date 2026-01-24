@@ -130,7 +130,7 @@ export default function Settings() {
       animate={{ opacity: 1, y: 0 }}
     >
       <p className="text-xs font-medium text-muted-foreground px-1">{title}</p>
-      <div className="card-dark divide-y divide-border">
+      <div className="card-glass divide-y divide-white/[0.06]">
         {items.map((item, i) => (
           <button 
             key={i}
@@ -138,7 +138,7 @@ export default function Settings() {
             onClick={item.onClick}
           >
             <div className="flex items-center gap-3">
-              <div className={`size-9 rounded-lg flex items-center justify-center ${item.highlight ? 'bg-primary/20' : 'bg-muted'}`}>
+              <div className={`size-9 rounded-lg backdrop-blur-sm flex items-center justify-center ${item.highlight ? 'bg-primary/20' : 'bg-muted/50'}`}>
                 <item.icon className={`size-4 ${item.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
               </div>
               <div className="text-left">
@@ -166,7 +166,7 @@ export default function Settings() {
           onClick={() => setActiveModal(null)}
         >
           <motion.div
-            className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-4"
+            className="w-full max-w-md card-glass p-6 space-y-4"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
@@ -372,7 +372,7 @@ export default function Settings() {
 
         {/* Profile Card */}
         <motion.div
-          className="card-dark p-5"
+          className="card-glass p-5"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -400,7 +400,7 @@ export default function Settings() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-border">
+          <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-white/[0.06]">
             {[
               { icon: Zap, value: Number(profile?.total_mined || 0).toLocaleString(), label: "Total Mined", color: "text-primary" },
               { icon: Award, value: `${Number(profile?.mining_rate || 10)}`, label: "Rate/Session", color: "text-gold" },

@@ -22,12 +22,12 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <motion.div
-      className={`p-4 rounded-2xl border ${
+      className={`p-4 rounded-2xl ${
         highlight 
-          ? "bg-primary/5 border-primary/20" 
-          : "bg-card border-border"
+          ? "card-glass border-primary/20" 
+          : "card-glass-subtle"
       }`}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -2 }}
       transition={{ type: "spring", stiffness: 400 }}
     >
       <div className="flex items-center gap-2 mb-2">
