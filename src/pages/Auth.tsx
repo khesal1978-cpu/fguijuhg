@@ -408,16 +408,23 @@ export default function Auth() {
               before listing.
             </motion.h1>
 
-            <motion.p
-              className="text-[#A0A0B0] text-[16px] sm:text-[17px] text-center mt-5 leading-[1.5]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
+            <motion.div
+              className="mt-6 px-6 py-4 rounded-2xl backdrop-blur-xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(20, 20, 30, 0.8) 0%, rgba(10, 10, 18, 0.85) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+              }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.25, type: "spring", stiffness: 200 }}
             >
-              No hardware. No fees.
-              <br />
-              Just time-based mining.
-            </motion.p>
+              <p className="text-white/90 text-[16px] sm:text-[17px] text-center leading-[1.6] font-medium">
+                No hardware. No fees.
+                <br />
+                Just time-based mining.
+              </p>
+            </motion.div>
           </div>
 
           {/* Spacer */}
@@ -429,50 +436,80 @@ export default function Auth() {
           {/* Mining Status Pill */}
           <motion.div
             className="flex justify-center mb-5"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
           >
-            <div 
-              className="inline-flex items-center gap-2.5 rounded-full px-6 py-3"
+            <motion.div 
+              className="inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 backdrop-blur-xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 28, 0.95) 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+                background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.85) 0%, rgba(20, 20, 28, 0.9) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
               }}
+              animate={{ 
+                boxShadow: [
+                  '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                  '0 8px 40px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                  '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              <span className="size-2.5 rounded-full bg-[#22C55E] animate-pulse" />
+              <motion.span 
+                className="size-2.5 rounded-full bg-[#22C55E]"
+                animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              />
               <AnimatedCounter />
-            </div>
+            </motion.div>
           </motion.div>
 
-          {/* CTA Button with Shine Effect */}
+          {/* CTA Button with Enhanced Animation */}
           <motion.button
             onClick={() => setScreen("landing")}
-            className="group relative w-full h-[58px] rounded-full font-semibold text-[18px] text-white flex items-center justify-center gap-2.5 overflow-hidden"
+            className="group relative w-full h-[60px] rounded-full font-semibold text-[18px] text-white flex items-center justify-center gap-2.5 overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 50%, #7B3FE4 100%)',
               boxShadow: '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
               border: '1px solid rgba(156, 107, 255, 0.3)'
             }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              boxShadow: [
+                '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+                '0 0 40px rgba(123, 63, 228, 0.7), 0 0 80px rgba(123, 63, 228, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
+              ]
+            }}
+            transition={{ 
+              delay: 0.6, 
+              type: "spring", 
+              stiffness: 200,
+              boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
           >
             {/* Shine animation overlay */}
             <span 
-              className="absolute inset-0 overflow-hidden rounded-full"
+              className="absolute inset-0 overflow-hidden rounded-full pointer-events-none"
               style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
-                animation: 'shine 3s ease-in-out infinite',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)',
+                animation: 'shine 2.5s ease-in-out infinite',
               }}
             />
-            <span className="relative z-10 flex items-center gap-2.5">
+            <motion.span 
+              className="relative z-10 flex items-center gap-2.5"
+              animate={{ x: [0, 3, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            >
               Start Mining Now
               <ArrowRight className="size-5" strokeWidth={2.5} />
-            </span>
+            </motion.span>
           </motion.button>
 
           {/* Helper text */}
