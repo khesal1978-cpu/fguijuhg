@@ -409,7 +409,11 @@ export default function Auth() {
             </motion.h1>
 
             <motion.p
-              className="text-white/60 text-[13px] sm:text-[14px] text-center mt-4 tracking-wide"
+              className="text-white/70 text-[13px] sm:text-[14px] text-center mt-4 tracking-wide px-4 py-2 rounded-full backdrop-blur-md"
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.25 }}
