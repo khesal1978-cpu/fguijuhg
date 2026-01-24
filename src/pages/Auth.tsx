@@ -43,17 +43,13 @@ const AnimatedCounter = () => {
   
   return (
     <motion.div
-      className="flex items-center justify-center gap-2 bg-background/80 backdrop-blur-md border border-border rounded-full px-5 py-2.5"
-      initial={{ opacity: 0, y: 20 }}
+      className="inline-flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2"
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1.2, type: "spring", stiffness: 100 }}
+      transition={{ delay: 0.8 }}
     >
-      <motion.div 
-        className="size-2.5 rounded-full bg-success"
-        animate={{ opacity: [1, 0.5, 1] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      />
-      <span className="text-base font-bold text-foreground tabular-nums">
+      <span className="size-2 rounded-full bg-success animate-pulse" />
+      <span className="text-sm font-medium text-foreground tabular-nums">
         {count.toLocaleString()}
       </span>
       <span className="text-sm text-muted-foreground">users mining now</span>
@@ -61,12 +57,6 @@ const AnimatedCounter = () => {
   );
 };
 
-// Decorative star positions (fixed to avoid hydration issues)
-const starPositions = [
-  { left: 18, top: 12 }, { left: 82, top: 8 }, { left: 25, top: 28 },
-  { left: 75, top: 22 }, { left: 12, top: 38 }, { left: 88, top: 35 },
-  { left: 45, top: 5 }, { left: 55, top: 15 },
-];
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -231,184 +221,72 @@ export default function Auth() {
     setLinkRecoveryEmail("");
   };
 
-  // Welcome Screen - Premium with 3D Globe
-  if (screen === "welcome") {
-    return (
-      <div className="min-h-screen bg-background flex flex-col dark overflow-hidden">
-        {/* Background glow effect */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div 
-            className="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
-            style={{
-              background: 'radial-gradient(circle, hsl(262, 83%, 35% / 0.25) 0%, transparent 70%)',
-              filter: 'blur(60px)',
-            }}
-          />
-        </div>
-
-        {/* Decorative stars */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {starPositions.map((pos, i) => (
-            <motion.div
-              key={i}
-              className="absolute size-1 rounded-full bg-foreground/50"
-              style={{ left: `${pos.left}%`, top: `${pos.top}%` }}
-              animate={{ opacity: [0.3, 0.9, 0.3], scale: [0.8, 1.2, 0.8] }}
-              transition={{
-                duration: 2.5 + i * 0.3,
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 relative flex flex-col px-6 pt-10 z-10">
-          {/* Headline at top */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-center mb-2"
-          >
-            <h1 className="text-3xl md:text-4xl font-display font-bold leading-tight text-foreground">
-              Be early.
-              <br />
-              Mine CASET
-              <br />
-              before listing.
-            </h1>
-          </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="text-muted-foreground text-sm text-center mb-4"
-          >
-            No hardware. No fees.
-            <br />
-            Just time-based mining.
-          </motion.p>
-
-          {/* 3D Globe */}
-          <div className="flex-1 flex flex-col items-center justify-center -mt-4">
-            <Suspense fallback={
-              <div className="w-full max-w-sm aspect-square flex items-center justify-center">
-                <div className="size-48 rounded-full bg-primary/20 animate-pulse" />
-              </div>
-            }>
-              <Globe3D />
-            </Suspense>
-            
-            {/* Counter badge below globe */}
-            <div className="mt-4">
-              <AnimatedCounter />
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom CTA area */}
-        <div className="relative z-10 px-6 pb-8 space-y-3">
-          {/* Primary CTA Button */}
-          <motion.button
-            onClick={() => setScreen("landing")}
-            className="w-full h-14 rounded-full font-semibold text-base text-primary-foreground flex items-center justify-center gap-2"
-            style={{
-              background: 'linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(262, 83%, 42%) 100%)',
-              boxShadow: '0 4px 24px hsl(262, 83%, 50% / 0.45)'
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Start Mining Now
-            <ArrowRight className="size-5" />
-          </motion.button>
-
-          {/* Secondary text */}
-          <motion.p
-            className="text-center text-sm text-muted-foreground/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.65 }}
-          >
-            Swipe or tap to start
-          </motion.p>
-
-          {/* Microsoft Badge */}
-          <motion.div 
-            className="flex items-center justify-center pt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/60 border border-border backdrop-blur-sm">
-              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#f25022" d="M1 1h10v10H1z"/>
-                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
-                <path fill="#7fba00" d="M12 1h10v10H12z"/>
-                <path fill="#ffb900" d="M12 12h10v10H12z"/>
-              </svg>
-              <span className="text-sm font-medium text-muted-foreground">Microsoft for Startups</span>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // Landing Screen (Login/Signup choice)
+  // ========================
+  // SCREEN 1: AUTH (LOGIN / SIGNUP)
+  // ========================
   if (screen === "landing") {
     return (
-      <div className="min-h-screen bg-background flex flex-col dark">
-        {/* Main content */}
+      <div 
+        className="min-h-screen flex flex-col dark"
+        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+      >
         <div className="flex-1 flex flex-col items-center justify-center px-6">
+          {/* App Icon with glow */}
           <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="relative mb-8"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
           >
-            {/* Logo */}
-            <motion.img 
+            {/* Radial glow behind icon */}
+            <div 
+              className="absolute inset-[-50%] rounded-full"
+              style={{
+                background: 'radial-gradient(circle, hsl(262, 83%, 58% / 0.3) 0%, transparent 70%)',
+                filter: 'blur(20px)',
+              }}
+            />
+            <img 
               src={pingcasetLogo} 
               alt="PingCaset" 
-              className="mx-auto size-40 rounded-3xl shadow-2xl shadow-primary/30 mb-8"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", delay: 0.1 }}
+              className="relative size-24 rounded-3xl"
             />
-
-            <motion.h1 
-              className="text-3xl font-display font-bold text-foreground mb-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              Are you ready!
-            </motion.h1>
-            <motion.p
-              className="text-muted-foreground text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              Start mining CASET tokens today
-            </motion.p>
           </motion.div>
+
+          {/* Headline */}
+          <motion.h1 
+            className="text-2xl md:text-3xl font-display font-bold text-foreground text-center mb-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            Mine CASET. Build Early.
+          </motion.h1>
+
+          {/* Subtext */}
+          <motion.p
+            className="text-muted-foreground/70 text-sm text-center mb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            A fair, time-based crypto mining network
+          </motion.p>
         </div>
 
-        {/* Bottom buttons */}
+        {/* Buttons Section */}
         <motion.div 
-          className="px-6 pb-6 space-y-3"
+          className="px-6 pb-8 space-y-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.3 }}
         >
-          {/* Login Button - White/Light */}
+          {/* Helper text */}
+          <p className="text-center text-xs text-muted-foreground/60 mb-2">
+            Already have an account?
+          </p>
+
+          {/* Primary Button - Login */}
           <button
             onClick={() => setScreen("login")}
             className="w-full h-14 rounded-full bg-foreground text-background font-semibold text-base hover:opacity-90 transition-opacity"
@@ -416,22 +294,129 @@ export default function Auth() {
             Login
           </button>
 
-          {/* Sign Up Button - Dark with border */}
+          {/* Secondary Button - Sign Up */}
           <button
             onClick={() => setScreen("register")}
-            className="w-full h-14 rounded-full bg-muted border border-border text-foreground font-semibold text-base hover:bg-muted/80 transition-colors"
+            className="w-full h-14 rounded-full bg-transparent border border-border text-foreground font-semibold text-base hover:bg-muted/30 transition-colors"
           >
             Sign Up
           </button>
 
           {/* Footer links */}
-          <div className="flex items-center justify-center gap-6 pt-4">
-            <Link to="/privacy-policy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Privacy policy
+          <div className="flex items-center justify-center gap-4 pt-6">
+            <Link to="/privacy-policy" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              Privacy Policy
             </Link>
-            <Link to="/terms-conditions" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Terms of service
+            <span className="text-muted-foreground/30">|</span>
+            <Link to="/terms-conditions" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              Terms of Service
             </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ========================
+  // SCREEN 2: ONBOARDING / PREVIEW (Welcome)
+  // ========================
+  if (screen === "welcome") {
+    return (
+      <div 
+        className="min-h-screen flex flex-col dark overflow-hidden"
+        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+      >
+        {/* Top Logo */}
+        <motion.div
+          className="pt-8 flex justify-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="relative">
+            <div 
+              className="absolute inset-[-30%] rounded-full"
+              style={{
+                background: 'radial-gradient(circle, hsl(262, 83%, 58% / 0.2) 0%, transparent 70%)',
+                filter: 'blur(15px)',
+              }}
+            />
+            <img 
+              src={pingcasetLogo} 
+              alt="PingCaset" 
+              className="relative size-12 rounded-xl"
+            />
+          </div>
+        </motion.div>
+
+        {/* Headline + Subtext */}
+        <div className="px-6 pt-6">
+          <motion.h1 
+            className="text-2xl md:text-3xl font-display font-bold text-foreground text-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Be early. Mine CASET before listing.
+          </motion.h1>
+
+          <motion.p
+            className="text-muted-foreground/70 text-sm text-center mt-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            No hardware. No fees. Just time-based mining.
+          </motion.p>
+        </div>
+
+        {/* Globe Visual Section */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <Suspense fallback={
+            <div className="w-full max-w-[280px] aspect-square flex items-center justify-center">
+              <div className="size-40 rounded-full bg-primary/10 animate-pulse" />
+            </div>
+          }>
+            <Globe3D />
+          </Suspense>
+          
+          {/* Mining Status Pill */}
+          <div className="mt-4">
+            <AnimatedCounter />
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <motion.div 
+          className="px-6 pb-8 space-y-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          {/* CTA Button */}
+          <button
+            onClick={() => setScreen("landing")}
+            className="w-full h-14 rounded-full font-semibold text-base text-primary-foreground flex items-center justify-center gap-2 transition-all hover:opacity-90"
+            style={{
+              background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
+              boxShadow: '0 4px 20px rgba(123, 63, 228, 0.4)'
+            }}
+          >
+            Start Mining Now
+            <ArrowRight className="size-5" />
+          </button>
+
+          {/* Microsoft Badge */}
+          <div className="flex items-center justify-center pt-2">
+            <div className="flex items-center gap-2 opacity-50">
+              <svg viewBox="0 0 23 23" className="size-3.5" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#f25022" d="M1 1h10v10H1z"/>
+                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+                <path fill="#7fba00" d="M12 1h10v10H12z"/>
+                <path fill="#ffb900" d="M12 12h10v10H12z"/>
+              </svg>
+              <span className="text-xs text-muted-foreground">Microsoft for Startups</span>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -441,7 +426,10 @@ export default function Auth() {
   // Recovery Screen
   if (screen === "recover") {
     return (
-      <div className="min-h-screen bg-background flex flex-col p-6 dark">
+      <div 
+        className="min-h-screen flex flex-col p-6 dark"
+        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button 
@@ -451,7 +439,7 @@ export default function Auth() {
             <ChevronLeft className="size-5 text-foreground" />
           </button>
           <img src={pingcasetLogo} alt="PingCaset" className="size-10 rounded-lg" />
-          <div className="size-10" /> {/* Spacer */}
+          <div className="size-10" />
         </div>
 
         {/* Content */}
@@ -492,23 +480,24 @@ export default function Auth() {
             </motion.div>
           ) : (
             <form onSubmit={handleRecoverUniqueId} className="space-y-4">
-              <div className="p-4 rounded-2xl border border-border bg-card">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-xl bg-muted flex items-center justify-center">
-                    <Mail className="size-5 text-muted-foreground" />
-                  </div>
-                  <Input
-                    type="email"
-                    placeholder="Enter your recovery email"
-                    value={recoveryEmail}
-                    onChange={(e) => setRecoveryEmail(e.target.value)}
-                    className="border-0 bg-transparent h-auto p-0 text-base focus-visible:ring-0"
-                    required
-                  />
-                </div>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Recovery email"
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(e.target.value)}
+                  required
+                  className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-14 rounded-full gradient-primary font-semibold text-base">
-                {loading ? <Loader2 className="size-5 animate-spin" /> : "Find My ID"}
+              
+              <Button
+                type="submit"
+                className="w-full h-14 rounded-xl gradient-primary"
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="size-5 animate-spin" /> : "Search"}
               </Button>
             </form>
           )}
@@ -517,10 +506,13 @@ export default function Auth() {
     );
   }
 
-  // Unique ID Setup Screen
-  if (screen === "unique-id-setup") {
+  // Login Screen
+  if (screen === "login") {
     return (
-      <div className="min-h-screen bg-background flex flex-col p-6 dark">
+      <div 
+        className="min-h-screen flex flex-col p-6 dark"
+        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button 
@@ -535,38 +527,370 @@ export default function Auth() {
 
         {/* Content */}
         <div className="flex-1">
+          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Welcome back</h1>
+          <p className="text-muted-foreground text-sm mb-8">Login to continue mining</p>
+
+          {/* Method Toggle */}
+          <div className="flex gap-2 p-1 bg-muted rounded-xl mb-6">
+            <button
+              type="button"
+              onClick={() => setLoginMethod("email")}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                loginMethod === "email" 
+                  ? "bg-card text-foreground shadow-sm" 
+                  : "text-muted-foreground"
+              }`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginMethod("unique-id")}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                loginMethod === "unique-id" 
+                  ? "bg-card text-foreground shadow-sm" 
+                  : "text-muted-foreground"
+              }`}
+            >
+              Unique ID
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {loginMethod === "email" ? (
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+                />
+              </div>
+            ) : (
+              <div className="relative">
+                <Key className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="PC-XXXXXXXX"
+                  value={uniqueId}
+                  onChange={(e) => setUniqueId(e.target.value.toUpperCase())}
+                  required
+                  className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground font-mono"
+                />
+              </div>
+            )}
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            {loginMethod === "unique-id" && (
+              <button
+                type="button"
+                onClick={() => setScreen("recover")}
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot your Unique ID?
+              </button>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-14 rounded-xl font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
+              }}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="size-5 animate-spin" /> : "Login"}
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Google Sign In */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleSignIn}
+            className="w-full h-14 rounded-xl border-border"
+            disabled={loading}
+          >
+            <svg className="size-5 mr-2" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </Button>
+        </div>
+
+        {/* Bottom link */}
+        <div className="text-center pt-4">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <button onClick={() => setScreen("register")} className="text-primary font-medium">
+              Sign up
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Register Screen
+  if (screen === "register") {
+    return (
+      <div 
+        className="min-h-screen flex flex-col p-6 dark"
+        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <button 
+            onClick={resetToLanding} 
+            className="size-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
+          >
+            <ChevronLeft className="size-5 text-foreground" />
+          </button>
+          <img src={pingcasetLogo} alt="PingCaset" className="size-10 rounded-lg" />
+          <div className="size-10" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1">
+          <h1 className="text-2xl font-display font-bold text-foreground mb-2">Create account</h1>
+          <p className="text-muted-foreground text-sm mb-8">Start mining CASET tokens today</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Display name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Password (6+ characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <div className="relative">
+              <Gift className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Referral code (optional)"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-14 rounded-xl font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
+              }}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="size-5 animate-spin" /> : "Create Account"}
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Alternative options */}
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoogleSignIn}
+              className="w-full h-14 rounded-xl border-border"
+              disabled={loading}
+            >
+              <svg className="size-5 mr-2" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCreateUniqueId}
+              className="w-full h-14 rounded-xl border-border"
+            >
+              <Key className="size-5 mr-2" />
+              Create Unique ID instead
+            </Button>
+          </div>
+        </div>
+
+        {/* Bottom link */}
+        <div className="text-center pt-4">
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <button onClick={() => setScreen("login")} className="text-primary font-medium">
+              Login
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Unique ID Setup Screen
+  if (screen === "unique-id-setup") {
+    return (
+      <div 
+        className="min-h-screen flex flex-col p-6 dark"
+        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <button 
+            onClick={() => setScreen("register")} 
+            className="size-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
+          >
+            <ChevronLeft className="size-5 text-foreground" />
+          </button>
+          <img src={pingcasetLogo} alt="PingCaset" className="size-10 rounded-lg" />
+          <div className="size-10" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1">
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">Your Unique ID</h1>
           <p className="text-muted-foreground text-sm mb-6">Save this ID - it's your login credential</p>
 
           {/* ID Display */}
-          <div className="p-5 rounded-2xl bg-primary/10 border border-primary/30 mb-4">
+          <div className="p-5 rounded-2xl bg-primary/10 border border-primary/30 mb-6">
             <div className="flex items-center justify-between">
               <p className="text-2xl font-mono font-bold text-primary">{generatedId}</p>
-              <button 
-                onClick={copyGeneratedId} 
-                className="size-10 rounded-xl bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors"
+              <button
+                type="button"
+                onClick={copyGeneratedId}
+                className="p-2 rounded-lg bg-primary/20 hover:bg-primary/30 transition-colors"
               >
-                {idCopied ? <Check className="size-5 text-primary" /> : <Copy className="size-5 text-primary" />}
+                {idCopied ? <Check className="size-5 text-success" /> : <Copy className="size-5 text-primary" />}
               </button>
             </div>
           </div>
 
           {/* Warning */}
-          <div className="flex gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-6">
-            <AlertTriangle className="size-5 text-destructive shrink-0" />
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-gold/10 border border-gold/30 mb-6">
+            <AlertTriangle className="size-5 text-gold flex-shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">
-              <span className="text-destructive font-medium">Save this ID!</span> Lost IDs without recovery email cannot be recovered.
+              Write this down! Without it, you cannot recover your account.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <InputField icon={User} placeholder="Display Name" value={displayName} onChange={setDisplayName} />
-            <InputField icon={Mail} placeholder="Recovery Email (optional)" value={linkRecoveryEmail} onChange={setLinkRecoveryEmail} type="email" />
-            <InputField icon={Lock} placeholder="Create Password" value={password} onChange={setPassword} type="password" required />
-            <InputField icon={Gift} placeholder="Referral Code (optional)" value={referralCode} onChange={(v) => setReferralCode(v.toUpperCase())} />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Display name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
 
-            <Button type="submit" disabled={loading} className="w-full h-14 rounded-full gradient-primary font-semibold text-base mt-4">
-              {loading ? <Loader2 className="size-5 animate-spin" /> : "Create Account"}
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Create password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="Recovery email (optional)"
+                value={linkRecoveryEmail}
+                onChange={(e) => setLinkRecoveryEmail(e.target.value)}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <div className="relative">
+              <Gift className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Referral code (optional)"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-14 rounded-xl font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
+              }}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="size-5 animate-spin" /> : "Complete Setup"}
             </Button>
           </form>
         </div>
@@ -574,180 +898,5 @@ export default function Auth() {
     );
   }
 
-  // Login / Register Screen
-  return (
-    <div className="min-h-screen bg-background flex flex-col p-6 dark">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <button 
-          onClick={resetToLanding} 
-          className="size-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted/80 transition-colors"
-        >
-          <ChevronLeft className="size-5 text-foreground" />
-        </button>
-        <img src={pingcasetLogo} alt="PingCaset" className="size-10 rounded-lg" />
-        <div className="size-10" />
-      </div>
-
-      {/* Content */}
-      <motion.div 
-        className="flex-1"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-          {screen === "login" ? "Welcome Back" : "Create Account"}
-        </h1>
-        <p className="text-muted-foreground text-sm mb-6">
-          {screen === "login" ? "Sign in with your credentials" : "Sign up to start mining CASET"}
-        </p>
-
-        {/* Google Button */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-          className="w-full h-14 rounded-full bg-foreground text-background font-semibold text-base flex items-center justify-center gap-2 hover:opacity-90 transition-opacity mb-4"
-        >
-          <svg className="size-5" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
-          Continue with Google
-        </button>
-
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="px-4 bg-background text-xs text-muted-foreground">or</span>
-          </div>
-        </div>
-
-        {/* Login Method Toggle */}
-        {screen === "login" && (
-          <div className="flex p-1 bg-muted rounded-full mb-4">
-            <button
-              type="button"
-              onClick={() => setLoginMethod("email")}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                loginMethod === "email" ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-              }`}
-            >
-              <Mail className="size-4" /> Email
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginMethod("unique-id")}
-              className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                loginMethod === "unique-id" ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-              }`}
-            >
-              <Key className="size-4" /> Unique ID
-            </button>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {screen === "register" && (
-            <InputField icon={User} placeholder="Display Name" value={displayName} onChange={setDisplayName} required />
-          )}
-
-          {screen === "login" ? (
-            loginMethod === "unique-id" ? (
-              <InputField icon={Key} placeholder="PC-XXXXXXXX" value={uniqueId} onChange={(v) => setUniqueId(v.toUpperCase())} required mono />
-            ) : (
-              <InputField icon={Mail} placeholder="Email" value={email} onChange={setEmail} type="email" required />
-            )
-          ) : (
-            <InputField icon={Mail} placeholder="Email" value={email} onChange={setEmail} type="email" required />
-          )}
-
-          <InputField icon={Lock} placeholder="Password" value={password} onChange={setPassword} type="password" required />
-
-          {screen === "register" && (
-            <InputField icon={Gift} placeholder="Referral Code (optional)" value={referralCode} onChange={(v) => setReferralCode(v.toUpperCase())} />
-          )}
-
-          <Button type="submit" disabled={loading} className="w-full h-14 rounded-full gradient-primary font-semibold text-base mt-2">
-            {loading ? <Loader2 className="size-5 animate-spin" /> : screen === "login" ? "Sign In" : "Create Account"}
-          </Button>
-        </form>
-
-        {/* Unique ID option for register */}
-        {screen === "register" && (
-          <button
-            type="button"
-            onClick={handleCreateUniqueId}
-            className="w-full mt-4 py-3 text-sm text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2"
-          >
-            <Key className="size-4" />
-            Create with Unique ID (No Email)
-          </button>
-        )}
-
-        {/* Forgot ID link */}
-        {screen === "login" && loginMethod === "unique-id" && (
-          <button
-            type="button"
-            onClick={() => setScreen("recover")}
-            className="w-full mt-4 text-center text-sm text-primary hover:underline"
-          >
-            Forgot your Unique ID?
-          </button>
-        )}
-
-        {/* Toggle */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          {screen === "login" ? (
-            <>Don't have an account? <button onClick={() => setScreen("register")} className="text-primary font-medium hover:underline">Sign up</button></>
-          ) : (
-            <>Have an account? <button onClick={() => setScreen("login")} className="text-primary font-medium hover:underline">Sign in</button></>
-          )}
-        </p>
-      </motion.div>
-    </div>
-  );
-}
-
-// Reusable Input Field Component
-function InputField({ 
-  icon: Icon, 
-  placeholder, 
-  value, 
-  onChange, 
-  type = "text", 
-  required = false,
-  mono = false
-}: { 
-  icon: any; 
-  placeholder: string; 
-  value: string; 
-  onChange: (value: string) => void; 
-  type?: string; 
-  required?: boolean;
-  mono?: boolean;
-}) {
-  return (
-    <div className="p-4 rounded-2xl border border-border bg-card">
-      <div className="flex items-center gap-3">
-        <div className="size-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-          <Icon className="size-5 text-muted-foreground" />
-        </div>
-        <Input
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`border-0 bg-transparent h-auto p-0 text-base focus-visible:ring-0 ${mono ? 'font-mono' : ''}`}
-          required={required}
-          minLength={type === "password" ? 6 : undefined}
-        />
-      </div>
-    </div>
-  );
+  return null;
 }
