@@ -315,19 +315,19 @@ export default function Auth() {
       <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
         {/* Globe Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-[center_60%] bg-no-repeat"
           style={{ backgroundImage: `url(${globeBackground})` }}
         />
         
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/80" />
+        {/* Dark overlay - darker at top and bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A12]/90 via-transparent to-[#0A0A12]/95" />
 
         {/* Main Content */}
-        <div className="relative z-10 flex-1 flex flex-col px-5">
+        <div className="relative z-10 flex-1 flex flex-col px-6">
           {/* Headline Section */}
-          <div className="pt-12 sm:pt-16 md:pt-20">
+          <div className="pt-14 sm:pt-20">
             <motion.h1 
-              className="text-[28px] sm:text-[34px] md:text-[40px] font-display font-bold text-white text-center leading-[1.15] tracking-tight"
+              className="text-[32px] sm:text-[38px] md:text-[44px] font-display font-bold text-white text-center leading-[1.1]"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -340,7 +340,7 @@ export default function Auth() {
             </motion.h1>
 
             <motion.p
-              className="text-[#9B9BAE] text-[15px] sm:text-base text-center mt-4 leading-relaxed"
+              className="text-[#A0A0B0] text-[16px] sm:text-[17px] text-center mt-5 leading-[1.5]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -356,16 +356,23 @@ export default function Auth() {
         </div>
 
         {/* Bottom Section */}
-        <div className="relative z-10 px-5 pb-8 sm:pb-10 space-y-4">
+        <div className="relative z-10 px-6 pb-10 sm:pb-12">
           {/* Mining Status Pill */}
           <motion.div
-            className="flex justify-center"
+            className="flex justify-center mb-5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 bg-[#1A1A22]/80 backdrop-blur-md border border-[#2A2A35] rounded-full px-5 py-2.5">
-              <span className="size-2 rounded-full bg-[#22C55E] animate-pulse" />
+            <div 
+              className="inline-flex items-center gap-2.5 rounded-full px-6 py-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 28, 0.95) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              <span className="size-2.5 rounded-full bg-[#22C55E] animate-pulse" />
               <AnimatedCounter />
             </div>
           </motion.div>
@@ -373,10 +380,11 @@ export default function Auth() {
           {/* CTA Button */}
           <motion.button
             onClick={() => setScreen("landing")}
-            className="w-full h-[56px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2"
+            className="w-full h-[58px] rounded-full font-semibold text-[18px] text-white flex items-center justify-center gap-2.5"
             style={{
-              background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
-              boxShadow: '0 4px 24px rgba(123, 63, 228, 0.5), inset 0 1px 0 rgba(255,255,255,0.15)'
+              background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 50%, #7B3FE4 100%)',
+              boxShadow: '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+              border: '1px solid rgba(156, 107, 255, 0.3)'
             }}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -385,12 +393,12 @@ export default function Auth() {
             whileTap={{ scale: 0.98 }}
           >
             Start Mining Now
-            <ArrowRight className="size-5" />
+            <ArrowRight className="size-5" strokeWidth={2.5} />
           </motion.button>
 
           {/* Helper text */}
           <motion.p
-            className="text-center text-[13px] text-[#6B6B7B]"
+            className="text-center text-[14px] text-[#6B6B7B] mt-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
@@ -400,19 +408,25 @@ export default function Auth() {
 
           {/* Microsoft Badge */}
           <motion.div 
-            className="flex items-center justify-center pt-1"
+            className="flex items-center justify-center mt-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#141418]/80 backdrop-blur-sm border border-[#252530]">
+            <div 
+              className="flex items-center gap-3 px-5 py-2.5 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, rgba(25, 25, 32, 0.9) 0%, rgba(18, 18, 24, 0.95) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.06)'
+              }}
+            >
               <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#f25022" d="M1 1h10v10H1z"/>
                 <path fill="#00a4ef" d="M1 12h10v10H1z"/>
                 <path fill="#7fba00" d="M12 1h10v10H12z"/>
                 <path fill="#ffb900" d="M12 12h10v10H12z"/>
               </svg>
-              <span className="text-sm text-[#9B9BAE]">Microsoft for Startups</span>
+              <span className="text-[14px] text-[#A0A0B0]">Microsoft for Startups</span>
             </div>
           </motion.div>
         </div>
