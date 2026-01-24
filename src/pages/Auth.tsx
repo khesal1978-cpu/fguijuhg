@@ -165,31 +165,44 @@ export default function Auth() {
         toast.success("Welcome back!");
         navigate("/");
       } else if (screen === "register") {
+        console.log('Starting registration with referral code:', referralCode);
         const userCredential = await firebaseSignUp(email, password);
+        console.log('Firebase user created:', userCredential.user.uid);
+        
+        // Create profile IMMEDIATELY with referral code before navigation
         await createProfile(
           userCredential.user.uid,
           displayName || 'Miner',
-          referralCode,
+          referralCode || undefined,
           { recoveryEmail: email }
         );
+        console.log('Profile created with referral code:', referralCode);
+        
         toast.success("Account created!");
         navigate("/");
       } else if (screen === "unique-id-setup") {
         const signupEmail = `${generatedId.toLowerCase()}@pingcaset.id`;
+        console.log('Starting unique ID registration with referral code:', referralCode);
         const userCredential = await firebaseSignUp(signupEmail, password);
+        console.log('Firebase user created:', userCredential.user.uid);
+        
+        // Create profile IMMEDIATELY with referral code before navigation
         await createProfile(
           userCredential.user.uid,
           displayName || generatedId,
-          referralCode,
+          referralCode || undefined,
           { 
             uniqueId: generatedId,
             recoveryEmail: linkRecoveryEmail || undefined
           }
         );
+        console.log('Profile created with referral code:', referralCode);
+        
         toast.success("Account created!");
         navigate("/");
       }
     } catch (err: any) {
+      console.error('Registration error:', err);
       const errorMessage = err?.message || "An error occurred";
       if (errorMessage.includes("email-already-in-use")) {
         toast.error("This account already exists");
