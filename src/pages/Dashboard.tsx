@@ -155,8 +155,8 @@ export default function Dashboard() {
         <StatCard
           icon={<Gauge className="size-4" />}
           label="Rate"
-          value={Number(profile?.mining_rate || 10).toFixed(1)}
-          unit="/hr"
+          value={`${Number(profile?.mining_rate || 10).toFixed(0)}`}
+          unit="/session"
           highlight
         />
         <StatCard
@@ -166,8 +166,8 @@ export default function Dashboard() {
         />
         <StatCard
           icon={<Timer className="size-4" />}
-          label="Level"
-          value={profile?.level || 1}
+          label="Sessions"
+          value="4/day"
         />
       </motion.div>
 
