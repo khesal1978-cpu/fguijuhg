@@ -58,11 +58,12 @@ export default function TermsConditions() {
           </div>
           <div className="text-sm text-muted-foreground space-y-2">
             <p>1. Share your unique referral code with friends to earn rewards.</p>
-            <p>2. When someone signs up using your code: you earn 25 coins and +2% mining boost.</p>
-            <p>3. The invited friend receives 50 coins as a welcome bonus.</p>
-            <p>4. Referral rewards are credited immediately upon successful signup.</p>
-            <p>5. Self-referrals or fake accounts will result in immediate disqualification.</p>
-            <p>6. Maximum of 100 referrals per account. Contact support for exceptions.</p>
+            <p>2. When someone signs up using your code: you earn 50 coins (direct referral).</p>
+            <p>3. When your referral invites someone: you earn 25 coins (indirect referral).</p>
+            <p>4. The invited friend receives 100 coins as a welcome bonus.</p>
+            <p>5. Referral rewards are credited immediately upon successful signup.</p>
+            <p>6. Self-referrals or fake accounts will result in immediate disqualification.</p>
+            <p>7. Maximum of 100 direct referrals per account. Contact support for exceptions.</p>
           </div>
         </section>
 

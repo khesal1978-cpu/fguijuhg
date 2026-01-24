@@ -65,7 +65,7 @@ const sections = [
     id: "referral",
     title: "Referral Rewards",
     icon: Users,
-    content: `Inviter receives 25 CASET reward. Invited user receives 50 CASET reward. Rewards issued only after valid mining activity. This prevents fake or inactive referrals.`
+    content: `2-Tier Referral System: Direct referral (Level 1) earns you 50 CASET. Indirect referral (Level 2) earns you 25 CASET when your referrals invite friends. The invited friend receives 100 CASET welcome bonus. Rewards are issued immediately upon signup. This prevents fake or inactive referrals.`
   },
   {
     id: "tokenomics",

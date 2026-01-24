@@ -205,6 +205,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          level: number
           referred_id: string
           referrer_id: string
         }
@@ -213,6 +214,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          level?: number
           referred_id: string
           referrer_id: string
         }
@@ -221,6 +223,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          level?: number
           referred_id?: string
           referrer_id?: string
         }

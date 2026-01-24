@@ -224,12 +224,12 @@ export const createProfile = async (
       const referrerId = referrerSnap.docs[0].id;
       const referrerProfile = referrerSnap.docs[0].data() as Profile;
       newProfile.referred_by = referrerId;
-      newProfile.balance = 50; // Welcome bonus for referred user
+      newProfile.balance = 100; // Welcome bonus for referred user
       
-      // Update referrer balance (direct referral bonus: 25)
+      // Update referrer balance (direct referral bonus: 50)
       const referrerRef = doc(db, 'profiles', referrerId);
       await updateDoc(referrerRef, {
-        balance: increment(25),
+        balance: increment(50),
         updated_at: now,
       });
       
@@ -237,7 +237,7 @@ export const createProfile = async (
       await addDoc(collection(db, 'referrals'), {
         referrer_id: referrerId,
         referred_id: userId,
-        bonus_earned: 25,
+        bonus_earned: 50,
         is_active: false,
         level: 1, // Direct referral
         created_at: now,
@@ -247,7 +247,7 @@ export const createProfile = async (
       await addDoc(collection(db, 'transactions'), {
         user_id: referrerId,
         type: 'referral',
-        amount: 25,
+        amount: 50,
         description: 'Direct referral bonus',
         metadata: { level: 1 },
         created_at: now,
@@ -256,7 +256,7 @@ export const createProfile = async (
       // Check for INDIRECT referral (if the referrer was referred by someone else)
       if (referrerProfile.referred_by) {
         const indirectReferrerId = referrerProfile.referred_by;
-        const indirectBonus = 10; // Indirect referral bonus
+        const indirectBonus = 25; // Indirect referral bonus
         
         // Update indirect referrer balance
         const indirectReferrerRef = doc(db, 'profiles', indirectReferrerId);
@@ -290,7 +290,7 @@ export const createProfile = async (
       await addDoc(collection(db, 'transactions'), {
         user_id: userId,
         type: 'referral',
-        amount: 50,
+        amount: 100,
         description: 'Welcome bonus from referral',
         metadata: null,
         created_at: now,
