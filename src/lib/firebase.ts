@@ -233,14 +233,21 @@ export const createProfile = async (
   await setDoc(profileRef, newProfile);
 
   // Handle referral AFTER profile is created
-  if (referralCode) {
+  if (referralCode && referralCode.trim()) {
     try {
-      const referrerQuery = query(collection(db, 'profiles'), where('referral_code', '==', referralCode.toUpperCase()));
+      const normalizedCode = referralCode.trim().toUpperCase();
+      console.log('Looking for referral code:', normalizedCode);
+      
+      const referrerQuery = query(collection(db, 'profiles'), where('referral_code', '==', normalizedCode));
       const referrerSnap = await getDocs(referrerQuery);
+      
+      console.log('Referrer query result - found:', !referrerSnap.empty, 'count:', referrerSnap.size);
       
       if (!referrerSnap.empty) {
         const referrerId = referrerSnap.docs[0].id;
         const referrerProfile = referrerSnap.docs[0].data() as Profile;
+        
+        console.log('Found referrer:', referrerId, 'with code:', referrerProfile.referral_code);
         
         // Update the new user's profile with referral info and welcome bonus
         await updateDoc(profileRef, {
@@ -259,14 +266,15 @@ export const createProfile = async (
         });
         
         // Create DIRECT referral record (level 1)
-        await addDoc(collection(db, 'referrals'), {
+        const referralDoc = await addDoc(collection(db, 'referrals'), {
           referrer_id: referrerId,
           referred_id: userId,
           bonus_earned: 50,
-          is_active: false,
+          is_active: true, // Mark as active immediately
           level: 1, // Direct referral
           created_at: now,
         });
+        console.log('Created direct referral record:', referralDoc.id);
         
         // Create transaction for direct referrer
         await addDoc(collection(db, 'transactions'), {
@@ -291,14 +299,15 @@ export const createProfile = async (
           });
           
           // Create INDIRECT referral record (level 2)
-          await addDoc(collection(db, 'referrals'), {
+          const indirectRefDoc = await addDoc(collection(db, 'referrals'), {
             referrer_id: indirectReferrerId,
             referred_id: userId,
             bonus_earned: indirectBonus,
-            is_active: false,
+            is_active: true, // Mark as active immediately
             level: 2, // Indirect referral
             created_at: now,
           });
+          console.log('Created indirect referral record:', indirectRefDoc.id);
           
           // Create transaction for indirect referrer
           await addDoc(collection(db, 'transactions'), {
@@ -320,6 +329,10 @@ export const createProfile = async (
           metadata: null,
           created_at: now,
         });
+        
+        console.log('Referral processing completed successfully');
+      } else {
+        console.log('No referrer found with code:', normalizedCode);
       }
     } catch (referralError) {
       // Log referral error but don't fail the signup
