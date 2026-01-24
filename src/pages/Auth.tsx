@@ -225,58 +225,56 @@ export default function Auth() {
   if (screen === "landing") {
     return (
       <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
-        {/* Background */}
-        <div 
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(180deg, #0A0A0F 0%, #0D0D14 50%, #0A0A0F 100%)' }}
-        />
+        {/* Background - pure dark */}
+        <div className="absolute inset-0 bg-[#050507]" />
         
-        {/* Subtle top glow */}
+        {/* Subtle ambient glow at top */}
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none"
+          className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[500px] h-[500px] pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at center top, rgba(123, 63, 228, 0.08) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(123, 63, 228, 0.12) 0%, transparent 60%)',
+            filter: 'blur(60px)',
           }}
         />
 
         {/* Main Content */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-10">
           {/* App Icon with 3D effect and glow */}
           <motion.div
-            className="relative mb-10"
+            className="relative mb-12"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+            transition={{ type: "spring", stiffness: 180, delay: 0.1 }}
           >
-            {/* Large radial glow behind icon */}
+            {/* Soft glow behind icon */}
             <div 
-              className="absolute -inset-16 pointer-events-none"
+              className="absolute -inset-12 pointer-events-none"
               style={{
-                background: 'radial-gradient(circle, rgba(123, 63, 228, 0.35) 0%, rgba(123, 63, 228, 0.1) 40%, transparent 70%)',
-                filter: 'blur(30px)',
+                background: 'radial-gradient(circle, rgba(123, 63, 228, 0.4) 0%, rgba(123, 63, 228, 0.15) 35%, transparent 65%)',
+                filter: 'blur(25px)',
               }}
             />
-            {/* Bottom reflection glow */}
+            {/* Bottom reflection */}
             <div 
-              className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 pointer-events-none"
+              className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-28 h-6 pointer-events-none"
               style={{
-                background: 'radial-gradient(ellipse, rgba(123, 63, 228, 0.4) 0%, transparent 70%)',
-                filter: 'blur(15px)',
+                background: 'radial-gradient(ellipse, rgba(123, 63, 228, 0.5) 0%, transparent 70%)',
+                filter: 'blur(12px)',
               }}
             />
             <img 
               src={pingcasetLogo} 
               alt="PingCaset" 
-              className="relative size-32 sm:size-36 rounded-[28px]"
+              className="relative size-[140px] sm:size-[150px] rounded-[32px]"
               style={{
-                boxShadow: '0 20px 60px rgba(123, 63, 228, 0.3), 0 10px 30px rgba(0, 0, 0, 0.5)'
+                boxShadow: '0 25px 50px rgba(123, 63, 228, 0.35), 0 15px 35px rgba(0, 0, 0, 0.4)'
               }}
             />
           </motion.div>
 
           {/* Headline */}
           <motion.h1 
-            className="text-[28px] sm:text-[32px] md:text-[36px] font-display font-bold text-white text-center leading-[1.15] mb-3"
+            className="text-[30px] sm:text-[34px] font-display font-bold text-white text-center leading-[1.2] mb-4"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -288,7 +286,7 @@ export default function Auth() {
 
           {/* Subtext */}
           <motion.p
-            className="text-[#8E8E9A] text-[15px] sm:text-base text-center leading-relaxed"
+            className="text-[#7A7A8A] text-[16px] text-center leading-[1.6]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -301,28 +299,32 @@ export default function Auth() {
 
         {/* Buttons Section */}
         <motion.div 
-          className="relative z-10 px-6 pb-10 sm:pb-12"
+          className="relative z-10 px-6 pb-8 sm:pb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
           {/* Helper text */}
-          <p className="text-center text-[14px] text-[#6B6B7B] mb-4">
+          <p className="text-center text-[15px] text-[#5A5A6A] mb-5">
             Already have an account?
           </p>
 
-          {/* Primary Button - Login */}
+          {/* Primary Button - Login (off-white/light gray) */}
           <motion.button
             onClick={() => setScreen("login")}
-            className="group relative w-full h-[56px] rounded-full bg-white text-[#0A0A0F] font-semibold text-[17px] mb-3 overflow-hidden"
+            className="group relative w-full h-[58px] rounded-full font-semibold text-[17px] mb-3 overflow-hidden"
+            style={{
+              background: 'linear-gradient(180deg, #E8E8EC 0%, #D8D8DC 100%)',
+              color: '#0A0A0F',
+            }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             {/* Shine effect */}
             <span 
-              className="absolute inset-0 overflow-hidden rounded-full"
+              className="absolute inset-0 overflow-hidden rounded-full pointer-events-none"
               style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(123, 63, 228, 0.2) 50%, transparent 100%)',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
                 animation: 'shine 3s ease-in-out infinite',
               }}
             />
@@ -332,23 +334,23 @@ export default function Auth() {
           {/* Secondary Button - Sign Up */}
           <motion.button
             onClick={() => setScreen("register")}
-            className="w-full h-[56px] rounded-full bg-transparent font-semibold text-[17px] text-white"
+            className="w-full h-[58px] rounded-full font-semibold text-[17px] text-white"
             style={{
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.5) 0%, rgba(20, 20, 28, 0.5) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: 'rgba(25, 25, 30, 0.6)',
             }}
-            whileHover={{ scale: 1.02, borderColor: 'rgba(255, 255, 255, 0.25)' }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             Sign Up
           </motion.button>
 
           {/* Footer links */}
-          <div className="flex items-center justify-center gap-6 pt-8">
-            <Link to="/privacy-policy" className="text-[13px] text-[#6B6B7B] hover:text-[#9B9BAE] transition-colors">
+          <div className="flex items-center justify-center gap-8 pt-10">
+            <Link to="/privacy-policy" className="text-[14px] text-[#5A5A6A] hover:text-[#8A8A9A] transition-colors">
               Privacy policy
             </Link>
-            <Link to="/terms-conditions" className="text-[13px] text-[#6B6B7B] hover:text-[#9B9BAE] transition-colors">
+            <Link to="/terms-conditions" className="text-[14px] text-[#5A5A6A] hover:text-[#8A8A9A] transition-colors">
               Terms of service
             </Link>
           </div>
