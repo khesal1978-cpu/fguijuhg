@@ -3,14 +3,16 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2, 
-  AlertTriangle, Key, Copy, Check, Sparkles, Zap, Shield, ChevronLeft
+  AlertTriangle, Key, Copy, Check, Sparkles, Zap, Shield, ChevronLeft,
+  Search, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { firebaseSignUp, firebaseSignIn, createProfile } from "@/lib/firebase";
+import { firebaseSignUp, firebaseSignIn, createProfile, signInWithGoogle, findUniqueIdByEmail, getProfile, db } from "@/lib/firebase";
 import { toast } from "sonner";
+import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 
-type AuthScreen = "welcome" | "login" | "register";
+type AuthScreen = "welcome" | "login" | "register" | "recover";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -27,6 +29,9 @@ export default function Auth() {
   const [generatedId, setGeneratedId] = useState("");
   const [showIdWarning, setShowIdWarning] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [foundUniqueId, setFoundUniqueId] = useState<string | null>(null);
+  const [linkRecoveryEmail, setLinkRecoveryEmail] = useState("");
 
   const generateUniqueId = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -50,6 +55,73 @@ export default function Auth() {
     setTimeout(() => setIdCopied(false), 2000);
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      const user = result.user;
+      
+      // Check if profile exists
+      const existingProfile = await getProfile(user.uid);
+      
+      if (!existingProfile) {
+        // Create new profile for Google user
+        await createProfile(
+          user.uid,
+          user.displayName || 'Miner',
+          referralCode,
+          { recoveryEmail: user.email || undefined }
+        );
+        toast.success("Account created! Happy mining!");
+      } else {
+        toast.success("Welcome back!");
+      }
+      
+      navigate("/");
+    } catch (err: any) {
+      console.error("Google sign-in error:", err);
+      if (err?.code === 'auth/popup-closed-by-user') {
+        toast.error("Sign-in cancelled");
+      } else {
+        toast.error(err?.message || "Failed to sign in with Google");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecoverUniqueId = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setFoundUniqueId(null);
+
+    try {
+      // Search for profile with this recovery email
+      const q = query(
+        collection(db, 'profiles'),
+        where('recovery_email', '==', recoveryEmail.toLowerCase())
+      );
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const profile = snap.docs[0].data();
+        if (profile.unique_id) {
+          setFoundUniqueId(profile.unique_id);
+          toast.success("Found your Unique ID!");
+        } else {
+          toast.error("No Unique ID linked to this email");
+        }
+      } else {
+        toast.error("No account found with this email");
+      }
+    } catch (err: any) {
+      console.error("Recovery error:", err);
+      toast.error("Failed to search for account");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -64,14 +136,19 @@ export default function Auth() {
         navigate("/");
       } else {
         // Register with Firebase
-        const signupEmail = generatedId ? `${generatedId.toLowerCase()}@pingcaset.id` : email;
+        const isUniqueIdSignup = !!generatedId;
+        const signupEmail = isUniqueIdSignup ? `${generatedId.toLowerCase()}@pingcaset.id` : email;
         const userCredential = await firebaseSignUp(signupEmail, password);
         
-        // Create profile in Firestore
+        // Create profile in Firestore with optional recovery email
         await createProfile(
           userCredential.user.uid,
           displayName || generatedId || 'Miner',
-          referralCode
+          referralCode,
+          { 
+            uniqueId: isUniqueIdSignup ? generatedId : undefined,
+            recoveryEmail: isUniqueIdSignup ? linkRecoveryEmail || undefined : email
+          }
         );
         
         toast.success("Account created! Happy mining!");
@@ -218,6 +295,122 @@ export default function Auth() {
     );
   }
 
+  // Recovery Screen
+  if (screen === "recover") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+        </div>
+
+        <motion.div
+          className="relative w-full max-w-sm z-10"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <button
+            onClick={() => {
+              setScreen("login");
+              setFoundUniqueId(null);
+              setRecoveryEmail("");
+            }}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          >
+            <ChevronLeft className="size-4" />
+            Back to Login
+          </button>
+
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="size-10 rounded-xl bg-primary flex items-center justify-center">
+              <RefreshCw className="size-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-display font-bold text-xl text-foreground">Recover ID</h1>
+              <p className="text-[10px] text-primary font-medium tracking-widest">ACCOUNT RECOVERY</p>
+            </div>
+          </div>
+
+          <div className="card-dark p-6">
+            <h2 className="text-lg font-display font-bold text-foreground text-center mb-1">
+              Find Your Unique ID
+            </h2>
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              Enter the Gmail you linked during signup
+            </p>
+
+            {foundUniqueId ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-4"
+              >
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-2">Your Unique ID</p>
+                  <p className="text-2xl font-mono font-bold text-primary">{foundUniqueId}</p>
+                </div>
+                
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(foundUniqueId);
+                    toast.success("ID copied!");
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Copy className="size-4 mr-2" />
+                  Copy ID
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setScreen("login");
+                    setUseUniqueId(true);
+                    setUniqueId(foundUniqueId);
+                    setFoundUniqueId(null);
+                  }}
+                  className="w-full gradient-primary"
+                >
+                  <Key className="size-4 mr-2" />
+                  Login with this ID
+                </Button>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleRecoverUniqueId} className="space-y-4">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="Enter your recovery Gmail"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 gradient-primary font-bold rounded-xl"
+                >
+                  {loading ? (
+                    <Loader2 className="size-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Search className="size-4 mr-2" />
+                      Find My ID
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   // Login/Register Screen
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
@@ -265,6 +458,32 @@ export default function Auth() {
           <p className="text-sm text-muted-foreground text-center mb-6">
             {screen === "login" ? "Sign in to continue mining" : "Start your mining journey"}
           </p>
+
+          {/* Google Sign In Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full h-11 mb-4 border-border hover:bg-muted/50"
+          >
+            <svg className="size-5 mr-2" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </Button>
+
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-2 bg-card text-muted-foreground">or</span>
+            </div>
+          </div>
 
           {/* Login Method Toggle (Login only) */}
           {screen === "login" && (
@@ -366,6 +585,24 @@ export default function Auth() {
                           </div>
                         </div>
 
+                        {/* Optional Recovery Email */}
+                        <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                          <p className="text-xs font-medium text-foreground mb-2 flex items-center gap-1.5">
+                            <Mail className="size-3.5 text-primary" />
+                            Link Gmail for Recovery (Optional)
+                          </p>
+                          <Input
+                            type="email"
+                            placeholder="your@gmail.com"
+                            value={linkRecoveryEmail}
+                            onChange={(e) => setLinkRecoveryEmail(e.target.value)}
+                            className="h-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground text-sm"
+                          />
+                          <p className="text-[10px] text-muted-foreground mt-2">
+                            This lets you recover your ID if forgotten
+                          </p>
+                        </div>
+
                         {/* Warning */}
                         <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30">
                           <div className="flex gap-3">
@@ -375,8 +612,7 @@ export default function Auth() {
                               <ul className="text-xs text-muted-foreground space-y-1">
                                 <li className="text-foreground">• Save this ID somewhere safe</li>
                                 <li className="text-foreground">• This is your ONLY way to login</li>
-                                <li>• If you lose it, your account is <span className="text-destructive font-medium">PERMANENTLY LOST</span></li>
-                                <li className="text-foreground">• There is NO recovery option</li>
+                                <li>• Without recovery email, lost ID = <span className="text-destructive font-medium">PERMANENT LOSS</span></li>
                               </ul>
                             </div>
                           </div>
@@ -388,6 +624,7 @@ export default function Auth() {
                           onClick={() => {
                             setGeneratedId("");
                             setShowIdWarning(false);
+                            setLinkRecoveryEmail("");
                           }}
                           className="w-full text-muted-foreground"
                         >
@@ -470,6 +707,16 @@ export default function Auth() {
               )}
             </Button>
           </form>
+
+          {/* Forgot Unique ID link */}
+          {screen === "login" && useUniqueId && (
+            <button
+              onClick={() => setScreen("recover")}
+              className="w-full mt-3 text-xs text-primary hover:underline"
+            >
+              Forgot your Unique ID?
+            </button>
+          )}
 
           {/* Toggle Login/Register */}
           <p className="text-center text-sm text-muted-foreground mt-4">

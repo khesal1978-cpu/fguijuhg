@@ -5,6 +5,11 @@ import {
   signInWithEmailAndPassword, 
   signOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+  linkWithCredential,
+  EmailAuthProvider,
   User
 } from "firebase/auth";
 import { 
@@ -40,6 +45,8 @@ const app = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(app);
 export const db = getFirestore(app);
 
+const googleProvider = new GoogleAuthProvider();
+
 // Auth Functions
 export const firebaseSignUp = async (email: string, password: string) => {
   return createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -51,6 +58,40 @@ export const firebaseSignIn = async (email: string, password: string) => {
 
 export const firebaseSignOut = async () => {
   return signOut(firebaseAuth);
+};
+
+export const signInWithGoogle = async () => {
+  return signInWithPopup(firebaseAuth, googleProvider);
+};
+
+export const sendResetEmail = async (email: string) => {
+  return sendPasswordResetEmail(firebaseAuth, email);
+};
+
+// Link a Unique ID account with Gmail for recovery
+export const linkUniqueIdToGmail = async (gmail: string, password: string) => {
+  const user = firebaseAuth.currentUser;
+  if (!user) throw new Error('No user logged in');
+  
+  const credential = EmailAuthProvider.credential(gmail, password);
+  return linkWithCredential(user, credential);
+};
+
+// Find Unique ID by linked Gmail
+export const findUniqueIdByEmail = async (gmail: string): Promise<string | null> => {
+  const q = query(
+    collection(db, 'profiles'),
+    where('recovery_email', '==', gmail.toLowerCase())
+  );
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    const profile = snap.docs[0].data();
+    // Extract unique ID from the profile's associated email
+    const profileId = snap.docs[0].id;
+    // Look up the auth user to get their email (which contains the unique ID)
+    return profile.unique_id || null;
+  }
+  return null;
 };
 
 export { onAuthStateChanged };
@@ -72,6 +113,8 @@ export interface Profile {
   username: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
+  unique_id?: string | null;
+  recovery_email?: string | null;
 }
 
 export interface MiningSession {
@@ -142,7 +185,12 @@ const generateReferralCode = (): string => {
 };
 
 // Profile Functions
-export const createProfile = async (userId: string, displayName: string, referralCode?: string): Promise<Profile> => {
+export const createProfile = async (
+  userId: string, 
+  displayName: string, 
+  referralCode?: string,
+  options?: { uniqueId?: string; recoveryEmail?: string }
+): Promise<Profile> => {
   const profileRef = doc(db, 'profiles', userId);
   const now = Timestamp.now();
   const today = new Date().toISOString().split('T')[0];
@@ -162,7 +210,9 @@ export const createProfile = async (userId: string, displayName: string, referra
     username: null,
     created_at: now,
     updated_at: now,
-  };
+    unique_id: options?.uniqueId || null,
+    recovery_email: options?.recoveryEmail?.toLowerCase() || null,
+  } as Profile;
 
   // Handle referral
   if (referralCode) {
