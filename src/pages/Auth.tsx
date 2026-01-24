@@ -224,93 +224,144 @@ export default function Auth() {
   // ========================
   if (screen === "landing") {
     return (
-      <div 
-        className="min-h-screen flex flex-col dark"
-        style={{ background: 'linear-gradient(180deg, #0B0B0F 0%, #121218 100%)' }}
-      >
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          {/* App Icon with glow */}
+      <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
+        {/* Background */}
+        <div 
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(180deg, #0A0A0F 0%, #0D0D14 50%, #0A0A0F 100%)' }}
+        />
+        
+        {/* Subtle top glow */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at center top, rgba(123, 63, 228, 0.08) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Main Content */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6">
+          {/* App Icon with 3D effect and glow */}
           <motion.div
-            className="relative mb-8"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
+            className="relative mb-10"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
           >
-            {/* Radial glow behind icon */}
+            {/* Large radial glow behind icon */}
             <div 
-              className="absolute inset-[-50%] rounded-full"
+              className="absolute -inset-16 pointer-events-none"
               style={{
-                background: 'radial-gradient(circle, hsl(262, 83%, 58% / 0.3) 0%, transparent 70%)',
-                filter: 'blur(20px)',
+                background: 'radial-gradient(circle, rgba(123, 63, 228, 0.35) 0%, rgba(123, 63, 228, 0.1) 40%, transparent 70%)',
+                filter: 'blur(30px)',
+              }}
+            />
+            {/* Bottom reflection glow */}
+            <div 
+              className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse, rgba(123, 63, 228, 0.4) 0%, transparent 70%)',
+                filter: 'blur(15px)',
               }}
             />
             <img 
               src={pingcasetLogo} 
               alt="PingCaset" 
-              className="relative size-24 rounded-3xl"
+              className="relative size-32 sm:size-36 rounded-[28px]"
+              style={{
+                boxShadow: '0 20px 60px rgba(123, 63, 228, 0.3), 0 10px 30px rgba(0, 0, 0, 0.5)'
+              }}
             />
           </motion.div>
 
           {/* Headline */}
           <motion.h1 
-            className="text-2xl md:text-3xl font-display font-bold text-foreground text-center mb-2"
+            className="text-[28px] sm:text-[32px] md:text-[36px] font-display font-bold text-white text-center leading-[1.15] mb-3"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.2 }}
           >
-            Mine CASET. Build Early.
+            Mine CASET.
+            <br />
+            Build Early.
           </motion.h1>
 
           {/* Subtext */}
           <motion.p
-            className="text-muted-foreground/70 text-sm text-center mb-10"
+            className="text-[#8E8E9A] text-[15px] sm:text-base text-center leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
           >
-            A fair, time-based crypto mining network
+            A fair, time-based
+            <br />
+            crypto mining network
           </motion.p>
         </div>
 
         {/* Buttons Section */}
         <motion.div 
-          className="px-6 pb-8 space-y-3"
+          className="relative z-10 px-6 pb-10 sm:pb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
         >
           {/* Helper text */}
-          <p className="text-center text-xs text-muted-foreground/60 mb-2">
+          <p className="text-center text-[14px] text-[#6B6B7B] mb-4">
             Already have an account?
           </p>
 
           {/* Primary Button - Login */}
-          <button
+          <motion.button
             onClick={() => setScreen("login")}
-            className="w-full h-14 rounded-full bg-foreground text-background font-semibold text-base hover:opacity-90 transition-opacity"
+            className="group relative w-full h-[56px] rounded-full bg-white text-[#0A0A0F] font-semibold text-[17px] mb-3 overflow-hidden"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            Login
-          </button>
+            {/* Shine effect */}
+            <span 
+              className="absolute inset-0 overflow-hidden rounded-full"
+              style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(123, 63, 228, 0.2) 50%, transparent 100%)',
+                animation: 'shine 3s ease-in-out infinite',
+              }}
+            />
+            <span className="relative z-10">Login</span>
+          </motion.button>
 
           {/* Secondary Button - Sign Up */}
-          <button
+          <motion.button
             onClick={() => setScreen("register")}
-            className="w-full h-14 rounded-full bg-transparent border border-border text-foreground font-semibold text-base hover:bg-muted/30 transition-colors"
+            className="w-full h-[56px] rounded-full bg-transparent font-semibold text-[17px] text-white"
+            style={{
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.5) 0%, rgba(20, 20, 28, 0.5) 100%)',
+            }}
+            whileHover={{ scale: 1.02, borderColor: 'rgba(255, 255, 255, 0.25)' }}
+            whileTap={{ scale: 0.98 }}
           >
             Sign Up
-          </button>
+          </motion.button>
 
           {/* Footer links */}
-          <div className="flex items-center justify-center gap-4 pt-6">
-            <Link to="/privacy-policy" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-              Privacy Policy
+          <div className="flex items-center justify-center gap-6 pt-8">
+            <Link to="/privacy-policy" className="text-[13px] text-[#6B6B7B] hover:text-[#9B9BAE] transition-colors">
+              Privacy policy
             </Link>
-            <span className="text-muted-foreground/30">|</span>
-            <Link to="/terms-conditions" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-              Terms of Service
+            <Link to="/terms-conditions" className="text-[13px] text-[#6B6B7B] hover:text-[#9B9BAE] transition-colors">
+              Terms of service
             </Link>
           </div>
         </motion.div>
+
+        {/* CSS for shine animation */}
+        <style>{`
+          @keyframes shine {
+            0% { transform: translateX(-100%); }
+            20% { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
       </div>
     );
   }
