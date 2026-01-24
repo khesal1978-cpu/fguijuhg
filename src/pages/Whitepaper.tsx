@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Coins, Users, Zap, Shield, Wallet, TrendingUp, Target, AlertTriangle, Download, FileText } from "lucide-react";
+import { ArrowLeft, Coins, Users, Zap, Shield, Wallet, TrendingUp, Target, AlertTriangle, Download, FileText, Flame, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ const sections = [
       "Manual session activation",
       "Invite-based mining boosts using active users only",
       "Strong emission caps",
+      "Token burning mechanism for inactive users",
       "Modular security that scales with adoption"
     ]
   },
@@ -47,6 +48,29 @@ const sections = [
       value: "10 CASET per session",
       sub: "Maximum: 40 CASET per day (without boosts)"
     }
+  },
+  {
+    id: "burning",
+    title: "Token Burning Mechanism",
+    icon: Flame,
+    content: `To maintain network health and reward active participants, PingCaset implements an Interlink-style burning mechanism. Users who remain inactive for more than 48 hours will have 10% of their balance burned. This protects the ecosystem from inactive accounts and prevents token hoarding without participation.`,
+    burnTable: [
+      { condition: "Inactive > 48 hours", penalty: "10% balance burned" },
+      { condition: "Each mining session", penalty: "Resets inactivity timer" },
+      { condition: "Burn event", penalty: "Recovery streak resets to 0" }
+    ]
+  },
+  {
+    id: "recovery",
+    title: "Token Recovery System",
+    icon: RefreshCw,
+    content: `Users who have had tokens burned can recover them through consistent activity. For every 4 consecutive mining sessions completed, users recover 25% of their burned tokens. This ensures that committed users can regain their status through sustained effort.`,
+    recoveryTable: [
+      { sessions: "4 sessions", recovery: "Recover 25% of burned" },
+      { sessions: "8 sessions", recovery: "Recover 50% of burned" },
+      { sessions: "12 sessions", recovery: "Recover 75% of burned" },
+      { sessions: "16 sessions", recovery: "Full recovery possible" }
+    ]
   },
   {
     id: "multiplier",
@@ -71,7 +95,7 @@ const sections = [
     id: "tokenomics",
     title: "Token Economics",
     icon: Wallet,
-    content: `Total CASET Supply: 50,000,000,000 (50 Billion). The supply is capped and non-inflationary.`,
+    content: `Total CASET Supply: 50,000,000,000 (50 Billion). The supply is capped and deflationary due to the burning mechanism.`,
     allocation: [
       { category: "User Mining Rewards", percent: "40%", amount: "20B" },
       { category: "Referral Rewards", percent: "15%", amount: "7.5B" },
@@ -124,6 +148,24 @@ ${section.content}
 ${section.highlight.sub}
 
 `;
+    }
+    if ((section as any).burnTable) {
+      text += `Condition                | Penalty
+-------------------------|-------------------------
+`;
+      (section as any).burnTable.forEach((row: { condition: string; penalty: string }) => {
+        text += `${row.condition.padEnd(25)}| ${row.penalty}\n`;
+      });
+      text += "\n";
+    }
+    if ((section as any).recoveryTable) {
+      text += `Streak           | Recovery
+-----------------|-------------------------
+`;
+      (section as any).recoveryTable.forEach((row: { sessions: string; recovery: string }) => {
+        text += `${row.sessions.padEnd(17)}| ${row.recovery}\n`;
+      });
+      text += "\n";
     }
     if (section.table) {
       text += `Active Referrals | Multiplier
@@ -284,6 +326,36 @@ export default function Whitepaper() {
                 <p className="text-xs text-muted-foreground mb-1">{section.highlight.label}</p>
                 <p className="text-xl font-display font-bold text-primary">{section.highlight.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{section.highlight.sub}</p>
+              </div>
+            )}
+
+            {section.burnTable && (
+              <div className="rounded-xl border border-destructive/30 overflow-hidden">
+                <div className="grid grid-cols-2 text-xs font-medium text-muted-foreground bg-destructive/10 px-4 py-2">
+                  <span>Condition</span>
+                  <span className="text-right">Penalty</span>
+                </div>
+                {section.burnTable.map((row, j) => (
+                  <div key={j} className="grid grid-cols-2 text-sm px-4 py-2.5 border-t border-destructive/20">
+                    <span className="text-foreground">{row.condition}</span>
+                    <span className="text-right font-medium text-destructive">{row.penalty}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {section.recoveryTable && (
+              <div className="rounded-xl border border-primary/30 overflow-hidden">
+                <div className="grid grid-cols-2 text-xs font-medium text-muted-foreground bg-primary/10 px-4 py-2">
+                  <span>Streak</span>
+                  <span className="text-right">Recovery</span>
+                </div>
+                {section.recoveryTable.map((row, j) => (
+                  <div key={j} className="grid grid-cols-2 text-sm px-4 py-2.5 border-t border-primary/20">
+                    <span className="text-foreground">{row.sessions}</span>
+                    <span className="text-right font-medium text-primary">{row.recovery}</span>
+                  </div>
+                ))}
               </div>
             )}
 
