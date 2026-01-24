@@ -34,16 +34,25 @@ export default function Team() {
     }
   };
 
-  const shareReferralLink = () => {
+  const shareReferralLink = async () => {
     const link = `${window.location.origin}/auth?ref=${profile?.referral_code}`;
+    
     if (navigator.share) {
-      navigator.share({
-        title: "Join PingCaset",
-        text: "Start mining crypto with me!",
-        url: link,
-      });
+      try {
+        await navigator.share({
+          title: "Join PingCaset",
+          text: "Start mining crypto with me!",
+          url: link,
+        });
+      } catch (error) {
+        // User cancelled or permission denied - fallback to clipboard
+        if ((error as Error).name !== 'AbortError') {
+          await navigator.clipboard.writeText(link);
+          toast.success("Link copied!");
+        }
+      }
     } else {
-      navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(link);
       toast.success("Link copied!");
     }
   };
