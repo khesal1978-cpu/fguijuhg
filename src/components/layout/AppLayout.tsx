@@ -32,8 +32,19 @@ export function AppLayout() {
   return (
     <div className="flex h-screen w-full bg-background dark">
       <main className="flex-1 relative overflow-hidden flex flex-col h-full">
-        {/* Subtle ambient glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Ambient glow effects */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] pointer-events-none" 
+          style={{
+            background: 'radial-gradient(ellipse at center top, hsl(262 83% 58% / 0.08) 0%, transparent 60%)',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] pointer-events-none" 
+          style={{
+            background: 'radial-gradient(circle, hsl(262 83% 58% / 0.05) 0%, transparent 60%)',
+            filter: 'blur(80px)',
+          }}
+        />
         
         <motion.div 
           className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide"

@@ -25,7 +25,7 @@ export default function Games() {
           <p className="text-xs text-muted-foreground">Play & earn coins</p>
         </div>
         <motion.div 
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-full"
+          className="flex items-center gap-1.5 px-3 py-1.5 card-glass-subtle rounded-full"
           whileHover={{ scale: 1.02 }}
         >
           <Coins className="size-4 text-primary" />
@@ -47,7 +47,7 @@ export default function Games() {
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${
             activeGame === "spin"
               ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground"
+              : "card-glass-subtle text-muted-foreground hover:text-foreground"
           }`}
         >
           <Sparkles className="size-4" />
@@ -58,7 +58,7 @@ export default function Games() {
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${
             activeGame === "scratch"
               ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground"
+              : "card-glass-subtle text-muted-foreground hover:text-foreground"
           }`}
         >
           <TicketPercent className="size-4" />
@@ -72,7 +72,7 @@ export default function Games() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        className="bg-card border border-border rounded-2xl p-5"
+        className="card-glass p-5"
       >
         {activeGame === "spin" ? (
           <div className="space-y-4">
@@ -106,10 +106,10 @@ export default function Games() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-card border border-border rounded-2xl p-4"
+        className="card-glass p-4"
       >
         <div className="flex items-center gap-2 mb-4">
-          <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="size-8 rounded-lg bg-primary/15 backdrop-blur-sm flex items-center justify-center">
             <Gift className="size-4 text-primary" />
           </div>
           <h3 className="text-base font-display font-bold text-foreground">Daily Tasks</h3>

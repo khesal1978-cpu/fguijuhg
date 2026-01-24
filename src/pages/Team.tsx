@@ -71,7 +71,7 @@ export default function Team() {
         ].map((stat, i) => (
           <div 
             key={i} 
-            className={`card-dark p-3 text-center ${stat.highlight ? 'border-primary/20 bg-primary/5' : ''}`}
+            className={`card-glass-subtle p-3 text-center ${stat.highlight ? 'border-primary/20' : ''}`}
           >
             {stat.icon && <stat.icon className="size-4 mx-auto mb-1 text-muted-foreground" />}
             <p className="text-[10px] text-muted-foreground mb-0.5">{stat.label}</p>
@@ -84,7 +84,7 @@ export default function Team() {
 
       {/* Mining Rate Boost Card */}
       <motion.div
-        className="card-dark p-4 space-y-3"
+        className="card-glass p-4 space-y-3"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.12 }}
@@ -109,7 +109,7 @@ export default function Team() {
 
         {/* Multiplier Tiers Table */}
         <div className="space-y-1">
-          <div className="grid grid-cols-2 text-xs font-medium text-muted-foreground pb-1 border-b border-border">
+          <div className="grid grid-cols-2 text-xs font-medium text-muted-foreground pb-1 border-b border-white/[0.06]">
             <span>Active Referrals</span>
             <span className="text-right">Mining Multiplier</span>
           </div>
@@ -148,7 +148,7 @@ export default function Team() {
 
       {/* Referral Card */}
       <motion.div
-        className="card-dark p-5 space-y-4"
+        className="card-glass p-5 space-y-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
@@ -176,7 +176,7 @@ export default function Team() {
         <div className="flex gap-2">
           <button
             onClick={copyReferralCode}
-            className="flex-1 flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors"
+            className="flex-1 flex items-center justify-between p-3 rounded-xl card-glass-subtle hover:border-primary/30 transition-colors"
           >
             <div className="text-left">
               <p className="text-[10px] text-muted-foreground">Your Code</p>
@@ -208,7 +208,7 @@ export default function Team() {
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
         ) : referrals.length === 0 ? (
-          <div className="card-dark p-6 text-center border-2 border-dashed">
+          <div className="card-glass p-6 text-center border-2 border-dashed border-white/[0.08]">
             <Plus className="size-8 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No team members yet</p>
             <p className="text-xs text-muted-foreground mt-1">Share your code to grow your team</p>
@@ -218,7 +218,7 @@ export default function Team() {
             {referrals.map((referral, i) => (
               <motion.div
                 key={referral.id}
-                className="card-dark p-3 flex items-center gap-3"
+                className="card-glass-subtle p-3 flex items-center gap-3"
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
