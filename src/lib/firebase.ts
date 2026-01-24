@@ -260,19 +260,27 @@ export const subscribeToProfile = (userId: string, callback: (profile: Profile |
 
 // Mining Functions
 export const getActiveSession = async (userId: string): Promise<MiningSession | null> => {
-  const q = query(
-    collection(db, 'mining_sessions'),
-    where('user_id', '==', userId),
-    where('is_active', '==', true),
-    where('is_claimed', '==', false),
-    orderBy('created_at', 'desc'),
-    limit(1)
-  );
-  
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  
-  return { id: snap.docs[0].id, ...snap.docs[0].data() } as MiningSession;
+  try {
+    // Simplified query - filter client-side to avoid composite index
+    const q = query(
+      collection(db, 'mining_sessions'),
+      where('user_id', '==', userId)
+    );
+    
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    
+    // Filter and sort client-side
+    const sessions = snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as MiningSession))
+      .filter(s => s.is_active && !s.is_claimed)
+      .sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
+    
+    return sessions[0] || null;
+  } catch (error) {
+    console.error('Error fetching active session:', error);
+    return null;
+  }
 };
 
 export const subscribeToMiningSession = (userId: string, callback: (session: MiningSession | null) => void) => {
