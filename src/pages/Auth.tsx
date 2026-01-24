@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
+import { firebaseSignUp, firebaseSignIn } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type AuthScreen = "welcome" | "login" | "register";
@@ -15,7 +16,6 @@ type AuthScreen = "welcome" | "login" | "register";
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
   
   const [screen, setScreen] = useState<AuthScreen>("welcome");
   const [loading, setLoading] = useState(false);
@@ -57,26 +57,50 @@ export default function Auth() {
 
     try {
       if (screen === "login") {
+        // Login with Firebase
         const loginEmail = useUniqueId ? `${uniqueId.toLowerCase()}@pingcaset.id` : email;
-        const { error } = await signIn(loginEmail, password);
-        if (error) {
-          toast.error(error.message);
-        } else {
-          toast.success("Welcome back!");
-          navigate("/");
-        }
+        await firebaseSignIn(loginEmail, password);
+        
+        // Also sign in to Supabase for profile data
+        await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        
+        toast.success("Welcome back!");
+        navigate("/");
       } else {
+        // Register with Firebase
         const signupEmail = generatedId ? `${generatedId.toLowerCase()}@pingcaset.id` : email;
-        const { error } = await signUp(signupEmail, password, displayName || generatedId, referralCode);
-        if (error) {
-          toast.error(error.message);
-        } else {
-          toast.success("Account created! Happy mining!");
-          navigate("/");
-        }
+        const userCredential = await firebaseSignUp(signupEmail, password);
+        
+        // Also create Supabase account for profile management
+        await supabase.auth.signUp({
+          email: signupEmail,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              display_name: displayName || generatedId,
+              referral_code: referralCode,
+            },
+          },
+        });
+        
+        toast.success("Account created! Happy mining!");
+        navigate("/");
       }
-    } catch (err) {
-      toast.error("An error occurred");
+    } catch (err: any) {
+      console.error("Auth error:", err);
+      const errorMessage = err?.message || "An error occurred";
+      if (errorMessage.includes("email-already-in-use")) {
+        toast.error("This email is already registered");
+      } else if (errorMessage.includes("invalid-credential") || errorMessage.includes("wrong-password")) {
+        toast.error("Invalid email or password");
+      } else if (errorMessage.includes("user-not-found")) {
+        toast.error("No account found with this email");
+      } else if (errorMessage.includes("weak-password")) {
+        toast.error("Password should be at least 6 characters");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -359,10 +383,10 @@ export default function Auth() {
                             <div>
                               <p className="text-sm font-semibold text-destructive mb-1">Important Warning</p>
                               <ul className="text-xs text-muted-foreground space-y-1">
-                                <li>• Save this ID somewhere safe</li>
-                                <li>• This is your ONLY way to login</li>
+                                <li className="text-foreground">• Save this ID somewhere safe</li>
+                                <li className="text-foreground">• This is your ONLY way to login</li>
                                 <li>• If you lose it, your account is <span className="text-destructive font-medium">PERMANENTLY LOST</span></li>
-                                <li>• There is NO recovery option</li>
+                                <li className="text-foreground">• There is NO recovery option</li>
                               </ul>
                             </div>
                           </div>
