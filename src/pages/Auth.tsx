@@ -14,33 +14,110 @@ import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
-// Animated counter component
-const AnimatedCounter = ({ value }: { value: number }) => {
-  const [displayValue, setDisplayValue] = useState(0);
-  
-  useEffect(() => {
-    const duration = 2000;
-    const steps = 60;
-    const increment = value / steps;
-    let current = 0;
-    
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= value) {
-        setDisplayValue(value);
-        clearInterval(timer);
-      } else {
-        setDisplayValue(Math.floor(current));
-      }
-    }, duration / steps);
-    
-    return () => clearInterval(timer);
-  }, [value]);
-  
+// Active miner dot positions on world map (approximate continent positions)
+const minerPositions = [
+  // North America
+  { x: 18, y: 32, delay: 0 }, { x: 22, y: 38, delay: 0.3 }, { x: 15, y: 42, delay: 0.6 },
+  { x: 25, y: 35, delay: 1.2 }, { x: 20, y: 45, delay: 0.9 },
+  // South America
+  { x: 28, y: 65, delay: 0.4 }, { x: 32, y: 72, delay: 0.8 }, { x: 26, y: 58, delay: 1.5 },
+  // Europe
+  { x: 48, y: 32, delay: 0.2 }, { x: 52, y: 35, delay: 0.5 }, { x: 45, y: 38, delay: 1.0 },
+  { x: 50, y: 28, delay: 1.3 }, { x: 55, y: 32, delay: 0.7 },
+  // Africa
+  { x: 50, y: 55, delay: 0.6 }, { x: 55, y: 50, delay: 1.1 }, { x: 48, y: 62, delay: 0.3 },
+  // Asia
+  { x: 68, y: 35, delay: 0.1 }, { x: 75, y: 38, delay: 0.4 }, { x: 82, y: 42, delay: 0.8 },
+  { x: 72, y: 45, delay: 1.4 }, { x: 78, y: 32, delay: 0.2 }, { x: 85, y: 48, delay: 0.9 },
+  // Australia
+  { x: 85, y: 68, delay: 0.5 }, { x: 82, y: 72, delay: 1.0 },
+];
+
+// Animated Miner Dot
+const MinerDot = ({ x, y, delay }: { x: number; y: number; delay: number }) => (
+  <motion.div
+    className="absolute"
+    style={{ left: `${x}%`, top: `${y}%` }}
+    initial={{ opacity: 0, scale: 0 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay: delay + 0.5, duration: 0.3 }}
+  >
+    {/* Pulse ring */}
+    <motion.div
+      className="absolute -inset-2 rounded-full bg-primary/20"
+      animate={{ scale: [1, 2, 1], opacity: [0.4, 0, 0.4] }}
+      transition={{ duration: 2 + delay, repeat: Infinity, ease: "easeOut" }}
+    />
+    {/* Core dot */}
+    <div className="size-2 rounded-full bg-primary" />
+  </motion.div>
+);
+
+// World Map with Active Miners
+const ActiveMinersMap = () => {
   return (
-    <span className="tabular-nums">
-      {displayValue.toLocaleString()}
-    </span>
+    <div className="relative w-full max-w-sm mx-auto aspect-[2/1]">
+      {/* Simplified world map outline */}
+      <svg
+        viewBox="0 0 100 50"
+        className="w-full h-full"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* North America */}
+        <path
+          d="M10 20 Q15 15 25 18 Q30 22 28 30 Q25 38 20 42 Q15 45 12 40 Q8 35 10 28 Q9 24 10 20"
+          className="fill-muted/30 stroke-border"
+          strokeWidth="0.3"
+        />
+        {/* South America */}
+        <path
+          d="M25 48 Q30 50 32 55 Q35 65 30 75 Q25 78 22 72 Q20 65 22 55 Q23 50 25 48"
+          className="fill-muted/30 stroke-border"
+          strokeWidth="0.3"
+        />
+        {/* Europe */}
+        <path
+          d="M45 22 Q50 18 55 20 Q58 25 56 32 Q52 38 48 35 Q44 32 45 28 Q44 24 45 22"
+          className="fill-muted/30 stroke-border"
+          strokeWidth="0.3"
+        />
+        {/* Africa */}
+        <path
+          d="M45 40 Q52 38 58 42 Q62 50 58 60 Q52 68 48 65 Q42 58 44 48 Q43 42 45 40"
+          className="fill-muted/30 stroke-border"
+          strokeWidth="0.3"
+        />
+        {/* Asia */}
+        <path
+          d="M58 20 Q70 15 82 22 Q90 30 88 40 Q85 48 78 50 Q70 52 65 45 Q60 38 62 30 Q58 24 58 20"
+          className="fill-muted/30 stroke-border"
+          strokeWidth="0.3"
+        />
+        {/* Australia */}
+        <path
+          d="M78 58 Q85 56 90 62 Q92 68 88 74 Q82 76 78 72 Q75 66 78 58"
+          className="fill-muted/30 stroke-border"
+          strokeWidth="0.3"
+        />
+      </svg>
+      
+      {/* Miner dots */}
+      {minerPositions.map((pos, i) => (
+        <MinerDot key={i} x={pos.x} y={pos.y} delay={pos.delay} />
+      ))}
+      
+      {/* Counter overlay */}
+      <motion.div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-2 bg-card/80 backdrop-blur-sm border border-border rounded-full px-4 py-1.5"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.5 }}
+      >
+        <span className="text-sm font-semibold text-foreground">24,897</span>
+        <span className="text-xs text-muted-foreground ml-1.5">mining now</span>
+      </motion.div>
+    </div>
   );
 };
 
@@ -388,16 +465,14 @@ export default function Auth() {
               transition={{ type: "spring", stiffness: 100, delay: 0.1 }}
             />
 
-            {/* Counter - Bold and clean */}
+            {/* World Map with Active Miners */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
+              className="mb-6"
             >
-              <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-2 tracking-tight">
-                <AnimatedCounter value={24897} />
-              </h1>
-              <p className="text-muted-foreground text-sm mb-8">Active Miners</p>
+              <ActiveMinersMap />
             </motion.div>
 
             {/* Headline - Clean typography */}
