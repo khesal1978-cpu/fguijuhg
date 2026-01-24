@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Loader2, CheckCircle2, AlertCircle, Eye, Move, Sparkles, RefreshCw, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Camera, Loader2, CheckCircle2, AlertCircle, Eye, Move, Sparkles, RefreshCw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -59,9 +59,9 @@ export function FaceVerificationCamera({
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: 'user', 
-            width: { ideal: 480 }, 
-            height: { ideal: 360 },
-            frameRate: { ideal: 15 } // Lower framerate for performance
+            width: { ideal: 320 }, 
+            height: { ideal: 240 },
+            frameRate: { ideal: 15 }
           },
         });
         
@@ -102,7 +102,7 @@ export function FaceVerificationCamera({
     };
   }, [onError]);
 
-  // Face detection loop with throttling
+  // Face detection loop - optimized
   const startDetection = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -111,14 +111,13 @@ export function FaceVerificationCamera({
     livenessStateRef.current = createLivenessState();
 
     let shouldStop = false;
-    const DETECTION_INTERVAL = 150; // Only detect every 150ms for performance
+    const DETECTION_INTERVAL = 200; // 200ms between detections for better performance
 
     const detect = async () => {
       if (!videoRef.current || shouldStop) return;
 
       const now = Date.now();
       
-      // Throttle detection
       if (now - lastDetectionRef.current < DETECTION_INTERVAL) {
         animationRef.current = requestAnimationFrame(detect);
         return;
@@ -131,41 +130,21 @@ export function FaceVerificationCamera({
         if (detection) {
           setFaceDetected(true);
 
-          // Draw face landmarks on canvas
-          const canvas = canvasRef.current!;
-          const ctx = canvas.getContext('2d')!;
-          const videoWidth = videoRef.current!.videoWidth;
-          const videoHeight = videoRef.current!.videoHeight;
-          
-          canvas.width = videoWidth;
-          canvas.height = videoHeight;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          // Draw subtle face outline
-          const { x, y, width, height } = detection.detection.box;
-          ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.roundRect(x, y, width, height, 8);
-          ctx.stroke();
+          if (stage === 'detecting') {
+            setStage('liveness');
+          }
 
           // Check liveness
           const livenessResult = checkLiveness(
             detection.landmarks,
             livenessStateRef.current
           );
+          
           setBlinkCount(livenessResult.blinkCount);
           setMovementDirection(livenessResult.movementDirection);
           setMovementComplete(livenessResult.movementDirection === 'complete');
-
-          if (stage === 'detecting') {
-            setStage('liveness');
-          }
-
           setMessage(livenessResult.message);
-          const blinkProgress = (livenessResult.blinkCount / 2) * 50;
-          const moveProgress = livenessResult.movementProgress * 0.5;
-          setProgress(Math.min(blinkProgress + moveProgress, 100));
+          setProgress(livenessResult.movementProgress);
 
           if (livenessResult.passed) {
             setStage('capturing');
@@ -184,11 +163,7 @@ export function FaceVerificationCamera({
           }
         } else {
           setFaceDetected(false);
-          setMessage('Move face into frame');
-
-          const canvas = canvasRef.current!;
-          const ctx = canvas.getContext('2d')!;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          setMessage('Position face in oval');
         }
       } catch (err) {
         console.error('Detection error:', err);
@@ -220,10 +195,36 @@ export function FaceVerificationCamera({
     setMessage('Position your face in the oval');
   };
 
+  const DirectionArrow = ({ direction, active }: { direction: MovementDirection; active: boolean }) => {
+    const Icon = direction === 'left' ? ArrowLeft : 
+                 direction === 'right' ? ArrowRight :
+                 direction === 'up' ? ArrowUp : ArrowDown;
+    
+    const positionClass = direction === 'left' ? 'left-2 top-1/2 -translate-y-1/2' :
+                          direction === 'right' ? 'right-2 top-1/2 -translate-y-1/2' :
+                          direction === 'up' ? 'top-8 left-1/2 -translate-x-1/2' :
+                          'bottom-20 left-1/2 -translate-x-1/2';
+
+    return (
+      <motion.div
+        className={`absolute ${positionClass} z-10`}
+        animate={active ? {
+          scale: [1, 1.3, 1],
+          opacity: [0.8, 1, 0.8],
+        } : { scale: 1, opacity: 0.2 }}
+        transition={{ repeat: active ? Infinity : 0, duration: 0.6 }}
+      >
+        <div className={`p-3 rounded-full ${active ? 'bg-primary shadow-lg shadow-primary/50' : 'bg-muted/30'}`}>
+          <Icon className={`size-6 ${active ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4">
       {/* Camera View */}
-      <div className="relative w-full max-w-sm aspect-[3/4] rounded-3xl overflow-hidden bg-gradient-to-b from-muted/50 to-muted shadow-2xl shadow-primary/10">
+      <div className="relative w-full max-w-xs aspect-[3/4] rounded-2xl overflow-hidden bg-muted shadow-xl">
         {/* Video */}
         <video
           ref={videoRef}
@@ -245,190 +246,107 @@ export function FaceVerificationCamera({
             <motion.div
               initial={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-20"
+              className="absolute inset-0 bg-background/95 flex flex-col items-center justify-center gap-4 z-20"
             >
               <div className="relative">
-                <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                <Sparkles className="absolute inset-0 m-auto size-6 text-primary" />
+                <div className="w-14 h-14 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                <Sparkles className="absolute inset-0 m-auto size-5 text-primary" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">{message}</p>
-                <Progress value={loadingProgress} className="w-32 h-1.5 mt-2" />
+                <p className="text-sm font-medium">{message}</p>
+                <Progress value={loadingProgress} className="w-28 h-1 mt-2" />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Face Guide Overlay with Movement Arrows */}
+        {/* Direction Arrows - only show during liveness check */}
+        {(stage === 'liveness' || stage === 'detecting') && !movementComplete && blinkCount >= 2 && (
+          <>
+            <DirectionArrow direction="left" active={movementDirection === 'left'} />
+            <DirectionArrow direction="right" active={movementDirection === 'right'} />
+            <DirectionArrow direction="up" active={movementDirection === 'up'} />
+            <DirectionArrow direction="down" active={movementDirection === 'down'} />
+          </>
+        )}
+
+        {/* Face Guide Overlay */}
         {stage !== 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            {/* Movement direction arrows */}
-            {(stage === 'liveness' || stage === 'detecting') && !movementComplete && (
-              <>
-                {/* Left arrow */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ 
-                    opacity: movementDirection === 'left' ? 1 : 0.2,
-                    x: movementDirection === 'left' ? [0, -10, 0] : 0,
-                    scale: movementDirection === 'left' ? 1.2 : 1
-                  }}
-                  transition={{ 
-                    x: { repeat: Infinity, duration: 0.8 },
-                    opacity: { duration: 0.3 }
-                  }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2"
-                >
-                  <div className={`p-2 rounded-full ${movementDirection === 'left' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
-                    <ChevronLeft className="size-8" />
-                  </div>
-                </motion.div>
-                
-                {/* Right arrow */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ 
-                    opacity: movementDirection === 'right' ? 1 : 0.2,
-                    x: movementDirection === 'right' ? [0, 10, 0] : 0,
-                    scale: movementDirection === 'right' ? 1.2 : 1
-                  }}
-                  transition={{ 
-                    x: { repeat: Infinity, duration: 0.8 },
-                    opacity: { duration: 0.3 }
-                  }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
-                >
-                  <div className={`p-2 rounded-full ${movementDirection === 'right' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
-                    <ChevronRight className="size-8" />
-                  </div>
-                </motion.div>
-                
-                {/* Up arrow */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ 
-                    opacity: movementDirection === 'up' ? 1 : 0.2,
-                    y: movementDirection === 'up' ? [0, -10, 0] : 0,
-                    scale: movementDirection === 'up' ? 1.2 : 1
-                  }}
-                  transition={{ 
-                    y: { repeat: Infinity, duration: 0.8 },
-                    opacity: { duration: 0.3 }
-                  }}
-                  className="absolute top-16 left-1/2 -translate-x-1/2"
-                >
-                  <div className={`p-2 rounded-full ${movementDirection === 'up' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
-                    <ChevronUp className="size-8" />
-                  </div>
-                </motion.div>
-                
-                {/* Down arrow */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ 
-                    opacity: movementDirection === 'down' ? 1 : 0.2,
-                    y: movementDirection === 'down' ? [0, 10, 0] : 0,
-                    scale: movementDirection === 'down' ? 1.2 : 1
-                  }}
-                  transition={{ 
-                    y: { repeat: Infinity, duration: 0.8 },
-                    opacity: { duration: 0.3 }
-                  }}
-                  className="absolute bottom-24 left-1/2 -translate-x-1/2"
-                >
-                  <div className={`p-2 rounded-full ${movementDirection === 'down' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
-                    <ChevronDown className="size-8" />
-                  </div>
-                </motion.div>
-              </>
-            )}
-
-            {/* Oval guide */}
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="relative"
             >
+              {/* Oval guide */}
               <div
-                className={`w-44 h-56 border-[3px] rounded-[50%] transition-all duration-500 ${
+                className={`w-36 h-48 border-4 rounded-[50%] transition-all duration-300 ${
                   faceDetected 
-                    ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.3)]' 
-                    : 'border-white/40'
+                    ? 'border-green-400 shadow-[0_0_20px_rgba(74,222,128,0.4)]' 
+                    : 'border-white/50'
                 }`}
               />
-              {/* Corner accents */}
-              <div className={`absolute -top-1 -left-1 w-6 h-6 border-t-[3px] border-l-[3px] rounded-tl-xl transition-colors duration-300 ${faceDetected ? 'border-green-500' : 'border-primary'}`} />
-              <div className={`absolute -top-1 -right-1 w-6 h-6 border-t-[3px] border-r-[3px] rounded-tr-xl transition-colors duration-300 ${faceDetected ? 'border-green-500' : 'border-primary'}`} />
-              <div className={`absolute -bottom-1 -left-1 w-6 h-6 border-b-[3px] border-l-[3px] rounded-bl-xl transition-colors duration-300 ${faceDetected ? 'border-green-500' : 'border-primary'}`} />
-              <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-b-[3px] border-r-[3px] rounded-br-xl transition-colors duration-300 ${faceDetected ? 'border-green-500' : 'border-primary'}`} />
+              {/* Corner markers */}
+              <div className={`absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 rounded-tl-lg transition-colors ${faceDetected ? 'border-green-400' : 'border-primary'}`} />
+              <div className={`absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 rounded-tr-lg transition-colors ${faceDetected ? 'border-green-400' : 'border-primary'}`} />
+              <div className={`absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 rounded-bl-lg transition-colors ${faceDetected ? 'border-green-400' : 'border-primary'}`} />
+              <div className={`absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 rounded-br-lg transition-colors ${faceDetected ? 'border-green-400' : 'border-primary'}`} />
             </motion.div>
           </div>
         )}
 
-        {/* Status Banner */}
+        {/* Status Message */}
         {stage !== 'loading' && (
           <motion.div 
-            initial={{ y: -20, opacity: 0 }}
+            initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="absolute top-3 left-3 right-3"
+            className="absolute top-2 left-2 right-2"
           >
-            <div className={`rounded-xl px-3 py-2 backdrop-blur-md flex items-center gap-2 ${
-              stage === 'complete' 
-                ? 'bg-green-500/20 border border-green-500/30' 
-                : stage === 'error'
-                ? 'bg-destructive/20 border border-destructive/30'
-                : 'bg-black/40'
+            <div className={`rounded-lg px-3 py-2 backdrop-blur-md flex items-center gap-2 text-white ${
+              stage === 'complete' ? 'bg-green-500/80' : 
+              stage === 'error' ? 'bg-destructive/80' : 'bg-black/50'
             }`}>
-              {stage === 'ready' && <Camera className="size-4 text-white shrink-0" />}
+              {stage === 'ready' && <Camera className="size-4 shrink-0" />}
               {(stage === 'detecting' || stage === 'liveness' || stage === 'capturing') && (
-                <Loader2 className="size-4 text-primary animate-spin shrink-0" />
+                <Loader2 className="size-4 animate-spin shrink-0" />
               )}
-              {stage === 'complete' && <CheckCircle2 className="size-4 text-green-500 shrink-0" />}
-              {stage === 'error' && <AlertCircle className="size-4 text-destructive shrink-0" />}
-              <span className="text-white text-xs font-medium truncate">{message}</span>
+              {stage === 'complete' && <CheckCircle2 className="size-4 shrink-0" />}
+              {stage === 'error' && <AlertCircle className="size-4 shrink-0" />}
+              <span className="text-xs font-medium truncate">{message}</span>
             </div>
           </motion.div>
         )}
 
-        {/* Progress & Liveness Indicators */}
+        {/* Progress & Status Badges */}
         <AnimatePresence>
           {(stage === 'liveness' || stage === 'detecting' || stage === 'capturing') && (
             <motion.div 
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              className="absolute bottom-3 left-3 right-3 space-y-2"
+              exit={{ y: 10, opacity: 0 }}
+              className="absolute bottom-2 left-2 right-2 space-y-2"
             >
               {/* Progress bar */}
-              <div className="h-1.5 bg-black/30 rounded-full overflow-hidden backdrop-blur-sm">
+              <div className="h-1.5 bg-black/30 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-primary to-green-500"
+                  className="h-full bg-gradient-to-r from-primary to-green-400"
                   initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.3 }}
+                  animate={{ width: `${Math.min((blinkCount / 2) * 50 + progress / 2, 100)}%` }}
                 />
               </div>
               
-              {/* Liveness indicators */}
+              {/* Status badges */}
               <div className="flex justify-center gap-2">
-                <div
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
-                    blinkCount >= 2 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-background/60 text-foreground backdrop-blur-sm'
-                  }`}
-                >
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                  blinkCount >= 2 ? 'bg-green-500 text-white' : 'bg-white/80 text-foreground'
+                }`}>
                   <Eye className="size-3" />
-                  <span>Blink {blinkCount}/2</span>
+                  <span>{blinkCount}/2</span>
                   {blinkCount >= 2 && <CheckCircle2 className="size-3" />}
                 </div>
-                <div
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
-                    movementComplete
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-background/60 text-foreground backdrop-blur-sm'
-                  }`}
-                >
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                  movementComplete ? 'bg-green-500 text-white' : 'bg-white/80 text-foreground'
+                }`}>
                   <Move className="size-3" />
                   <span>{movementComplete ? 'Done' : 'Move'}</span>
                   {movementComplete && <CheckCircle2 className="size-3" />}
@@ -444,60 +362,51 @@ export function FaceVerificationCamera({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-green-500/20 backdrop-blur-sm flex items-center justify-center z-10"
+              className="absolute inset-0 bg-green-500/30 backdrop-blur-sm flex items-center justify-center z-10"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', damping: 15 }}
-                className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/50"
+                transition={{ type: 'spring', bounce: 0.5 }}
               >
-                <CheckCircle2 className="size-10 text-white" />
+                <CheckCircle2 className="size-16 text-green-500 drop-shadow-lg" />
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 w-full max-w-sm">
+      {/* Controls */}
+      <div className="flex gap-3">
         {stage === 'ready' && (
-          <Button onClick={handleStart} className="flex-1 h-12 gradient-primary font-semibold text-base">
-            <Camera className="size-5 mr-2" />
-            Start {mode === 'register' ? 'Scan' : 'Verification'}
+          <Button onClick={handleStart} size="lg" className="gap-2">
+            <Camera className="size-4" />
+            Start Verification
           </Button>
         )}
-
-        {(stage === 'detecting' || stage === 'liveness' || stage === 'capturing') && (
-          <Button variant="outline" onClick={handleRetry} className="flex-1 h-12">
-            <RefreshCw className="size-4 mr-2" />
-            Reset
-          </Button>
-        )}
-
-        {stage === 'error' && (
-          <Button onClick={() => window.location.reload()} className="flex-1 h-12">
-            <RefreshCw className="size-4 mr-2" />
+        
+        {(stage === 'detecting' || stage === 'liveness' || stage === 'error') && (
+          <Button onClick={handleRetry} variant="outline" size="lg" className="gap-2">
+            <RefreshCw className="size-4" />
             Retry
           </Button>
         )}
       </div>
 
       {/* Instructions */}
-      <div className="text-center text-sm text-muted-foreground max-w-xs px-4">
-        {stage === 'ready' && (
-          <p>Center your face in the oval frame, ensure good lighting.</p>
-        )}
-        {(stage === 'detecting' || stage === 'liveness') && (
-          <p>Blink naturally 2 times and move your head slightly.</p>
-        )}
-        {stage === 'complete' && (
-          <p className="text-green-500 font-medium">✓ Face verified successfully</p>
-        )}
-        {stage === 'error' && (
-          <p className="text-destructive">Please allow camera access to continue.</p>
-        )}
-      </div>
+      {stage === 'liveness' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center text-sm text-muted-foreground max-w-xs"
+        >
+          {blinkCount < 2 ? (
+            <p>Blink your eyes naturally twice</p>
+          ) : (
+            <p>Follow the arrow and turn your head</p>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 }
