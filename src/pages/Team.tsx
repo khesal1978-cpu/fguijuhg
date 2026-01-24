@@ -231,7 +231,7 @@ export default function Team() {
                     {referral.referred_profile?.display_name || "Miner"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(referral.created_at).toLocaleDateString()}
+                    {((referral.created_at as any)?.toDate?.() ?? new Date(referral.created_at as any)).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-lg">

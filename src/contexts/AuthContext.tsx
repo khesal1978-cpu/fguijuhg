@@ -1,144 +1,86 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
-
-type Profile = Tables<"profiles">;
+import { 
+  firebaseAuth, 
+  onAuthStateChanged, 
+  firebaseSignOut,
+  User,
+  Profile,
+  getProfile,
+  createProfile,
+  subscribeToProfile,
+  trackDailyLogin
+} from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName?: string, referralCode?: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (!error && data) {
+    const data = await getProfile(userId);
+    if (data) {
       setProfile(data);
     }
     return data;
   };
 
-  const trackDailyLogin = async () => {
-    try {
-      await supabase.rpc("track_daily_login");
-    } catch (err) {
-      console.error("Failed to track daily login:", err);
-    }
-  };
-
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.uid);
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          // Use setTimeout to prevent potential deadlock
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            // Track daily login when user signs in or session is restored
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-              trackDailyLogin();
-            }
-          }, 0);
-        } else {
-          setProfile(null);
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      
+      if (firebaseUser) {
+        // Check if profile exists
+        let userProfile = await getProfile(firebaseUser.uid);
+        
+        if (!userProfile) {
+          // Profile doesn't exist yet - this shouldn't happen normally
+          // as we create it during signup, but handle edge case
+          userProfile = await createProfile(firebaseUser.uid, 'Miner');
         }
-        setLoading(false);
+        
+        setProfile(userProfile);
+        
+        // Track daily login
+        await trackDailyLogin(firebaseUser.uid);
+      } else {
+        setProfile(null);
       }
-    );
-
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        // Track daily login on initial page load
-        trackDailyLogin();
-      }
+      
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   // Subscribe to profile changes in real-time
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel("profile-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "profiles",
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => {
-          setProfile(payload.new as Profile);
-        }
-      )
-      .subscribe();
+    const unsubscribe = subscribeToProfile(user.uid, (updatedProfile) => {
+      setProfile(updatedProfile);
+    });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => unsubscribe();
   }, [user]);
 
-  const signUp = async (email: string, password: string, displayName?: string, referralCode?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          display_name: displayName || "Miner",
-          referral_code: referralCode,
-        },
-      },
-    });
-    return { error: error as Error | null };
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
-
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut();
     setProfile(null);
   };
 
@@ -146,12 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        session,
+        signOut,
         profile,
         loading,
-        signUp,
-        signIn,
-        signOut,
         refreshProfile,
       }}
     >

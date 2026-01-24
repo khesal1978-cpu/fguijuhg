@@ -210,7 +210,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-foreground">{tx.description || tx.type}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {((tx.created_at as any)?.toDate?.() ?? new Date(tx.created_at as any)).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </p>
                   </div>
                 </div>
