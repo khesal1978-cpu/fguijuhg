@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Referral, getReferrals, subscribeToReferrals } from "@/lib/firebase";
+import { Referral, getReferrals, subscribeToReferrals, claimPendingBonuses } from "@/lib/firebase";
 
 export function useReferrals() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
 
   const fetchReferrals = useCallback(async () => {
     if (!user) {
@@ -42,6 +43,26 @@ export function useReferrals() {
 
     return () => unsubscribe();
   }, [user]);
+
+  // Claim pending bonuses manually
+  const claimBonuses = useCallback(async () => {
+    if (!user) return { claimed: 0, total: 0 };
+    
+    setClaiming(true);
+    try {
+      const result = await claimPendingBonuses(user.uid);
+      if (result.total > 0) {
+        // Refresh profile to show updated balance
+        await refreshProfile();
+      }
+      return result;
+    } catch (error) {
+      console.error('Error claiming bonuses:', error);
+      return { claimed: 0, total: 0 };
+    } finally {
+      setClaiming(false);
+    }
+  }, [user, refreshProfile]);
 
   // Separate direct and indirect referrals
   const directReferrals = useMemo(() => 
@@ -89,7 +110,9 @@ export function useReferrals() {
     directReferrals,
     indirectReferrals,
     stats, 
-    loading, 
+    loading,
+    claiming,
+    claimBonuses,
     refresh: fetchReferrals 
   };
 }

@@ -22,7 +22,7 @@ function getMultiplierTier(activeReferrals: number) {
 
 export default function Team() {
   const { profile } = useAuth();
-  const { directReferrals, indirectReferrals, stats, loading } = useReferrals();
+  const { directReferrals, indirectReferrals, stats, loading, claiming, claimBonuses } = useReferrals();
   const [activeTab, setActiveTab] = useState<"direct" | "indirect">("direct");
   
   const currentTier = getMultiplierTier(stats.activeReferrals);
@@ -57,17 +57,43 @@ export default function Team() {
     }
   };
 
+  const handleClaimBonuses = async () => {
+    const result = await claimBonuses();
+    if (result.total > 0) {
+      toast.success(`Claimed ${result.total} CASET from ${result.claimed} referral(s)!`);
+    } else {
+      toast.info("No pending bonuses to claim");
+    }
+  };
+
   const displayedReferrals = activeTab === "direct" ? directReferrals : indirectReferrals;
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
-      {/* Header */}
+      {/* Header with Claim Button */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
       >
-        <h1 className="text-xl font-display font-bold text-foreground">Team</h1>
-        <p className="text-sm text-muted-foreground">Invite friends & earn together</p>
+        <div>
+          <h1 className="text-xl font-display font-bold text-foreground">Team</h1>
+          <p className="text-sm text-muted-foreground">Invite friends & earn together</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleClaimBonuses}
+          disabled={claiming}
+          className="flex items-center gap-1.5"
+        >
+          {claiming ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Gift className="size-4" />
+          )}
+          Claim
+        </Button>
       </motion.div>
 
       {/* Stats Overview */}
