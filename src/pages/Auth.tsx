@@ -640,37 +640,60 @@ export default function Auth() {
         
         {/* Top purple glow */}
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[250px] pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(123, 63, 228, 0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse at center, rgba(123, 63, 228, 0.12) 0%, transparent 70%)',
             filter: 'blur(40px)',
           }}
         />
 
         {/* Content */}
-        <div className="relative z-10 flex-1 flex flex-col px-6 pt-8 pb-6 overflow-y-auto">
+        <motion.div 
+          className="relative z-10 flex-1 flex flex-col px-6 pt-6 pb-6 overflow-y-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+        >
           {/* Back button */}
-          <button 
+          <motion.button 
             onClick={resetToLanding} 
-            className="size-10 rounded-full bg-[#1A1A22] border border-[#2A2A35] flex items-center justify-center mb-6"
+            className="size-10 rounded-full backdrop-blur-md flex items-center justify-center mb-5"
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <ChevronLeft className="size-5 text-white" />
-          </button>
+          </motion.button>
 
           {/* Headline */}
-          <h1 className="text-[28px] font-display font-bold text-white mb-2">Welcome back</h1>
-          <p className="text-[#7A7A8A] text-[15px] mb-8">Login to continue mining</p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.05 }}
+          >
+            <h1 className="text-[26px] font-display font-bold text-white mb-1">Welcome back</h1>
+            <p className="text-white/50 text-[14px] mb-6">Login to continue mining</p>
+          </motion.div>
 
           {/* Google Button */}
           <motion.button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full h-[58px] rounded-full font-semibold text-[16px] text-[#0A0A0F] flex items-center justify-center gap-3 mb-6"
+            className="w-full h-[54px] rounded-full font-semibold text-[15px] text-[#0A0A0F] flex items-center justify-center gap-3 mb-5"
             style={{
               background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%)',
             }}
-            whileHover={{ scale: 1.02 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.1 }}
+            whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
             <svg className="size-5" viewBox="0 0 24 24">
@@ -683,23 +706,40 @@ export default function Auth() {
           </motion.button>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-[#2A2A35]" />
-            <span className="text-[13px] text-[#5A5A6A]">or sign in manually</span>
-            <div className="flex-1 h-px bg-[#2A2A35]" />
-          </div>
+          <motion.div 
+            className="flex items-center gap-4 mb-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.15 }}
+          >
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[12px] text-white/40">or sign in manually</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </motion.div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <motion.form 
+            onSubmit={handleSubmit} 
+            className="space-y-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.2 }}
+          >
             {/* Method Toggle */}
-            <div className="flex gap-2 p-1 bg-[#1A1A22] rounded-2xl mb-2">
+            <div 
+              className="flex gap-1.5 p-1 rounded-xl mb-1 backdrop-blur-md"
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setLoginMethod("email")}
-                className={`flex-1 py-3 rounded-xl text-[14px] font-medium transition-all ${
+                className={`flex-1 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                   loginMethod === "email" 
-                    ? "bg-[#2A2A35] text-white" 
-                    : "text-[#6A6A7A]"
+                    ? "bg-white/10 text-white" 
+                    : "text-white/40"
                 }`}
               >
                 Email
@@ -707,10 +747,10 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setLoginMethod("unique-id")}
-                className={`flex-1 py-3 rounded-xl text-[14px] font-medium transition-all ${
+                className={`flex-1 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                   loginMethod === "unique-id" 
-                    ? "bg-[#2A2A35] text-white" 
-                    : "text-[#6A6A7A]"
+                    ? "bg-white/10 text-white" 
+                    : "text-white/40"
                 }`}
               >
                 Unique ID
@@ -719,8 +759,11 @@ export default function Auth() {
 
             {loginMethod === "email" ? (
               <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                  <Mail className="size-5 text-[#6A6A7A]" />
+                <div 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+                >
+                  <Mail className="size-4 text-white/50" />
                 </div>
                 <Input
                   type="email"
@@ -728,13 +771,16 @@ export default function Auth() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                  className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
                 />
               </div>
             ) : (
               <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                  <Key className="size-5 text-[#6A6A7A]" />
+                <div 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+                >
+                  <Key className="size-4 text-white/50" />
                 </div>
                 <Input
                   type="text"
@@ -742,14 +788,17 @@ export default function Auth() {
                   value={uniqueId}
                   onChange={(e) => setUniqueId(e.target.value.toUpperCase())}
                   required
-                  className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px] font-mono"
+                  className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px] font-mono"
                 />
               </div>
             )}
 
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                <Lock className="size-5 text-[#6A6A7A]" />
+              <div 
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+              >
+                <Lock className="size-4 text-white/50" />
               </div>
               <Input
                 type="password"
@@ -757,7 +806,7 @@ export default function Auth() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
               />
             </div>
 
@@ -765,10 +814,10 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setScreen("recover")}
-                className="flex items-center gap-2 text-[14px] text-primary"
+                className="flex items-center gap-2 text-[13px] text-primary"
               >
-                <Key className="size-4" />
-                Forgot your Unique ID? <span className="text-[#6A6A7A]">Recover ›</span>
+                <Key className="size-3.5" />
+                Forgot your Unique ID? <span className="text-white/40">Recover ›</span>
               </button>
             )}
 
@@ -776,37 +825,41 @@ export default function Auth() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full h-[58px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2 mt-2"
+              className="w-full h-[54px] rounded-full font-semibold text-[16px] text-white flex items-center justify-center gap-2 mt-3"
               style={{
                 background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
-                boxShadow: '0 0 30px rgba(123, 63, 228, 0.4)',
+                boxShadow: '0 0 25px rgba(123, 63, 228, 0.35)',
               }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
             >
               {loading ? <Loader2 className="size-5 animate-spin" /> : (
-                <>Login & Start Mining <ArrowRight className="size-5" /></>
+                <>Login & Start Mining <ArrowRight className="size-4" /></>
               )}
             </motion.button>
-          </form>
-        </div>
+          </motion.form>
+        </motion.div>
 
         {/* Bottom link */}
-        <div className="relative z-10 text-center pb-8 px-6">
-          <p className="text-[15px] text-[#6A6A7A]">
+        <motion.div 
+          className="relative z-10 text-center pb-6 px-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25, delay: 0.3 }}
+        >
+          <p className="text-[14px] text-white/40">
             Don't have an account?{" "}
             <button onClick={() => setScreen("register")} className="text-primary font-medium">
               Sign up
             </button>
           </p>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   // Register Screen
   if (screen === "register") {
-    
     return (
       <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
         {/* Background */}
@@ -814,37 +867,60 @@ export default function Auth() {
         
         {/* Top purple glow */}
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[250px] pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(123, 63, 228, 0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse at center, rgba(123, 63, 228, 0.12) 0%, transparent 70%)',
             filter: 'blur(40px)',
           }}
         />
 
         {/* Content */}
-        <div className="relative z-10 flex-1 flex flex-col px-6 pt-8 pb-6 overflow-y-auto">
+        <motion.div 
+          className="relative z-10 flex-1 flex flex-col px-6 pt-6 pb-6 overflow-y-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+        >
           {/* Back button */}
-          <button 
+          <motion.button 
             onClick={resetToLanding} 
-            className="size-10 rounded-full bg-[#1A1A22] border border-[#2A2A35] flex items-center justify-center mb-6"
+            className="size-10 rounded-full backdrop-blur-md flex items-center justify-center mb-5"
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <ChevronLeft className="size-5 text-white" />
-          </button>
+          </motion.button>
 
           {/* Headline */}
-          <h1 className="text-[28px] font-display font-bold text-white mb-2">Create your account</h1>
-          <p className="text-[#7A7A8A] text-[15px] mb-8">Start mining CASET in minutes</p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.05 }}
+          >
+            <h1 className="text-[26px] font-display font-bold text-white mb-1">Create your account</h1>
+            <p className="text-white/50 text-[14px] mb-6">Start mining CASET in minutes</p>
+          </motion.div>
 
           {/* Google Button */}
           <motion.button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full h-[58px] rounded-full font-semibold text-[16px] text-[#0A0A0F] flex items-center justify-center gap-3 mb-6"
+            className="w-full h-[54px] rounded-full font-semibold text-[15px] text-[#0A0A0F] flex items-center justify-center gap-3 mb-5"
             style={{
               background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%)',
             }}
-            whileHover={{ scale: 1.02 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.1 }}
+            whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
             <svg className="size-5" viewBox="0 0 24 24">
@@ -857,32 +933,49 @@ export default function Auth() {
           </motion.button>
 
           {/* Divider */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-[#2A2A35]" />
-            <span className="text-[13px] text-[#5A5A6A]">or sign up manually</span>
-            <div className="flex-1 h-px bg-[#2A2A35]" />
-          </div>
+          <motion.div 
+            className="flex items-center gap-4 mb-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.15 }}
+          >
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[12px] text-white/40">or sign up manually</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </motion.div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <motion.form 
+            onSubmit={handleSubmit} 
+            className="space-y-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.2 }}
+          >
             {/* Display Name */}
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                <User className="size-5 text-[#6A6A7A]" />
+              <div 
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+              >
+                <User className="size-4 text-white/50" />
               </div>
               <Input
                 type="text"
                 placeholder="Display name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
               />
             </div>
 
             {/* Email */}
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                <Mail className="size-5 text-[#6A6A7A]" />
+              <div 
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+              >
+                <Mail className="size-4 text-white/50" />
               </div>
               <Input
                 type="email"
@@ -890,14 +983,17 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
               />
             </div>
 
             {/* Password */}
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                <Lock className="size-5 text-[#6A6A7A]" />
+              <div 
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+              >
+                <Lock className="size-4 text-white/50" />
               </div>
               <Input
                 type="password"
@@ -906,7 +1002,7 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
               />
             </div>
 
@@ -915,22 +1011,25 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setShowReferralInput(true)}
-                className="flex items-center gap-2 text-[14px] text-primary"
+                className="flex items-center gap-2 text-[13px] text-primary"
               >
-                <Key className="size-4" />
-                Have a referral code? <span className="text-[#6A6A7A]">Apply ›</span>
+                <Gift className="size-3.5" />
+                Have a referral code? <span className="text-white/40">Apply ›</span>
               </button>
             ) : (
               <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-xl bg-[#2A2A35] flex items-center justify-center">
-                  <Gift className="size-5 text-[#6A6A7A]" />
+                <div 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(255, 255, 255, 0.06)' }}
+                >
+                  <Gift className="size-4 text-white/50" />
                 </div>
                 <Input
                   type="text"
                   placeholder="Referral code"
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value)}
-                  className="h-[58px] pl-16 rounded-2xl bg-[#12121A] border-[#2A2A35] text-white placeholder:text-[#5A5A6A] text-[16px]"
+                  className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
                 />
               </div>
             )}
@@ -939,47 +1038,60 @@ export default function Auth() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full h-[58px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2 mt-2"
+              className="w-full h-[54px] rounded-full font-semibold text-[16px] text-white flex items-center justify-center gap-2 mt-3"
               style={{
                 background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
-                boxShadow: '0 0 30px rgba(123, 63, 228, 0.4)',
+                boxShadow: '0 0 25px rgba(123, 63, 228, 0.35)',
               }}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
             >
               {loading ? <Loader2 className="size-5 animate-spin" /> : (
-                <>Create Account & Start Mining <ArrowRight className="size-5" /></>
+                <>Create Account <ArrowRight className="size-4" /></>
               )}
             </motion.button>
-          </form>
+          </motion.form>
 
           {/* Advanced Options Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-[#2A2A35]" />
-            <span className="text-[13px] text-[#5A5A6A]">Advanced options</span>
-            <div className="flex-1 h-px bg-[#2A2A35]" />
-          </div>
+          <motion.div 
+            className="flex items-center gap-4 my-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.3 }}
+          >
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[12px] text-white/40">Advanced</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </motion.div>
 
           {/* Unique ID Option */}
-          <button
+          <motion.button
             type="button"
             onClick={handleCreateUniqueId}
-            className="flex items-center justify-center gap-2 text-[15px] text-primary"
+            className="flex items-center justify-center gap-2 text-[14px] text-primary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, delay: 0.35 }}
           >
             <Key className="size-4" />
-            Create account with Unique ID (no email)
-          </button>
-        </div>
+            Create with Unique ID (no email)
+          </motion.button>
+        </motion.div>
 
         {/* Bottom link */}
-        <div className="relative z-10 text-center pb-8 px-6">
-          <p className="text-[15px] text-[#6A6A7A]">
+        <motion.div 
+          className="relative z-10 text-center pb-6 px-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25, delay: 0.4 }}
+        >
+          <p className="text-[14px] text-white/40">
             Have an account?{" "}
             <button onClick={() => setScreen("login")} className="text-primary font-medium">
               Sign in
             </button>
           </p>
-        </div>
+        </motion.div>
       </div>
     );
   }
