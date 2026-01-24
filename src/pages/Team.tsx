@@ -196,15 +196,15 @@ export default function Team() {
         <div className="flex flex-wrap gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/30 text-xs font-semibold text-gold">
             <Gift className="size-4" />
-            Direct: +25
+            Direct: +50
           </span>
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 border border-primary/30 text-xs font-semibold text-primary">
             <Link2 className="size-4" />
-            Indirect: +10
+            Indirect: +25
           </span>
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/15 border border-success/30 text-xs font-semibold text-success">
             <UserPlus className="size-4" />
-            Friend: +50
+            Friend: +100
           </span>
         </div>
 
