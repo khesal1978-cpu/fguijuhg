@@ -236,88 +236,81 @@ export default function Auth() {
 
         {/* Main Content */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-10">
-          {/* App Icon with 3D effect and glow */}
+          {/* App Icon with 3D effect and glow - NO DELAY */}
           <motion.div
-            className="relative mb-12"
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 180, delay: 0.1 }}
+            className="relative mb-10"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
           >
             {/* Soft glow behind icon */}
             <div 
-              className="absolute -inset-12 pointer-events-none"
+              className="absolute -inset-10 pointer-events-none"
               style={{
-                background: 'radial-gradient(circle, rgba(123, 63, 228, 0.4) 0%, rgba(123, 63, 228, 0.15) 35%, transparent 65%)',
-                filter: 'blur(25px)',
-              }}
-            />
-            {/* Bottom reflection */}
-            <div 
-              className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-28 h-6 pointer-events-none"
-              style={{
-                background: 'radial-gradient(ellipse, rgba(123, 63, 228, 0.5) 0%, transparent 70%)',
-                filter: 'blur(12px)',
+                background: 'radial-gradient(circle, rgba(123, 63, 228, 0.35) 0%, rgba(123, 63, 228, 0.1) 40%, transparent 70%)',
+                filter: 'blur(20px)',
               }}
             />
             <img 
               src={pingcasetLogo} 
               alt="PingCaset" 
-              className="relative size-[140px] sm:size-[150px] rounded-[32px]"
+              className="relative size-[120px] sm:size-[130px] rounded-[28px]"
               style={{
-                boxShadow: '0 25px 50px rgba(123, 63, 228, 0.35), 0 15px 35px rgba(0, 0, 0, 0.4)'
+                boxShadow: '0 20px 40px rgba(123, 63, 228, 0.3), 0 10px 25px rgba(0, 0, 0, 0.35)'
               }}
             />
           </motion.div>
 
           {/* Headline */}
           <motion.h1 
-            className="text-[30px] sm:text-[34px] font-display font-bold text-white text-center leading-[1.2] mb-4"
-            initial={{ opacity: 0, y: 10 }}
+            className="text-[28px] sm:text-[32px] font-display font-bold text-white text-center leading-[1.15] mb-3"
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
           >
             Mine CASET.
             <br />
             Build Early.
           </motion.h1>
 
-          {/* Subtext */}
+          {/* Subtext with glassmorphic pill */}
           <motion.p
-            className="text-[#7A7A8A] text-[16px] text-center leading-[1.6]"
+            className="text-white/60 text-[13px] sm:text-[14px] text-center tracking-wide px-4 py-2 rounded-full backdrop-blur-md"
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
           >
-            A fair, time-based
-            <br />
-            crypto mining network
+            A fair, time-based crypto mining network
           </motion.p>
         </div>
 
         {/* Buttons Section */}
         <motion.div 
           className="relative z-10 px-6 pb-8 sm:pb-10"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
         >
           {/* Helper text */}
-          <p className="text-center text-[15px] text-[#5A5A6A] mb-5">
+          <p className="text-center text-[14px] text-white/40 mb-4">
             Already have an account?
           </p>
 
-          {/* Primary Button - Login (off-white/light gray) */}
+          {/* Primary Button - Login */}
           <motion.button
             onClick={() => setScreen("login")}
-            className="group relative w-full h-[58px] rounded-full font-semibold text-[17px] mb-3 overflow-hidden"
+            className="group relative w-full h-[56px] rounded-full font-semibold text-[16px] mb-3 overflow-hidden"
             style={{
               background: 'linear-gradient(180deg, #E8E8EC 0%, #D8D8DC 100%)',
               color: '#0A0A0F',
             }}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
-            {/* Shine effect */}
             <span 
               className="absolute inset-0 overflow-hidden rounded-full pointer-events-none"
               style={{
@@ -328,26 +321,27 @@ export default function Auth() {
             <span className="relative z-10">Login</span>
           </motion.button>
 
-          {/* Secondary Button - Sign Up */}
+          {/* Secondary Button - Sign Up with glassmorphism */}
           <motion.button
             onClick={() => setScreen("register")}
-            className="w-full h-[58px] rounded-full font-semibold text-[17px] text-white"
+            className="w-full h-[56px] rounded-full font-semibold text-[16px] text-white backdrop-blur-md"
             style={{
               border: '1px solid rgba(255, 255, 255, 0.12)',
-              background: 'rgba(25, 25, 30, 0.6)',
+              background: 'rgba(255, 255, 255, 0.06)',
             }}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >
             Sign Up
           </motion.button>
 
           {/* Footer links */}
-          <div className="flex items-center justify-center gap-8 pt-10">
-            <Link to="/privacy-policy" className="text-[14px] text-[#5A5A6A] hover:text-[#8A8A9A] transition-colors">
+          <div className="flex items-center justify-center gap-6 pt-8">
+            <Link to="/privacy-policy" className="text-[13px] text-white/30 hover:text-white/50 transition-colors">
               Privacy policy
             </Link>
-            <Link to="/terms-conditions" className="text-[14px] text-[#5A5A6A] hover:text-[#8A8A9A] transition-colors">
+            <span className="text-white/20">•</span>
+            <Link to="/terms-conditions" className="text-[13px] text-white/30 hover:text-white/50 transition-colors">
               Terms of service
             </Link>
           </div>
