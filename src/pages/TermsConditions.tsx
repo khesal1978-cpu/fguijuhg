@@ -17,10 +17,10 @@ export default function TermsConditions() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-9 rounded-xl"
+          className="size-9 rounded-xl bg-white/[0.08] border border-white/[0.1]"
           onClick={() => navigate("/settings")}
         >
-          <ArrowLeft className="size-5" />
+          <ArrowLeft className="size-5 text-foreground" />
         </Button>
         <div>
           <h1 className="text-xl font-display font-bold text-foreground">Terms & Conditions</h1>

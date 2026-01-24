@@ -182,7 +182,7 @@ export default function Whitepaper() {
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/settings" className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
+          <Link to="/settings" className="p-2.5 -ml-2 bg-white/[0.08] border border-white/[0.1] rounded-xl hover:bg-white/[0.12] transition-colors">
               <ArrowLeft className="size-5 text-foreground" />
             </Link>
             <div>
@@ -194,7 +194,7 @@ export default function Whitepaper() {
             size="sm" 
             variant="outline"
             onClick={handleDownload}
-            className="gap-1.5"
+            className="gap-1.5 bg-white/[0.08] border-white/[0.15] text-foreground hover:bg-white/[0.12]"
           >
             <Download className="size-4" />
             <span className="hidden sm:inline">Download</span>
@@ -342,10 +342,10 @@ export default function Whitepaper() {
         >
           <Button 
             variant="outline"
-            className="w-full h-12 gap-2"
+            className="w-full h-12 gap-2 bg-white/[0.08] border-white/[0.15] text-foreground hover:bg-white/[0.12]"
             onClick={handleDownload}
           >
-            <Download className="size-4" />
+            <Download className="size-4 text-foreground" />
             Save Whitepaper for Offline Reading
           </Button>
         </motion.div>
