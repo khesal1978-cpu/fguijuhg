@@ -42,27 +42,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // Check if profile exists
-        let userProfile = await getProfile(firebaseUser.uid);
+      try {
+        setUser(firebaseUser);
         
-        if (!userProfile) {
-          // Profile doesn't exist yet - this shouldn't happen normally
-          // as we create it during signup, but handle edge case
-          userProfile = await createProfile(firebaseUser.uid, 'Miner');
+        if (firebaseUser) {
+          // Check if profile exists
+          let userProfile = await getProfile(firebaseUser.uid);
+          
+          if (!userProfile) {
+            // Profile doesn't exist yet - create it
+            userProfile = await createProfile(firebaseUser.uid, 'Miner');
+          }
+          
+          setProfile(userProfile);
+          
+          // Track daily login (don't await to prevent blocking)
+          trackDailyLogin(firebaseUser.uid).catch(console.error);
+        } else {
+          setProfile(null);
         }
-        
-        setProfile(userProfile);
-        
-        // Track daily login
-        await trackDailyLogin(firebaseUser.uid);
-      } else {
+      } catch (error) {
+        console.error('Auth state change error:', error);
         setProfile(null);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => unsubscribe();
