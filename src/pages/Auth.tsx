@@ -409,16 +409,12 @@ export default function Auth() {
             </motion.h1>
 
             <motion.p
-              className="mt-5 px-4 py-2.5 rounded-xl backdrop-blur-md text-white/85 text-[15px] sm:text-[16px] text-center leading-[1.5] font-medium inline-block"
-              style={{
-                background: 'rgba(15, 15, 22, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-              }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              className="text-white/60 text-[13px] sm:text-[14px] text-center mt-4 tracking-wide"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.25 }}
             >
-              No hardware. No fees. Just time-based mining.
+              No hardware • No fees • Time-based mining
             </motion.p>
           </div>
 
