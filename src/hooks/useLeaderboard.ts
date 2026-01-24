@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getLeaderboard } from "@/lib/firebase";
 
 interface LeaderboardEntry {
   rank: number;
   user_id: string;
   display_name: string;
   total_mined: number;
-  level: number;
   is_premium: boolean;
 }
 
@@ -15,13 +14,8 @@ export function useLeaderboard() {
   const [loading, setLoading] = useState(true);
 
   const fetchLeaderboard = useCallback(async () => {
-    const { data, error } = await supabase.rpc("get_leaderboard", {
-      time_period: "all",
-    });
-
-    if (!error && data) {
-      setLeaderboard(data as LeaderboardEntry[]);
-    }
+    const data = await getLeaderboard();
+    setLeaderboard(data);
     setLoading(false);
   }, []);
 

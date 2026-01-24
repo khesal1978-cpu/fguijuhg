@@ -7,8 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { firebaseSignUp, firebaseSignIn } from "@/lib/firebase";
-import { supabase } from "@/integrations/supabase/client";
+import { firebaseSignUp, firebaseSignIn, createProfile } from "@/lib/firebase";
 import { toast } from "sonner";
 
 type AuthScreen = "welcome" | "login" | "register";
@@ -61,9 +60,6 @@ export default function Auth() {
         const loginEmail = useUniqueId ? `${uniqueId.toLowerCase()}@pingcaset.id` : email;
         await firebaseSignIn(loginEmail, password);
         
-        // Also sign in to Supabase for profile data
-        await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        
         toast.success("Welcome back!");
         navigate("/");
       } else {
@@ -71,18 +67,12 @@ export default function Auth() {
         const signupEmail = generatedId ? `${generatedId.toLowerCase()}@pingcaset.id` : email;
         const userCredential = await firebaseSignUp(signupEmail, password);
         
-        // Also create Supabase account for profile management
-        await supabase.auth.signUp({
-          email: signupEmail,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              display_name: displayName || generatedId,
-              referral_code: referralCode,
-            },
-          },
-        });
+        // Create profile in Firestore
+        await createProfile(
+          userCredential.user.uid,
+          displayName || generatedId || 'Miner',
+          referralCode
+        );
         
         toast.success("Account created! Happy mining!");
         navigate("/");
@@ -463,75 +453,49 @@ export default function Auth() {
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                   className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                 />
-                {referralCode && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
-                    +50 Bonus!
-                  </span>
-                )}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full h-11 gradient-primary font-semibold mt-2"
-              disabled={loading || (screen === "register" && !email && !generatedId)}
+              disabled={loading}
+              className="w-full h-12 gradient-primary font-bold rounded-xl shadow-lg shadow-primary/25"
             >
               {loading ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-5 animate-spin" />
+              ) : screen === "login" ? (
+                "Sign In"
               ) : (
-                <>
-                  {screen === "login" ? "Sign In" : "Create Account"}
-                  <ArrowRight className="size-4 ml-2" />
-                </>
+                "Create Account"
               )}
             </Button>
           </form>
 
-          <div className="mt-5 text-center space-y-2">
-            <button
-              type="button"
-              onClick={() => {
-                setScreen(screen === "login" ? "register" : "login");
-                setGeneratedId("");
-                setShowIdWarning(false);
-                setUseUniqueId(false);
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {screen === "login" ? "Don't have an account? " : "Already have an account? "}
-              <span className="font-medium text-primary">{screen === "login" ? "Sign up" : "Sign in"}</span>
-            </button>
-
-            {screen === "login" && useUniqueId && (
-              <p className="text-xs text-muted-foreground/70 px-4">
-                ⚠️ If you lost your Unique ID, your account cannot be recovered.
-              </p>
+          {/* Toggle Login/Register */}
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            {screen === "login" ? (
+              <>
+                Don't have an account?{" "}
+                <button
+                  onClick={() => setScreen("register")}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  onClick={() => setScreen("login")}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Sign in
+                </button>
+              </>
             )}
-          </div>
+          </p>
         </div>
-
-        {/* Microsoft for Startups Badge */}
-        <motion.div
-          className="mt-8 flex items-center justify-center gap-2 text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <span className="text-xs">Supported by</span>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border">
-            <svg 
-              viewBox="0 0 23 23" 
-              className="size-4"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path fill="#f25022" d="M1 1h10v10H1z"/>
-              <path fill="#00a4ef" d="M1 12h10v10H1z"/>
-              <path fill="#7fba00" d="M12 1h10v10H12z"/>
-              <path fill="#ffb900" d="M12 12h10v10H12z"/>
-            </svg>
-            <span className="text-xs font-medium text-foreground">Microsoft for Startups</span>
-          </div>
-        </motion.div>
       </motion.div>
     </div>
   );

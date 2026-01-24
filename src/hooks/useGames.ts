@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { 
+  DailyTask,
+  getDailyTasks,
+  subscribeToTasks,
+  playSpinWheel,
+  playScratchCard,
+  claimTaskReward
+} from "@/lib/firebase";
 import { toast } from "sonner";
 
 interface SpinResult {
@@ -17,16 +24,6 @@ interface ScratchResult {
   error?: string;
 }
 
-interface DailyTask {
-  id: string;
-  task_type: string;
-  progress: number;
-  target: number;
-  reward: number;
-  is_completed: boolean;
-  is_claimed: boolean;
-}
-
 export function useGames() {
   const { user, refreshProfile } = useAuth();
   const [tasks, setTasks] = useState<DailyTask[]>([]);
@@ -37,15 +34,8 @@ export function useGames() {
   const fetchTasks = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("daily_tasks")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_claimed", false);
-
-    if (!error && data) {
-      setTasks(data as DailyTask[]);
-    }
+    const data = await getDailyTasks(user.uid);
+    setTasks(data);
     setLoading(false);
   }, [user]);
 
@@ -57,26 +47,13 @@ export function useGames() {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel("tasks-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "daily_tasks",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchTasks();
-        }
-      )
-      .subscribe();
+    const unsubscribe = subscribeToTasks(user.uid, (updatedTasks) => {
+      setTasks(updatedTasks);
+      setLoading(false);
+    });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchTasks]);
+    return () => unsubscribe();
+  }, [user]);
 
   const playSpin = async (): Promise<SpinResult> => {
     if (!user) {
@@ -87,16 +64,7 @@ export function useGames() {
     setSpinning(true);
 
     try {
-      const { data, error } = await supabase.rpc("play_spin_wheel", {
-        spin_cost: 5,
-      });
-
-      if (error) {
-        toast.error("Failed to spin");
-        return { success: false, error: error.message };
-      }
-
-      const result = data as unknown as SpinResult;
+      const result = await playSpinWheel(user.uid, 5);
 
       if (!result.success) {
         toast.error(result.error || "Failed to spin");
@@ -119,16 +87,7 @@ export function useGames() {
     setScratching(true);
 
     try {
-      const { data, error } = await supabase.rpc("play_scratch_card", {
-        scratch_cost: 3,
-      });
-
-      if (error) {
-        toast.error("Failed to scratch");
-        return { success: false, error: error.message };
-      }
-
-      const result = data as unknown as ScratchResult;
+      const result = await playScratchCard(user.uid, 3);
 
       if (!result.success) {
         toast.error(result.error || "Failed to scratch");
@@ -143,16 +102,12 @@ export function useGames() {
   };
 
   const claimTask = async (taskId: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc("claim_task_reward", {
-      task_id: taskId,
-    });
-
-    if (error) {
-      toast.error("Failed to claim reward");
+    if (!user) {
+      toast.error("Please sign in");
       return false;
     }
 
-    const result = data as { success: boolean; reward?: number; error?: string };
+    const result = await claimTaskReward(user.uid, taskId);
 
     if (!result.success) {
       toast.error(result.error || "Failed to claim");

@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Tables } from "@/integrations/supabase/types";
+import { 
+  MiningSession,
+  getActiveSession,
+  subscribeToMiningSession,
+  startMiningSession as firebaseStartMining,
+  claimMiningReward as firebaseClaimReward
+} from "@/lib/firebase";
 import { toast } from "sonner";
-
-type MiningSession = Tables<"mining_sessions">;
 
 export function useMining() {
   const { user, refreshProfile } = useAuth();
@@ -17,27 +20,26 @@ export function useMining() {
   const fetchActiveSession = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("mining_sessions")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .eq("is_claimed", false)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!error && data) {
-      setActiveSession(data);
-    } else {
-      setActiveSession(null);
-    }
+    const session = await getActiveSession(user.uid);
+    setActiveSession(session);
     setLoading(false);
   }, [user]);
 
   useEffect(() => {
     fetchActiveSession();
   }, [fetchActiveSession]);
+
+  // Subscribe to mining session changes
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = subscribeToMiningSession(user.uid, (session) => {
+      setActiveSession(session);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Calculate time remaining and progress
   useEffect(() => {
@@ -49,8 +51,8 @@ export function useMining() {
 
     const updateTimer = () => {
       const now = new Date();
-      const endsAt = new Date(activeSession.ends_at);
-      const startedAt = new Date(activeSession.started_at);
+      const endsAt = activeSession.ends_at.toDate();
+      const startedAt = activeSession.started_at.toDate();
       const totalDuration = endsAt.getTime() - startedAt.getTime();
       const elapsed = now.getTime() - startedAt.getTime();
       const remaining = endsAt.getTime() - now.getTime();
@@ -75,45 +77,13 @@ export function useMining() {
     return () => clearInterval(interval);
   }, [activeSession]);
 
-  // Subscribe to mining session changes
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel("mining-sessions")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "mining_sessions",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchActiveSession();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchActiveSession]);
-
   const startMining = async () => {
     if (!user) {
       toast.error("Please sign in to start mining");
       return false;
     }
 
-    const { data, error } = await supabase.rpc("start_mining_session");
-
-    if (error) {
-      toast.error("Failed to start mining session");
-      return false;
-    }
-
-    const result = data as { success: boolean; error?: string; session_id?: string };
+    const result = await firebaseStartMining(user.uid);
 
     if (!result.success) {
       toast.error(result.error || "Failed to start mining");
@@ -126,7 +96,7 @@ export function useMining() {
   };
 
   const claimReward = async () => {
-    if (!activeSession) {
+    if (!activeSession || !user) {
       toast.error("No active session to claim");
       return false;
     }
@@ -136,16 +106,7 @@ export function useMining() {
       return false;
     }
 
-    const { data, error } = await supabase.rpc("claim_mining_reward", {
-      session_id: activeSession.id,
-    });
-
-    if (error) {
-      toast.error("Failed to claim reward");
-      return false;
-    }
-
-    const result = data as { success: boolean; error?: string; amount?: number };
+    const result = await firebaseClaimReward(user.uid, activeSession.id);
 
     if (!result.success) {
       toast.error(result.error || "Failed to claim reward");
