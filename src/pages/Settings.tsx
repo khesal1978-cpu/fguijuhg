@@ -47,9 +47,10 @@ export default function Settings() {
   ];
 
   const legalSettings: SettingItem[] = [
+    { icon: FileText, title: "Whitepaper", subtitle: "CASET tokenomics & vision", onClick: () => navigate("/whitepaper"), highlight: true },
     { icon: FileText, title: "Terms & Conditions", subtitle: "Mining & referral rules", onClick: () => navigate("/terms") },
     { icon: Lock, title: "Privacy Policy", subtitle: "Data usage & protection", onClick: () => navigate("/privacy") },
-    { icon: HelpCircle, title: "Help Center", subtitle: "AI-powered support", onClick: () => navigate("/help"), highlight: true },
+    { icon: HelpCircle, title: "Help Center", subtitle: "AI-powered support", onClick: () => navigate("/help") },
   ];
 
   const renderSettingsList = (items: SettingItem[], title: string) => (
@@ -110,7 +111,7 @@ export default function Settings() {
               {profile?.display_name || "Miner"}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Level {profile?.level || 1} • {profile?.is_premium ? "⭐ PRO" : "Free"}
+              {profile?.is_premium ? "⭐ PRO Member" : "Free Member"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               ID: {profile?.referral_code}
@@ -119,11 +120,10 @@ export default function Settings() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-border">
+        <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-border">
           {[
-            { icon: Zap, value: Number(profile?.total_mined || 0).toLocaleString(), label: "Mined", color: "text-primary" },
+            { icon: Zap, value: Number(profile?.total_mined || 0).toLocaleString(), label: "Total Mined", color: "text-primary" },
             { icon: Award, value: `${profile?.mining_power || 50}%`, label: "Power", color: "text-gold" },
-            { icon: User, value: profile?.level || 1, label: "Level", color: "text-accent-foreground" },
           ].map((stat, i) => (
             <div key={i} className="text-center">
               <stat.icon className={`size-4 mx-auto mb-1 ${stat.color}`} />
