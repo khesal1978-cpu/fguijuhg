@@ -214,8 +214,8 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-primary">
-                  +{Number(tx.amount).toFixed(2)}
+                <span className={`text-sm font-semibold ${Number(tx.amount) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  {Number(tx.amount) >= 0 ? '+' : ''}{Number(tx.amount).toFixed(2)}
                 </span>
               </motion.div>
             ))
