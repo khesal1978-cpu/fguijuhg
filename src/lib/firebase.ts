@@ -306,6 +306,57 @@ export const subscribeToMiningSession = (userId: string, callback: (session: Min
   });
 };
 
+// Helper to count active referrals (users who mined in last 48 hours)
+const getActiveReferralCount = async (userId: string): Promise<number> => {
+  try {
+    const referralQuery = query(
+      collection(db, 'referrals'),
+      where('referrer_id', '==', userId),
+      where('is_active', '==', true)
+    );
+    const referralSnap = await getDocs(referralQuery);
+    return referralSnap.size;
+  } catch (error) {
+    console.error('Error counting referrals:', error);
+    return 0;
+  }
+};
+
+// Calculate mining multiplier based on active referrals
+const getMiningMultiplier = (activeReferrals: number): number => {
+  if (activeReferrals >= 11) return 2.5;
+  if (activeReferrals >= 6) return 2.0;
+  if (activeReferrals >= 3) return 1.7;
+  if (activeReferrals >= 1) return 1.2;
+  return 1.0;
+};
+
+// Check today's session count
+const getTodaySessionCount = async (userId: string): Promise<number> => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = Timestamp.fromDate(today);
+    
+    const q = query(
+      collection(db, 'mining_sessions'),
+      where('user_id', '==', userId)
+    );
+    const snap = await getDocs(q);
+    
+    // Filter client-side for today's sessions
+    const todaySessions = snap.docs.filter(doc => {
+      const data = doc.data();
+      return data.created_at.toMillis() >= todayTimestamp.toMillis();
+    });
+    
+    return todaySessions.length;
+  } catch (error) {
+    console.error('Error counting sessions:', error);
+    return 0;
+  }
+};
+
 export const startMiningSession = async (userId: string): Promise<{ success: boolean; error?: string; session_id?: string }> => {
   // Check for existing active session
   const existing = await getActiveSession(userId);
@@ -313,14 +364,25 @@ export const startMiningSession = async (userId: string): Promise<{ success: boo
     return { success: false, error: 'Already have an active mining session' };
   }
 
+  // Check daily session limit (max 4 per day)
+  const todayCount = await getTodaySessionCount(userId);
+  if (todayCount >= 4) {
+    return { success: false, error: 'Daily mining limit reached (4 sessions/day)' };
+  }
+
   const profile = await getProfile(userId);
   if (!profile) {
     return { success: false, error: 'Profile not found' };
   }
 
+  // Calculate reward with referral multiplier
+  const activeReferrals = await getActiveReferralCount(userId);
+  const multiplier = getMiningMultiplier(activeReferrals);
+  const baseReward = 10; // Base 10 CASET per 6-hour session
+  const earnedAmount = Math.floor(baseReward * multiplier);
+
   const now = Timestamp.now();
   const endsAt = Timestamp.fromDate(new Date(Date.now() + 6 * 60 * 60 * 1000)); // 6 hours
-  const earnedAmount = profile.mining_rate * 6; // 10 CASET per session
 
   const sessionRef = await addDoc(collection(db, 'mining_sessions'), {
     user_id: userId,
