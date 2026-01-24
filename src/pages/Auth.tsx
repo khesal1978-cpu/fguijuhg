@@ -312,16 +312,22 @@ export default function Auth() {
   // ========================
   if (screen === "welcome") {
     return (
-      <div 
-        className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden"
-        style={{ background: '#0A0A0F' }}
-      >
+      <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
+        {/* Globe Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${globeBackground})` }}
+        />
+        
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/80" />
+
         {/* Main Content */}
-        <div className="flex-1 flex flex-col px-5 pt-safe-top">
+        <div className="relative z-10 flex-1 flex flex-col px-5">
           {/* Headline Section */}
-          <div className="pt-10 sm:pt-14 md:pt-16">
+          <div className="pt-12 sm:pt-16 md:pt-20">
             <motion.h1 
-              className="text-[26px] sm:text-[32px] md:text-4xl lg:text-5xl font-display font-bold text-white text-center leading-[1.15]"
+              className="text-[28px] sm:text-[34px] md:text-[40px] font-display font-bold text-white text-center leading-[1.15] tracking-tight"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -334,7 +340,7 @@ export default function Auth() {
             </motion.h1>
 
             <motion.p
-              className="text-[#8E8E9A] text-[14px] sm:text-[15px] md:text-base text-center mt-3 sm:mt-4 leading-relaxed"
+              className="text-[#9B9BAE] text-[15px] sm:text-base text-center mt-4 leading-relaxed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -345,63 +351,37 @@ export default function Auth() {
             </motion.p>
           </div>
 
-          {/* Globe Card Container */}
-          <motion.div 
-            className="flex-1 flex items-center justify-center py-4 sm:py-6"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <div className="relative w-full max-w-[340px] sm:max-w-[400px] md:max-w-[450px] lg:max-w-[500px] aspect-[4/5]">
-              {/* Rounded card with globe */}
-              <div 
-                className="absolute inset-0 rounded-[28px] sm:rounded-[32px] overflow-hidden border border-[#2A2A35]/50"
-                style={{
-                  boxShadow: '0 0 60px rgba(123, 63, 228, 0.15), 0 0 100px rgba(123, 63, 228, 0.1)',
-                }}
-              >
-                <img 
-                  src={globeBackground} 
-                  alt="" 
-                  className="w-full h-full object-cover object-center"
-                  loading="eager"
-                />
-                {/* Top gradient fade */}
-                <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0A0A0F] to-transparent" />
-              </div>
-
-              {/* Mining Status Pill - Overlapping bottom of card */}
-              <motion.div
-                className="absolute -bottom-5 left-1/2 -translate-x-1/2 z-10"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <div className="inline-flex items-center gap-2 bg-[#1A1A22]/90 backdrop-blur-md border border-[#2A2A35] rounded-full px-5 py-2.5 shadow-lg">
-                  <span className="size-2 rounded-full bg-[#22C55E] animate-pulse" />
-                  <span className="text-[15px] font-semibold text-white tabular-nums">
-                    <AnimatedCounter />
-                  </span>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
+          {/* Spacer */}
+          <div className="flex-1" />
         </div>
 
-        {/* Bottom Section - Fixed to bottom */}
-        <div className="px-5 pb-6 sm:pb-8 pb-safe-bottom space-y-3">
+        {/* Bottom Section */}
+        <div className="relative z-10 px-5 pb-8 sm:pb-10 space-y-4">
+          {/* Mining Status Pill */}
+          <motion.div
+            className="flex justify-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="inline-flex items-center gap-2 bg-[#1A1A22]/80 backdrop-blur-md border border-[#2A2A35] rounded-full px-5 py-2.5">
+              <span className="size-2 rounded-full bg-[#22C55E] animate-pulse" />
+              <AnimatedCounter />
+            </div>
+          </motion.div>
+
           {/* CTA Button */}
           <motion.button
             onClick={() => setScreen("landing")}
-            className="w-full h-[54px] sm:h-[58px] rounded-full font-semibold text-[16px] sm:text-[17px] text-white flex items-center justify-center gap-2"
+            className="w-full h-[56px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2"
             style={{
               background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 100%)',
-              boxShadow: '0 4px 20px rgba(123, 63, 228, 0.4), 0 8px 40px rgba(123, 63, 228, 0.2), inset 0 1px 0 rgba(255,255,255,0.15)'
+              boxShadow: '0 4px 24px rgba(123, 63, 228, 0.5), inset 0 1px 0 rgba(255,255,255,0.15)'
             }}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            whileHover={{ scale: 1.02, boxShadow: '0 6px 30px rgba(123, 63, 228, 0.5), 0 12px 50px rgba(123, 63, 228, 0.3)' }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             Start Mining Now
@@ -410,7 +390,7 @@ export default function Auth() {
 
           {/* Helper text */}
           <motion.p
-            className="text-center text-[13px] sm:text-sm text-[#5B5B6B]"
+            className="text-center text-[13px] text-[#6B6B7B]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
@@ -420,19 +400,19 @@ export default function Auth() {
 
           {/* Microsoft Badge */}
           <motion.div 
-            className="flex items-center justify-center pt-2"
+            className="flex items-center justify-center pt-1"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#141418] border border-[#252530]">
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#141418]/80 backdrop-blur-sm border border-[#252530]">
               <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#f25022" d="M1 1h10v10H1z"/>
                 <path fill="#00a4ef" d="M1 12h10v10H1z"/>
                 <path fill="#7fba00" d="M12 1h10v10H12z"/>
                 <path fill="#ffb900" d="M12 12h10v10H12z"/>
               </svg>
-              <span className="text-[13px] sm:text-sm text-[#8E8E9A]">Microsoft for Startups</span>
+              <span className="text-sm text-[#9B9BAE]">Microsoft for Startups</span>
             </div>
           </motion.div>
         </div>
