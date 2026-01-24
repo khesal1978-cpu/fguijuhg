@@ -239,105 +239,135 @@ export const createProfile = async (
     total_recovered: 0,
   };
 
-  // IMPORTANT: Create the user's profile FIRST before any other operations
-  // This ensures the user document exists for Firestore security rules
-  await setDoc(profileRef, newProfile);
+  console.log('[PROFILE] Creating profile for user:', userId);
+  console.log('[PROFILE] Referral code provided:', referralCode || 'none');
 
-  // Handle referral AFTER profile is created
+  // Handle referral BEFORE creating profile so we can set initial balance
+  let referrerId: string | null = null;
+  let indirectReferrerId: string | null = null;
+  
   if (referralCode && referralCode.trim()) {
     const normalizedCode = referralCode.trim().toUpperCase();
-    console.log('[REFERRAL] Looking for referral code:', normalizedCode);
+    console.log('[REFERRAL] Looking for referrer with code:', normalizedCode);
     
     try {
       const referrerQuery = query(collection(db, 'profiles'), where('referral_code', '==', normalizedCode));
       const referrerSnap = await getDocs(referrerQuery);
       
-      console.log('[REFERRAL] Query result - found:', !referrerSnap.empty, 'count:', referrerSnap.size);
+      console.log('[REFERRAL] Query returned', referrerSnap.size, 'results');
       
       if (!referrerSnap.empty) {
-        const referrerId = referrerSnap.docs[0].id;
+        referrerId = referrerSnap.docs[0].id;
         const referrerProfile = referrerSnap.docs[0].data() as Profile;
+        indirectReferrerId = referrerProfile.referred_by || null;
         
-        console.log('[REFERRAL] Found referrer:', referrerId, 'code:', referrerProfile.referral_code);
+        console.log('[REFERRAL] Found referrer:', referrerId);
+        console.log('[REFERRAL] Referrer code matches:', referrerProfile.referral_code);
+        console.log('[REFERRAL] Indirect referrer:', indirectReferrerId || 'none');
         
-        // Step 1: Update NEW USER's profile with referral info and 100 CASET welcome bonus
-        // This always works since user updates their OWN profile
-        await updateDoc(profileRef, {
-          referred_by: referrerId,
-          balance: 100,
-          updated_at: now,
-        });
-        newProfile.referred_by = referrerId;
+        // Set welcome bonus and referrer on profile
         newProfile.balance = 100;
-        console.log('[REFERRAL] New user got 100 CASET welcome bonus');
-        
-        // Step 2: Create referral record (for tracking/display)
+        newProfile.referred_by = referrerId;
+      } else {
+        console.log('[REFERRAL] No profile found with code:', normalizedCode);
+      }
+    } catch (error) {
+      console.error('[REFERRAL] Error finding referrer:', error);
+    }
+  }
+
+  // Create the user's profile
+  try {
+    await setDoc(profileRef, newProfile);
+    console.log('[PROFILE] Profile created successfully');
+  } catch (error) {
+    console.error('[PROFILE] Error creating profile:', error);
+    throw error;
+  }
+
+  // Process referral AFTER profile exists (required for security rules)
+  if (referrerId) {
+    console.log('[REFERRAL] Processing referral rewards...');
+    
+    // Step 1: Create direct referral record
+    try {
+      const directReferralRef = await addDoc(collection(db, 'referrals'), {
+        referrer_id: referrerId,
+        referred_id: userId,
+        bonus_earned: 50,
+        is_active: true,
+        level: 1,
+        created_at: now,
+      });
+      console.log('[REFERRAL] Created direct referral record:', directReferralRef.id);
+    } catch (error) {
+      console.error('[REFERRAL] Failed to create direct referral record:', error);
+    }
+    
+    // Step 2: Create pending bonus for direct referrer (50 CASET)
+    try {
+      const pendingBonusRef = await addDoc(collection(db, 'pending_bonuses'), {
+        user_id: referrerId,
+        amount: 50,
+        type: 'direct_referral',
+        from_user_id: userId,
+        from_user_name: displayName || 'New User',
+        is_claimed: false,
+        created_at: now,
+      });
+      console.log('[REFERRAL] Created pending bonus for referrer:', pendingBonusRef.id);
+    } catch (error) {
+      console.error('[REFERRAL] Failed to create pending bonus for referrer:', error);
+    }
+    
+    // Step 3: Create welcome bonus transaction for new user
+    try {
+      await addDoc(collection(db, 'transactions'), {
+        user_id: userId,
+        type: 'referral',
+        amount: 100,
+        description: 'Welcome bonus from referral',
+        metadata: { referrer_id: referrerId },
+        created_at: now,
+      });
+      console.log('[REFERRAL] Created welcome bonus transaction');
+    } catch (error) {
+      console.error('[REFERRAL] Failed to create welcome transaction:', error);
+    }
+    
+    // Step 4: Handle indirect referral
+    if (indirectReferrerId) {
+      try {
         await addDoc(collection(db, 'referrals'), {
-          referrer_id: referrerId,
+          referrer_id: indirectReferrerId,
           referred_id: userId,
-          bonus_earned: 50,
+          bonus_earned: 25,
           is_active: true,
-          level: 1,
+          level: 2,
           created_at: now,
         });
-        console.log('[REFERRAL] Created direct referral record');
-        
-        // Step 3: Create PENDING BONUS for referrer (50 CASET)
-        // Referrer will claim this when they log in
+        console.log('[REFERRAL] Created indirect referral record');
+      } catch (error) {
+        console.error('[REFERRAL] Failed to create indirect referral:', error);
+      }
+      
+      try {
         await addDoc(collection(db, 'pending_bonuses'), {
-          user_id: referrerId,
-          amount: 50,
-          type: 'direct_referral',
+          user_id: indirectReferrerId,
+          amount: 25,
+          type: 'indirect_referral',
           from_user_id: userId,
+          from_user_name: displayName || 'New User',
           is_claimed: false,
           created_at: now,
         });
-        console.log('[REFERRAL] Created pending bonus (50) for referrer');
-        
-        // Step 4: Create welcome bonus transaction for new user
-        await addDoc(collection(db, 'transactions'), {
-          user_id: userId,
-          type: 'referral',
-          amount: 100,
-          description: 'Welcome bonus from referral',
-          metadata: { referrer_id: referrerId },
-          created_at: now,
-        });
-        
-        // Step 5: Handle INDIRECT referral if applicable
-        if (referrerProfile.referred_by) {
-          const indirectReferrerId = referrerProfile.referred_by;
-          
-          // Create indirect referral record
-          await addDoc(collection(db, 'referrals'), {
-            referrer_id: indirectReferrerId,
-            referred_id: userId,
-            bonus_earned: 25,
-            is_active: true,
-            level: 2,
-            created_at: now,
-          });
-          console.log('[REFERRAL] Created indirect referral record');
-          
-          // Create PENDING BONUS for indirect referrer (25 CASET)
-          await addDoc(collection(db, 'pending_bonuses'), {
-            user_id: indirectReferrerId,
-            amount: 25,
-            type: 'indirect_referral',
-            from_user_id: userId,
-            is_claimed: false,
-            created_at: now,
-          });
-          console.log('[REFERRAL] Created pending bonus (25) for indirect referrer');
-        }
-        
-        console.log('[REFERRAL] Referral processing completed successfully!');
-      } else {
-        console.log('[REFERRAL] No referrer found with code:', normalizedCode);
+        console.log('[REFERRAL] Created pending bonus for indirect referrer');
+      } catch (error) {
+        console.error('[REFERRAL] Failed to create indirect pending bonus:', error);
       }
-    } catch (referralError) {
-      console.error('[REFERRAL] Error:', referralError);
     }
+    
+    console.log('[REFERRAL] Referral processing complete!');
   }
 
   // Initialize daily tasks
@@ -1047,16 +1077,23 @@ export const trackDailyLogin = async (userId: string): Promise<{ success: boolea
 // Claim all pending referral bonuses for a user
 // This is called on login so users get their referral bonuses
 export const claimPendingBonuses = async (userId: string): Promise<{ claimed: number; total: number }> => {
+  console.log('[REFERRAL] Checking for pending bonuses for user:', userId);
+  
   try {
+    // Simple query - filter client side to avoid composite index
     const q = query(
       collection(db, 'pending_bonuses'),
-      where('user_id', '==', userId),
-      where('is_claimed', '==', false)
+      where('user_id', '==', userId)
     );
     
     const snap = await getDocs(q);
+    console.log('[REFERRAL] Found', snap.size, 'total pending bonus records');
     
-    if (snap.empty) {
+    // Filter unclaimed client-side
+    const unclaimedDocs = snap.docs.filter(d => !d.data().is_claimed);
+    console.log('[REFERRAL] Unclaimed bonuses:', unclaimedDocs.length);
+    
+    if (unclaimedDocs.length === 0) {
       return { claimed: 0, total: 0 };
     }
     
@@ -1064,37 +1101,53 @@ export const claimPendingBonuses = async (userId: string): Promise<{ claimed: nu
     const now = Timestamp.now();
     
     // Calculate total and mark as claimed
-    for (const bonusDoc of snap.docs) {
+    for (const bonusDoc of unclaimedDocs) {
       const bonus = bonusDoc.data();
       totalBonus += bonus.amount;
+      console.log('[REFERRAL] Processing bonus:', bonus.amount, 'CASET, type:', bonus.type);
       
       // Mark as claimed
-      await updateDoc(doc(db, 'pending_bonuses', bonusDoc.id), {
-        is_claimed: true,
-      });
+      try {
+        await updateDoc(doc(db, 'pending_bonuses', bonusDoc.id), {
+          is_claimed: true,
+        });
+      } catch (updateError) {
+        console.error('[REFERRAL] Failed to mark bonus as claimed:', updateError);
+        continue;
+      }
       
       // Create transaction record
-      await addDoc(collection(db, 'transactions'), {
-        user_id: userId,
-        type: 'referral',
-        amount: bonus.amount,
-        description: bonus.type === 'direct_referral' ? 'Direct referral bonus' : 'Indirect referral bonus (2nd level)',
-        metadata: { from_user: bonus.from_user_id, type: bonus.type },
-        created_at: now,
-      });
+      try {
+        await addDoc(collection(db, 'transactions'), {
+          user_id: userId,
+          type: 'referral',
+          amount: bonus.amount,
+          description: bonus.type === 'direct_referral' 
+            ? `Direct referral bonus from ${bonus.from_user_name || 'New User'}` 
+            : `Indirect referral bonus from ${bonus.from_user_name || 'New User'}`,
+          metadata: { from_user: bonus.from_user_id, type: bonus.type },
+          created_at: now,
+        });
+      } catch (txError) {
+        console.error('[REFERRAL] Failed to create transaction:', txError);
+      }
     }
     
     // Update user's balance (user updating their OWN profile - always allowed)
     if (totalBonus > 0) {
-      const profileRef = doc(db, 'profiles', userId);
-      await updateDoc(profileRef, {
-        balance: increment(totalBonus),
-        updated_at: now,
-      });
-      console.log('[REFERRAL] Claimed pending bonuses:', totalBonus, 'CASET');
+      try {
+        const profileRef = doc(db, 'profiles', userId);
+        await updateDoc(profileRef, {
+          balance: increment(totalBonus),
+          updated_at: now,
+        });
+        console.log('[REFERRAL] Successfully claimed', totalBonus, 'CASET from', unclaimedDocs.length, 'bonuses');
+      } catch (balanceError) {
+        console.error('[REFERRAL] Failed to update balance:', balanceError);
+      }
     }
     
-    return { claimed: snap.size, total: totalBonus };
+    return { claimed: unclaimedDocs.length, total: totalBonus };
   } catch (error) {
     console.error('[REFERRAL] Error claiming pending bonuses:', error);
     return { claimed: 0, total: 0 };
@@ -1103,59 +1156,38 @@ export const claimPendingBonuses = async (userId: string): Promise<{ claimed: nu
 
 // Referral Functions
 export const getReferrals = async (userId: string): Promise<Referral[]> => {
-  // Simplified query - sort client-side
-  const q = query(
-    collection(db, 'referrals'),
-    where('referrer_id', '==', userId)
-  );
+  console.log('[REFERRAL] Fetching referrals where referrer_id =', userId);
   
-  const snap = await getDocs(q);
-  const referrals: Referral[] = [];
-  
-  for (const referralDoc of snap.docs) {
-    const referral = { id: referralDoc.id, ...referralDoc.data() } as Referral;
+  try {
+    const q = query(
+      collection(db, 'referrals'),
+      where('referrer_id', '==', userId)
+    );
     
-    // Get referred user's profile
-    const profileSnap = await getDoc(doc(db, 'profiles', referral.referred_id));
-    if (profileSnap.exists()) {
-      const profile = profileSnap.data() as Profile;
-      referral.referred_profile = {
-        display_name: profile.display_name,
-        total_mined: profile.total_mined,
-        created_at: profile.created_at,
-      };
-    }
+    const snap = await getDocs(q);
+    console.log('[REFERRAL] Query returned', snap.size, 'referral documents');
     
-    referrals.push(referral);
-  }
-  
-  // Sort client-side
-  referrals.sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
-  return referrals;
-};
-
-export const subscribeToReferrals = (userId: string, callback: (referrals: Referral[]) => void) => {
-  // Simplified query - sort client-side
-  const q = query(
-    collection(db, 'referrals'),
-    where('referrer_id', '==', userId)
-  );
-  
-  return onSnapshot(q, async (snap) => {
     const referrals: Referral[] = [];
     
     for (const referralDoc of snap.docs) {
-      const referral = { id: referralDoc.id, ...referralDoc.data() } as Referral;
+      const data = referralDoc.data();
+      console.log('[REFERRAL] Processing referral:', referralDoc.id, data);
+      
+      const referral = { id: referralDoc.id, ...data } as Referral;
       
       // Get referred user's profile
-      const profileSnap = await getDoc(doc(db, 'profiles', referral.referred_id));
-      if (profileSnap.exists()) {
-        const profile = profileSnap.data() as Profile;
-        referral.referred_profile = {
-          display_name: profile.display_name,
-          total_mined: profile.total_mined,
-          created_at: profile.created_at,
-        };
+      try {
+        const profileSnap = await getDoc(doc(db, 'profiles', referral.referred_id));
+        if (profileSnap.exists()) {
+          const profile = profileSnap.data() as Profile;
+          referral.referred_profile = {
+            display_name: profile.display_name,
+            total_mined: profile.total_mined,
+            created_at: profile.created_at,
+          };
+        }
+      } catch (profileError) {
+        console.error('[REFERRAL] Failed to get referred profile:', profileError);
       }
       
       referrals.push(referral);
@@ -1163,7 +1195,58 @@ export const subscribeToReferrals = (userId: string, callback: (referrals: Refer
     
     // Sort client-side
     referrals.sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
+    console.log('[REFERRAL] Returning', referrals.length, 'referrals');
+    return referrals;
+  } catch (error) {
+    console.error('[REFERRAL] Error fetching referrals:', error);
+    return [];
+  }
+};
+
+export const subscribeToReferrals = (userId: string, callback: (referrals: Referral[]) => void) => {
+  console.log('[REFERRAL] Setting up real-time subscription for referrer:', userId);
+  
+  const q = query(
+    collection(db, 'referrals'),
+    where('referrer_id', '==', userId)
+  );
+  
+  return onSnapshot(q, async (snap) => {
+    console.log('[REFERRAL] Real-time update received:', snap.size, 'referral documents');
+    
+    const referrals: Referral[] = [];
+    
+    for (const referralDoc of snap.docs) {
+      const data = referralDoc.data();
+      console.log('[REFERRAL] Realtime referral data:', referralDoc.id, data);
+      
+      const referral = { id: referralDoc.id, ...data } as Referral;
+      
+      // Get referred user's profile
+      try {
+        const profileSnap = await getDoc(doc(db, 'profiles', referral.referred_id));
+        if (profileSnap.exists()) {
+          const profile = profileSnap.data() as Profile;
+          referral.referred_profile = {
+            display_name: profile.display_name,
+            total_mined: profile.total_mined,
+            created_at: profile.created_at,
+          };
+        }
+      } catch (profileError) {
+        console.error('[REFERRAL] Failed to get referred profile in realtime:', profileError);
+      }
+      
+      referrals.push(referral);
+    }
+    
+    // Sort client-side
+    referrals.sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
+    console.log('[REFERRAL] Realtime callback with', referrals.length, 'referrals');
     callback(referrals);
+  }, (error) => {
+    console.error('[REFERRAL] Realtime subscription error:', error);
+    callback([]);
   });
 };
 
