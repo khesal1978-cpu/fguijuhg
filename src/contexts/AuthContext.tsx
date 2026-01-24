@@ -60,22 +60,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(firebaseUser);
           
           if (firebaseUser) {
-            // Check if profile exists
+            // Check if profile exists - but DON'T auto-create it here
+            // The Auth page handles profile creation with referral codes
+            // We just wait for the profile to be created
             let userProfile = await getProfile(firebaseUser.uid);
             
             if (!userProfile) {
-              // Profile doesn't exist yet - create it
-              try {
-                userProfile = await createProfile(firebaseUser.uid, 'Miner');
-              } catch (createError) {
-                console.error('Error creating profile:', createError);
+              // Wait a moment and try again - the Auth page might be creating the profile
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              userProfile = await getProfile(firebaseUser.uid);
+              
+              // If still no profile after waiting, create a basic one
+              // This handles edge cases like direct Google sign-in without going through Auth page
+              if (!userProfile) {
+                try {
+                  console.log('Creating fallback profile for user:', firebaseUser.uid);
+                  userProfile = await createProfile(firebaseUser.uid, firebaseUser.displayName || 'Miner');
+                } catch (createError) {
+                  console.error('Error creating fallback profile:', createError);
+                }
               }
             }
             
             setProfile(userProfile);
             
             // Track daily login (don't await to prevent blocking)
-            trackDailyLogin(firebaseUser.uid).catch(console.error);
+            if (userProfile) {
+              trackDailyLogin(firebaseUser.uid).catch(console.error);
+            }
           } else {
             setProfile(null);
           }
