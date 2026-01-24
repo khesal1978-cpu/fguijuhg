@@ -408,23 +408,18 @@ export default function Auth() {
               before listing.
             </motion.h1>
 
-            <motion.div
-              className="mt-6 px-6 py-4 rounded-2xl backdrop-blur-xl"
+            <motion.p
+              className="mt-5 px-4 py-2.5 rounded-xl backdrop-blur-md text-white/85 text-[15px] sm:text-[16px] text-center leading-[1.5] font-medium inline-block"
               style={{
-                background: 'linear-gradient(135deg, rgba(20, 20, 30, 0.8) 0%, rgba(10, 10, 18, 0.85) 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                background: 'rgba(15, 15, 22, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.25, type: "spring", stiffness: 200 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
             >
-              <p className="text-white/90 text-[16px] sm:text-[17px] text-center leading-[1.6] font-medium">
-                No hardware. No fees.
-                <br />
-                Just time-based mining.
-              </p>
-            </motion.div>
+              No hardware. No fees. Just time-based mining.
+            </motion.p>
           </div>
 
           {/* Spacer */}
