@@ -53,11 +53,19 @@ export default function Auth() {
   
   const [screen, setScreen] = useState<AuthScreen>("welcome");
   const [loading, setLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [referralCode, setReferralCode] = useState(searchParams.get("ref") || "");
   const [loginMethod, setLoginMethod] = useState<"email" | "unique-id">("email");
+
+  // Preload background image
+  useEffect(() => {
+    const img = new Image();
+    img.src = globeBackground;
+    img.onload = () => setImageLoaded(true);
+  }, []);
   const [uniqueId, setUniqueId] = useState("");
   const [generatedId, setGeneratedId] = useState("");
   const [idCopied, setIdCopied] = useState(false);
@@ -312,11 +320,19 @@ export default function Auth() {
   // ========================
   if (screen === "welcome") {
     return (
-      <div className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative">
+      <motion.div 
+        className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: imageLoaded ? 1 : 0 }}
+        transition={{ duration: 0.4 }}
+      >
         {/* Globe Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-[center_60%] bg-no-repeat"
-          style={{ backgroundImage: `url(${globeBackground})` }}
+          className="absolute inset-0 bg-cover bg-[center_60%] bg-no-repeat transition-opacity duration-500"
+          style={{ 
+            backgroundImage: `url(${globeBackground})`,
+            opacity: imageLoaded ? 1 : 0
+          }}
         />
         
         {/* Dark overlay - darker at top and bottom */}
@@ -377,10 +393,10 @@ export default function Auth() {
             </div>
           </motion.div>
 
-          {/* CTA Button */}
+          {/* CTA Button with Shine Effect */}
           <motion.button
             onClick={() => setScreen("landing")}
-            className="w-full h-[58px] rounded-full font-semibold text-[18px] text-white flex items-center justify-center gap-2.5"
+            className="group relative w-full h-[58px] rounded-full font-semibold text-[18px] text-white flex items-center justify-center gap-2.5 overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 50%, #7B3FE4 100%)',
               boxShadow: '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
@@ -392,8 +408,18 @@ export default function Auth() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Start Mining Now
-            <ArrowRight className="size-5" strokeWidth={2.5} />
+            {/* Shine animation overlay */}
+            <span 
+              className="absolute inset-0 overflow-hidden rounded-full"
+              style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)',
+                animation: 'shine 3s ease-in-out infinite',
+              }}
+            />
+            <span className="relative z-10 flex items-center gap-2.5">
+              Start Mining Now
+              <ArrowRight className="size-5" strokeWidth={2.5} />
+            </span>
           </motion.button>
 
           {/* Helper text */}
@@ -430,7 +456,16 @@ export default function Auth() {
             </div>
           </motion.div>
         </div>
-      </div>
+
+        {/* CSS for shine animation */}
+        <style>{`
+          @keyframes shine {
+            0% { transform: translateX(-100%); }
+            20% { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
+      </motion.div>
     );
   }
 
