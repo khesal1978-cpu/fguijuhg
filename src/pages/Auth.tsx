@@ -14,110 +14,257 @@ import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
-// Active miner dot positions on world map (approximate continent positions)
+// Active miner dot positions on world map (realistic positions)
 const minerPositions = [
   // North America
-  { x: 18, y: 32, delay: 0 }, { x: 22, y: 38, delay: 0.3 }, { x: 15, y: 42, delay: 0.6 },
-  { x: 25, y: 35, delay: 1.2 }, { x: 20, y: 45, delay: 0.9 },
-  // South America
-  { x: 28, y: 65, delay: 0.4 }, { x: 32, y: 72, delay: 0.8 }, { x: 26, y: 58, delay: 1.5 },
+  { x: 15, y: 28, delay: 0, size: 1.2 }, { x: 20, y: 32, delay: 0.5, size: 1 }, { x: 12, y: 35, delay: 1.2, size: 0.8 },
+  { x: 22, y: 38, delay: 2.1, size: 1.1 }, { x: 18, y: 42, delay: 0.8, size: 0.9 },
+  // South America  
+  { x: 28, y: 62, delay: 1.5, size: 1 }, { x: 30, y: 70, delay: 0.3, size: 0.8 }, { x: 26, y: 55, delay: 2.4, size: 1.1 },
   // Europe
-  { x: 48, y: 32, delay: 0.2 }, { x: 52, y: 35, delay: 0.5 }, { x: 45, y: 38, delay: 1.0 },
-  { x: 50, y: 28, delay: 1.3 }, { x: 55, y: 32, delay: 0.7 },
+  { x: 48, y: 28, delay: 0.2, size: 1.2 }, { x: 52, y: 32, delay: 1.8, size: 1 }, { x: 46, y: 35, delay: 0.9, size: 0.9 },
+  { x: 50, y: 25, delay: 1.4, size: 0.8 }, { x: 54, y: 30, delay: 2.6, size: 1.1 },
   // Africa
-  { x: 50, y: 55, delay: 0.6 }, { x: 55, y: 50, delay: 1.1 }, { x: 48, y: 62, delay: 0.3 },
+  { x: 50, y: 52, delay: 0.7, size: 1 }, { x: 54, y: 48, delay: 1.1, size: 0.9 }, { x: 48, y: 58, delay: 2.0, size: 1.2 },
   // Asia
-  { x: 68, y: 35, delay: 0.1 }, { x: 75, y: 38, delay: 0.4 }, { x: 82, y: 42, delay: 0.8 },
-  { x: 72, y: 45, delay: 1.4 }, { x: 78, y: 32, delay: 0.2 }, { x: 85, y: 48, delay: 0.9 },
+  { x: 65, y: 30, delay: 0.1, size: 1.1 }, { x: 72, y: 35, delay: 0.6, size: 1.3 }, { x: 80, y: 38, delay: 1.3, size: 1 },
+  { x: 70, y: 42, delay: 1.9, size: 0.9 }, { x: 76, y: 28, delay: 0.4, size: 1.2 }, { x: 85, y: 45, delay: 2.2, size: 0.8 },
+  { x: 68, y: 48, delay: 2.8, size: 1 },
   // Australia
-  { x: 85, y: 68, delay: 0.5 }, { x: 82, y: 72, delay: 1.0 },
+  { x: 84, y: 65, delay: 0.8, size: 1.1 }, { x: 80, y: 70, delay: 1.6, size: 0.9 },
 ];
 
-// Animated Miner Dot
-const MinerDot = ({ x, y, delay }: { x: number; y: number; delay: number }) => (
-  <motion.div
-    className="absolute"
-    style={{ left: `${x}%`, top: `${y}%` }}
-    initial={{ opacity: 0, scale: 0 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: delay + 0.5, duration: 0.3 }}
-  >
-    {/* Pulse ring */}
-    <motion.div
-      className="absolute -inset-2 rounded-full bg-primary/20"
-      animate={{ scale: [1, 2, 1], opacity: [0.4, 0, 0.4] }}
-      transition={{ duration: 2 + delay, repeat: Infinity, ease: "easeOut" }}
-    />
-    {/* Core dot */}
-    <div className="size-2 rounded-full bg-primary" />
-  </motion.div>
-);
-
-// World Map with Active Miners
-const ActiveMinersMap = () => {
+// Animated Miner Dot with smooth pulse
+const MinerDot = ({ x, y, delay, size = 1 }: { x: number; y: number; delay: number; size?: number }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), delay * 1000 + 800);
+    return () => clearTimeout(timer);
+  }, [delay]);
+  
+  if (!isVisible) return null;
+  
   return (
-    <div className="relative w-full max-w-sm mx-auto aspect-[2/1]">
-      {/* Simplified world map outline */}
-      <svg
-        viewBox="0 0 100 50"
-        className="w-full h-full"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* North America */}
-        <path
-          d="M10 20 Q15 15 25 18 Q30 22 28 30 Q25 38 20 42 Q15 45 12 40 Q8 35 10 28 Q9 24 10 20"
-          className="fill-muted/30 stroke-border"
-          strokeWidth="0.3"
-        />
-        {/* South America */}
-        <path
-          d="M25 48 Q30 50 32 55 Q35 65 30 75 Q25 78 22 72 Q20 65 22 55 Q23 50 25 48"
-          className="fill-muted/30 stroke-border"
-          strokeWidth="0.3"
-        />
-        {/* Europe */}
-        <path
-          d="M45 22 Q50 18 55 20 Q58 25 56 32 Q52 38 48 35 Q44 32 45 28 Q44 24 45 22"
-          className="fill-muted/30 stroke-border"
-          strokeWidth="0.3"
-        />
-        {/* Africa */}
-        <path
-          d="M45 40 Q52 38 58 42 Q62 50 58 60 Q52 68 48 65 Q42 58 44 48 Q43 42 45 40"
-          className="fill-muted/30 stroke-border"
-          strokeWidth="0.3"
-        />
-        {/* Asia */}
-        <path
-          d="M58 20 Q70 15 82 22 Q90 30 88 40 Q85 48 78 50 Q70 52 65 45 Q60 38 62 30 Q58 24 58 20"
-          className="fill-muted/30 stroke-border"
-          strokeWidth="0.3"
-        />
-        {/* Australia */}
-        <path
-          d="M78 58 Q85 56 90 62 Q92 68 88 74 Q82 76 78 72 Q75 66 78 58"
-          className="fill-muted/30 stroke-border"
-          strokeWidth="0.3"
-        />
-      </svg>
-      
-      {/* Miner dots */}
-      {minerPositions.map((pos, i) => (
-        <MinerDot key={i} x={pos.x} y={pos.y} delay={pos.delay} />
-      ))}
-      
-      {/* Counter overlay */}
+    <motion.div
+      className="absolute -translate-x-1/2 -translate-y-1/2"
+      style={{ left: `${x}%`, top: `${y}%` }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+    >
+      {/* Outer pulse ring */}
       <motion.div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-2 bg-card/80 backdrop-blur-sm border border-border rounded-full px-4 py-1.5"
-        initial={{ opacity: 0, y: 10 }}
+        className="absolute rounded-full bg-primary/30"
+        style={{ 
+          width: 16 * size, 
+          height: 16 * size,
+          left: -8 * size,
+          top: -8 * size
+        }}
+        animate={{ 
+          scale: [1, 2.5, 1],
+          opacity: [0.4, 0, 0.4]
+        }}
+        transition={{ 
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeOut",
+          delay: delay * 0.5
+        }}
+      />
+      {/* Inner glow */}
+      <motion.div
+        className="absolute rounded-full bg-primary/50"
+        style={{ 
+          width: 8 * size, 
+          height: 8 * size,
+          left: -4 * size,
+          top: -4 * size
+        }}
+        animate={{ 
+          scale: [1, 1.5, 1],
+          opacity: [0.6, 0.3, 0.6]
+        }}
+        transition={{ 
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: delay * 0.3
+        }}
+      />
+      {/* Core dot */}
+      <motion.div 
+        className="rounded-full bg-primary"
+        style={{ width: 4 * size, height: 4 * size, marginLeft: -2 * size, marginTop: -2 * size }}
+        animate={{ opacity: [0.8, 1, 0.8] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
+    </motion.div>
+  );
+};
+
+// Realistic World Map with Active Miners
+const ActiveMinersMap = () => {
+  const [activeCount, setActiveCount] = useState(0);
+  
+  useEffect(() => {
+    const target = 24897;
+    const duration = 2500;
+    const steps = 80;
+    const increment = target / steps;
+    let current = 0;
+    
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setActiveCount(target);
+        clearInterval(timer);
+      } else {
+        setActiveCount(Math.floor(current));
+      }
+    }, duration / steps);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <motion.div 
+      className="relative w-full max-w-md mx-auto"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+    >
+      {/* Map container with subtle border */}
+      <div className="relative aspect-[2/1] rounded-2xl overflow-hidden bg-card/30 border border-border/50 p-4">
+        {/* World map SVG - Realistic simplified outline */}
+        <svg
+          viewBox="0 0 1000 500"
+          className="w-full h-full"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <defs>
+            <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="hsl(var(--muted))" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="hsl(var(--muted))" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          
+          {/* North America */}
+          <motion.path
+            d="M50,120 L80,90 L120,80 L160,85 L200,75 L240,90 L270,120 L280,160 L260,200 L240,220 L200,240 L180,260 L160,250 L140,230 L120,240 L100,220 L80,200 L60,180 L50,150 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.2 }}
+          />
+          
+          {/* South America */}
+          <motion.path
+            d="M200,280 L230,270 L260,290 L280,330 L300,380 L290,420 L260,450 L230,460 L200,440 L190,400 L200,360 L190,320 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.4 }}
+          />
+          
+          {/* Europe */}
+          <motion.path
+            d="M440,100 L480,90 L520,100 L550,120 L560,150 L540,180 L500,190 L460,180 L440,160 L430,130 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.3 }}
+          />
+          
+          {/* Africa */}
+          <motion.path
+            d="M440,200 L500,190 L560,210 L580,260 L570,320 L540,380 L500,400 L460,390 L440,350 L430,300 L440,250 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.5 }}
+          />
+          
+          {/* Asia */}
+          <motion.path
+            d="M560,80 L620,70 L700,80 L780,100 L850,130 L880,180 L870,230 L840,270 L780,290 L720,280 L660,250 L620,220 L580,180 L560,140 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.2 }}
+          />
+          
+          {/* India/Southeast Asia */}
+          <motion.path
+            d="M680,250 L720,240 L760,260 L780,300 L760,340 L720,350 L680,330 L670,290 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.6 }}
+          />
+          
+          {/* Australia */}
+          <motion.path
+            d="M800,340 L860,330 L920,350 L940,400 L920,440 L860,450 L810,430 L790,390 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.7 }}
+          />
+          
+          {/* Japan */}
+          <motion.path
+            d="M880,140 L910,130 L930,160 L920,200 L890,210 L870,180 Z"
+            fill="url(#landGradient)"
+            stroke="hsl(var(--border))"
+            strokeWidth="1"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.4 }}
+          />
+        </svg>
+        
+        {/* Miner dots overlay */}
+        <div className="absolute inset-4">
+          {minerPositions.map((pos, i) => (
+            <MinerDot key={i} x={pos.x} y={pos.y} delay={pos.delay} size={pos.size} />
+          ))}
+        </div>
+      </div>
+      
+      {/* Counter badge */}
+      <motion.div
+        className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-card border border-border rounded-full px-5 py-2 shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5 }}
+        transition={{ delay: 1.8, type: "spring", stiffness: 100 }}
       >
-        <span className="text-sm font-semibold text-foreground">24,897</span>
-        <span className="text-xs text-muted-foreground ml-1.5">mining now</span>
+        <motion.div 
+          className="size-2 rounded-full bg-success"
+          animate={{ opacity: [1, 0.5, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+        <span className="text-base font-bold text-foreground tabular-nums">
+          {activeCount.toLocaleString()}
+        </span>
+        <span className="text-sm text-muted-foreground">mining now</span>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };
 
