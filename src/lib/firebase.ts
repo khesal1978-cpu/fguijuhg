@@ -181,6 +181,17 @@ export interface GamePlay {
   created_at: Timestamp;
 }
 
+// Pending bonus for referral system - allows users to claim bonuses on their next login
+export interface PendingBonus {
+  id: string;
+  user_id: string; // The user who will receive this bonus
+  amount: number;
+  type: 'direct_referral' | 'indirect_referral';
+  from_user_id: string; // The new user who triggered this bonus
+  is_claimed: boolean;
+  created_at: Timestamp;
+}
+
 // Generate unique referral code
 const generateReferralCode = (): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -235,149 +246,97 @@ export const createProfile = async (
   // Handle referral AFTER profile is created
   if (referralCode && referralCode.trim()) {
     const normalizedCode = referralCode.trim().toUpperCase();
-    console.log('Looking for referral code:', normalizedCode);
+    console.log('[REFERRAL] Looking for referral code:', normalizedCode);
     
     try {
       const referrerQuery = query(collection(db, 'profiles'), where('referral_code', '==', normalizedCode));
       const referrerSnap = await getDocs(referrerQuery);
       
-      console.log('Referrer query result - found:', !referrerSnap.empty, 'count:', referrerSnap.size);
+      console.log('[REFERRAL] Query result - found:', !referrerSnap.empty, 'count:', referrerSnap.size);
       
       if (!referrerSnap.empty) {
         const referrerId = referrerSnap.docs[0].id;
         const referrerProfile = referrerSnap.docs[0].data() as Profile;
         
-        console.log('Found referrer:', referrerId, 'with code:', referrerProfile.referral_code);
+        console.log('[REFERRAL] Found referrer:', referrerId, 'code:', referrerProfile.referral_code);
         
-        // Step 1: Update the new user's profile with referral info and welcome bonus
-        // This should always work since the user is updating their own profile
-        try {
-          await updateDoc(profileRef, {
-            referred_by: referrerId,
-            balance: 100, // Welcome bonus for referred user
-            updated_at: now,
-          });
-          newProfile.referred_by = referrerId;
-          newProfile.balance = 100;
-          console.log('New user profile updated with referral info and 100 CASET bonus');
-        } catch (profileUpdateError) {
-          console.error('Error updating new user profile:', profileUpdateError);
-        }
+        // Step 1: Update NEW USER's profile with referral info and 100 CASET welcome bonus
+        // This always works since user updates their OWN profile
+        await updateDoc(profileRef, {
+          referred_by: referrerId,
+          balance: 100,
+          updated_at: now,
+        });
+        newProfile.referred_by = referrerId;
+        newProfile.balance = 100;
+        console.log('[REFERRAL] New user got 100 CASET welcome bonus');
         
-        // Step 2: Create DIRECT referral record (level 1)
-        // The new user should be able to create referral documents
-        try {
-          const referralDoc = await addDoc(collection(db, 'referrals'), {
-            referrer_id: referrerId,
-            referred_id: userId,
-            bonus_earned: 50,
-            is_active: true,
-            level: 1,
-            created_at: now,
-          });
-          console.log('Created direct referral record:', referralDoc.id);
-        } catch (referralCreateError) {
-          console.error('Error creating referral record:', referralCreateError);
-        }
+        // Step 2: Create referral record (for tracking/display)
+        await addDoc(collection(db, 'referrals'), {
+          referrer_id: referrerId,
+          referred_id: userId,
+          bonus_earned: 50,
+          is_active: true,
+          level: 1,
+          created_at: now,
+        });
+        console.log('[REFERRAL] Created direct referral record');
         
-        // Step 3: Update referrer balance (direct referral bonus: 50)
-        // This might fail due to Firestore rules - user updating another user's profile
-        try {
-          const referrerRef = doc(db, 'profiles', referrerId);
-          await updateDoc(referrerRef, {
-            balance: increment(50),
-            updated_at: now,
-          });
-          console.log('Referrer balance updated with 50 CASET bonus');
-        } catch (referrerUpdateError) {
-          console.error('Error updating referrer balance (expected if rules restrict cross-user updates):', referrerUpdateError);
-          // The referrer bonus will need to be handled differently
-          // For now, we still record the transaction so it can be reconciled
-        }
+        // Step 3: Create PENDING BONUS for referrer (50 CASET)
+        // Referrer will claim this when they log in
+        await addDoc(collection(db, 'pending_bonuses'), {
+          user_id: referrerId,
+          amount: 50,
+          type: 'direct_referral',
+          from_user_id: userId,
+          is_claimed: false,
+          created_at: now,
+        });
+        console.log('[REFERRAL] Created pending bonus (50) for referrer');
         
-        // Step 4: Create transaction for direct referrer
-        try {
-          await addDoc(collection(db, 'transactions'), {
-            user_id: referrerId,
-            type: 'referral',
-            amount: 50,
-            description: 'Direct referral bonus',
-            metadata: { level: 1, from_user: userId },
-            created_at: now,
-          });
-          console.log('Created transaction for referrer');
-        } catch (txError) {
-          console.error('Error creating referrer transaction:', txError);
-        }
+        // Step 4: Create welcome bonus transaction for new user
+        await addDoc(collection(db, 'transactions'), {
+          user_id: userId,
+          type: 'referral',
+          amount: 100,
+          description: 'Welcome bonus from referral',
+          metadata: { referrer_id: referrerId },
+          created_at: now,
+        });
         
         // Step 5: Handle INDIRECT referral if applicable
         if (referrerProfile.referred_by) {
           const indirectReferrerId = referrerProfile.referred_by;
-          const indirectBonus = 25;
           
-          try {
-            // Create INDIRECT referral record (level 2)
-            const indirectRefDoc = await addDoc(collection(db, 'referrals'), {
-              referrer_id: indirectReferrerId,
-              referred_id: userId,
-              bonus_earned: indirectBonus,
-              is_active: true,
-              level: 2,
-              created_at: now,
-            });
-            console.log('Created indirect referral record:', indirectRefDoc.id);
-          } catch (indirectRefError) {
-            console.error('Error creating indirect referral:', indirectRefError);
-          }
-          
-          try {
-            // Update indirect referrer balance
-            const indirectReferrerRef = doc(db, 'profiles', indirectReferrerId);
-            await updateDoc(indirectReferrerRef, {
-              balance: increment(indirectBonus),
-              updated_at: now,
-            });
-            console.log('Indirect referrer balance updated');
-          } catch (indirectBalanceError) {
-            console.error('Error updating indirect referrer balance:', indirectBalanceError);
-          }
-          
-          try {
-            // Create transaction for indirect referrer
-            await addDoc(collection(db, 'transactions'), {
-              user_id: indirectReferrerId,
-              type: 'referral',
-              amount: indirectBonus,
-              description: 'Indirect referral bonus (2nd level)',
-              metadata: { level: 2, from_user: userId },
-              created_at: now,
-            });
-          } catch (indirectTxError) {
-            console.error('Error creating indirect referrer transaction:', indirectTxError);
-          }
-        }
-        
-        // Step 6: Create welcome bonus transaction for new user
-        try {
-          await addDoc(collection(db, 'transactions'), {
-            user_id: userId,
-            type: 'referral',
-            amount: 100,
-            description: 'Welcome bonus from referral',
-            metadata: { referrer_id: referrerId },
+          // Create indirect referral record
+          await addDoc(collection(db, 'referrals'), {
+            referrer_id: indirectReferrerId,
+            referred_id: userId,
+            bonus_earned: 25,
+            is_active: true,
+            level: 2,
             created_at: now,
           });
-          console.log('Created welcome bonus transaction for new user');
-        } catch (welcomeTxError) {
-          console.error('Error creating welcome transaction:', welcomeTxError);
+          console.log('[REFERRAL] Created indirect referral record');
+          
+          // Create PENDING BONUS for indirect referrer (25 CASET)
+          await addDoc(collection(db, 'pending_bonuses'), {
+            user_id: indirectReferrerId,
+            amount: 25,
+            type: 'indirect_referral',
+            from_user_id: userId,
+            is_claimed: false,
+            created_at: now,
+          });
+          console.log('[REFERRAL] Created pending bonus (25) for indirect referrer');
         }
         
-        console.log('Referral processing completed');
+        console.log('[REFERRAL] Referral processing completed successfully!');
       } else {
-        console.log('No referrer found with code:', normalizedCode);
+        console.log('[REFERRAL] No referrer found with code:', normalizedCode);
       }
     } catch (referralError) {
-      console.error('Referral processing error:', referralError);
+      console.error('[REFERRAL] Error:', referralError);
     }
   }
 
@@ -1083,6 +1042,63 @@ export const trackDailyLogin = async (userId: string): Promise<{ success: boolea
   });
 
   return { success: true, already_completed: false };
+};
+
+// Claim all pending referral bonuses for a user
+// This is called on login so users get their referral bonuses
+export const claimPendingBonuses = async (userId: string): Promise<{ claimed: number; total: number }> => {
+  try {
+    const q = query(
+      collection(db, 'pending_bonuses'),
+      where('user_id', '==', userId),
+      where('is_claimed', '==', false)
+    );
+    
+    const snap = await getDocs(q);
+    
+    if (snap.empty) {
+      return { claimed: 0, total: 0 };
+    }
+    
+    let totalBonus = 0;
+    const now = Timestamp.now();
+    
+    // Calculate total and mark as claimed
+    for (const bonusDoc of snap.docs) {
+      const bonus = bonusDoc.data();
+      totalBonus += bonus.amount;
+      
+      // Mark as claimed
+      await updateDoc(doc(db, 'pending_bonuses', bonusDoc.id), {
+        is_claimed: true,
+      });
+      
+      // Create transaction record
+      await addDoc(collection(db, 'transactions'), {
+        user_id: userId,
+        type: 'referral',
+        amount: bonus.amount,
+        description: bonus.type === 'direct_referral' ? 'Direct referral bonus' : 'Indirect referral bonus (2nd level)',
+        metadata: { from_user: bonus.from_user_id, type: bonus.type },
+        created_at: now,
+      });
+    }
+    
+    // Update user's balance (user updating their OWN profile - always allowed)
+    if (totalBonus > 0) {
+      const profileRef = doc(db, 'profiles', userId);
+      await updateDoc(profileRef, {
+        balance: increment(totalBonus),
+        updated_at: now,
+      });
+      console.log('[REFERRAL] Claimed pending bonuses:', totalBonus, 'CASET');
+    }
+    
+    return { claimed: snap.size, total: totalBonus };
+  } catch (error) {
+    console.error('[REFERRAL] Error claiming pending bonuses:', error);
+    return { claimed: 0, total: 0 };
+  }
 };
 
 // Referral Functions

@@ -8,7 +8,8 @@ import {
   getProfile,
   createProfile,
   subscribeToProfile,
-  trackDailyLogin
+  trackDailyLogin,
+  claimPendingBonuses
 } from "@/lib/firebase";
 
 interface AuthContextType {
@@ -84,8 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             setProfile(userProfile);
             
-            // Track daily login (don't await to prevent blocking)
+            // Claim any pending referral bonuses (don't await to prevent blocking)
             if (userProfile) {
+              claimPendingBonuses(firebaseUser.uid).then((result) => {
+                if (result.total > 0) {
+                  console.log(`[REFERRAL] Claimed ${result.total} CASET from ${result.claimed} pending bonuses`);
+                }
+              }).catch(console.error);
+              
+              // Track daily login
               trackDailyLogin(firebaseUser.uid).catch(console.error);
             }
           } else {
