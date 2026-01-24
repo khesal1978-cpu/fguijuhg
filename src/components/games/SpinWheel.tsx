@@ -10,47 +10,41 @@ interface SpinWheelProps {
   cost: number;
 }
 
-// SVG Icons
-const SkullIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
-    <path d="M12 2C6.48 2 2 6.48 2 12c0 3.69 2.47 6.86 6 8.25V22h8v-1.75c3.53-1.39 6-4.56 6-8.25 0-5.52-4.48-10-10-10zm-2 15H8v-2h2v2zm0-4H8V9h2v4zm4 4h-2v-2h2v2zm0-4h-2V9h2v4zm3-1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm0-4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM7 12c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm0-4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
-  </svg>
-);
-
-const CoinStackIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
-    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.3"/>
-    <text x="12" y="16" textAnchor="middle" fontSize="10" fill="currentColor" fontWeight="bold">$</text>
-  </svg>
-);
-
-const TrophyIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
-    <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
-  </svg>
-);
-
-const DiamondIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
-    <path d="M19 3H5L2 9l10 12L22 9l-3-6zM9.62 8l1.5-3h1.76l1.5 3H9.62zM11 10v6.68L5.44 10H11zm2 0h5.56L13 16.68V10zm6.26-2h-2.65l-1.5-3h2.65l1.5 3zM6.24 5h2.65l-1.5 3H4.74l1.5-3z"/>
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
-    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-  </svg>
-);
-
-// 6 segments with vibrant colors and proper SVG icons
+// 8 segments matching the backend reward probabilities
+// Backend: Unlucky/0 (35%), 10 (35%), 20 (20%), 50 (7%), 100 (3%), 500 (0%)
 const SEGMENTS = [
-  { value: 0, icon: "skull", color: ["#334155", "#1e293b"], isUnlucky: true },
-  { value: 10, icon: "coin", color: ["#7c3aed", "#6d28d9"] },
-  { value: 20, icon: "star", color: ["#9333ea", "#7e22ce"] },
-  { value: 50, icon: "trophy", color: ["#f59e0b", "#d97706"] },
-  { value: 100, icon: "diamond", color: ["#10b981", "#059669"] },
-  { value: 0, icon: "skull", color: ["#475569", "#334155"], isUnlucky: true },
+  { value: 0, label: "X", color: ["#334155", "#1e293b"], isUnlucky: true },
+  { value: 10, label: "10", color: ["#7c3aed", "#6d28d9"] },
+  { value: 20, label: "20", color: ["#9333ea", "#7e22ce"] },
+  { value: 50, label: "50", color: ["#f59e0b", "#d97706"] },
+  { value: 0, label: "X", color: ["#475569", "#334155"], isUnlucky: true },
+  { value: 100, label: "100", color: ["#10b981", "#059669"] },
+  { value: 10, label: "10", color: ["#8b5cf6", "#7c3aed"] },
+  { value: 500, label: "500", color: ["#ec4899", "#db2777"] },
 ];
+
+// Map reward value to segment index
+const getSegmentIndex = (reward: number): number => {
+  if (reward === 0) {
+    // Randomly choose between the two unlucky segments (0 and 4)
+    return Math.random() < 0.5 ? 0 : 4;
+  }
+  
+  // Find the segment that matches the reward value (excluding unlucky ones)
+  const matchingSegments = SEGMENTS
+    .map((s, i) => ({ ...s, index: i }))
+    .filter(s => s.value === reward && !s.isUnlucky);
+  
+  if (matchingSegments.length > 0) {
+    // If multiple segments have the same value, pick one randomly
+    const randomMatch = matchingSegments[Math.floor(Math.random() * matchingSegments.length)];
+    return randomMatch.index;
+  }
+  
+  // Fallback: find any segment with the value
+  const fallbackIndex = SEGMENTS.findIndex(s => s.value === reward);
+  return fallbackIndex !== -1 ? fallbackIndex : 1;
+};
 
 export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
   const { profile } = useAuth();
@@ -73,19 +67,14 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
     if (response.success && response.reward !== undefined) {
       const reward = response.reward;
+      const segmentIndex = getSegmentIndex(reward);
       
-      let segmentIndex: number;
-      if (reward === 0) {
-        segmentIndex = Math.random() < 0.5 ? 0 : 5;
-        setIsUnlucky(true);
-      } else {
-        segmentIndex = SEGMENTS.findIndex((s) => s.value === reward && !s.isUnlucky);
-        if (segmentIndex === -1) segmentIndex = 1;
-      }
+      // Set unlucky state based on actual reward value
+      setIsUnlucky(reward === 0);
       
       const numSegments = SEGMENTS.length;
       const segmentAngle = 360 / numSegments;
-      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.7);
+      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.6);
       const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
       const spins = 5 + Math.floor(Math.random() * 3);
       const newRotation = rotation + spins * 360 + (360 - targetAngle) + randomOffset;
@@ -104,49 +93,38 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
   const canSpin = (profile?.balance || 0) >= cost && !spinning && !isSpinning;
 
-  const renderIcon = (iconType: string) => {
-    switch (iconType) {
-      case "skull": return <SkullIcon />;
-      case "coin": return <CoinStackIcon />;
-      case "star": return <StarIcon />;
-      case "trophy": return <TrophyIcon />;
-      case "diamond": return <DiamondIcon />;
-      default: return null;
-    }
-  };
-
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-5">
       {/* Wheel Container */}
-      <div className="relative w-[280px] h-[280px]">
-        {/* Outer Glow Animation */}
-        <div className="absolute inset-[-20px] rounded-full bg-gradient-to-r from-primary/30 via-violet-500/20 to-primary/30 blur-2xl animate-pulse-soft" />
+      <div className="relative w-[260px] h-[260px]">
+        {/* Outer Glow */}
+        <div className="absolute inset-[-16px] rounded-full bg-gradient-to-r from-primary/20 via-violet-500/15 to-primary/20 blur-xl" />
         
-        {/* Decorative Outer Ring with Dots */}
-        <div className="absolute inset-[-8px] rounded-full border-4 border-primary/20">
-          {[...Array(24)].map((_, i) => (
+        {/* Decorative Dots Ring */}
+        <div className="absolute inset-[-6px] rounded-full">
+          {[...Array(32)].map((_, i) => (
             <div
               key={i}
-              className="absolute size-2 rounded-full bg-primary/60"
+              className="absolute size-1.5 rounded-full bg-primary/50"
               style={{
                 top: '50%',
                 left: '50%',
-                transform: `rotate(${i * 15}deg) translateY(-148px) translateX(-50%)`,
+                transform: `rotate(${i * 11.25}deg) translateY(-136px) translateX(-50%)`,
               }}
             />
           ))}
         </div>
 
         {/* Main Wheel */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-card via-card to-muted p-2 shadow-2xl">
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-card to-muted p-1.5 shadow-2xl border border-border/50">
           <motion.div
             ref={wheelRef}
-            className="relative w-full h-full rounded-full overflow-hidden shadow-inner"
+            className="relative w-full h-full rounded-full overflow-hidden"
             style={{ rotate: rotation }}
             animate={{ rotate: rotation }}
             transition={{ duration: 3.5, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-lg">
+            <svg viewBox="0 0 200 200" className="w-full h-full">
               {SEGMENTS.map((segment, i) => {
                 const angle = 360 / SEGMENTS.length;
                 const startAngle = i * angle - 90;
@@ -161,10 +139,8 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
                 const textAngle = startAngle + angle / 2;
                 const textRad = (textAngle * Math.PI) / 180;
-                const iconX = 100 + 65 * Math.cos(textRad);
-                const iconY = 100 + 65 * Math.sin(textRad);
-                const valueX = 100 + 45 * Math.cos(textRad);
-                const valueY = 100 + 45 * Math.sin(textRad);
+                const labelX = 100 + 70 * Math.cos(textRad);
+                const labelY = 100 + 70 * Math.sin(textRad);
 
                 return (
                   <g key={i}>
@@ -177,82 +153,66 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                     <path
                       d={`M 100 100 L ${x1} ${y1} A 100 100 0 ${largeArc} 1 ${x2} ${y2} Z`}
                       fill={`url(#seg-grad-${i})`}
-                      stroke="rgba(255,255,255,0.15)"
+                      stroke="rgba(255,255,255,0.1)"
+                      strokeWidth="0.5"
+                    />
+                    {/* Segment divider line */}
+                    <line
+                      x1="100"
+                      y1="100"
+                      x2={x1}
+                      y2={y1}
+                      stroke="rgba(255,255,255,0.2)"
                       strokeWidth="1"
                     />
-                    {/* Icon */}
-                    <g transform={`translate(${iconX - 10}, ${iconY - 10}) rotate(${textAngle + 90}, 10, 10)`}>
-                      <rect x="2" y="2" width="16" height="16" rx="4" fill="rgba(255,255,255,0.2)" />
-                      <g transform="translate(4, 4) scale(0.5)" fill="white">
-                        {segment.icon === "skull" && (
-                          <path d="M12 2C6.48 2 2 6.48 2 12c0 3.69 2.47 6.86 6 8.25V22h8v-1.75c3.53-1.39 6-4.56 6-8.25 0-5.52-4.48-10-10-10zm-2.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
-                        )}
-                        {segment.icon === "coin" && (
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                        )}
-                        {segment.icon === "star" && (
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        )}
-                        {segment.icon === "trophy" && (
-                          <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z"/>
-                        )}
-                        {segment.icon === "diamond" && (
-                          <path d="M19 3H5L2 9l10 12L22 9l-3-6z"/>
-                        )}
-                      </g>
-                    </g>
-                    {/* Value text */}
+                    {/* Value Label */}
                     <text
-                      x={valueX}
-                      y={valueY}
+                      x={labelX}
+                      y={labelY}
                       fill="white"
-                      fontSize={segment.isUnlucky ? "10" : "12"}
+                      fontSize={segment.isUnlucky ? "18" : segment.value >= 100 ? "14" : "16"}
                       fontWeight="bold"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      transform={`rotate(${textAngle + 90}, ${valueX}, ${valueY})`}
+                      transform={`rotate(${textAngle + 90}, ${labelX}, ${labelY})`}
                       style={{ 
                         textShadow: "0 2px 4px rgba(0,0,0,0.5)", 
                         fontFamily: "'Space Grotesk', sans-serif" 
                       }}
                     >
-                      {segment.isUnlucky ? "X" : segment.value}
+                      {segment.label}
                     </text>
                   </g>
                 );
               })}
-              {/* Inner circle overlay */}
-              <circle cx="100" cy="100" r="28" fill="transparent" />
+              {/* Center circle for visual appeal */}
+              <circle cx="100" cy="100" r="25" fill="transparent" />
             </svg>
           </motion.div>
 
           {/* Center Button */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-xl border-4 border-white/20 z-10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg border-2 border-white/20 z-10">
             <motion.div
               animate={isSpinning ? { rotate: 360 } : { rotate: 0 }}
               transition={{ duration: 1, repeat: isSpinning ? Infinity : 0, ease: "linear" }}
             >
-              <svg viewBox="0 0 24 24" fill="white" className="size-6">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
+              <Sparkles className="size-5 text-white" />
             </motion.div>
           </div>
         </div>
 
         {/* Pointer */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
-          <div className="relative">
-            <svg viewBox="0 0 30 35" className="w-7 h-8 drop-shadow-lg">
-              <defs>
-                <linearGradient id="pointer-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" />
-                  <stop offset="100%" stopColor="#6d28d9" />
-                </linearGradient>
-              </defs>
-              <path d="M15 0 L28 25 L15 35 L2 25 Z" fill="url(#pointer-grad)" />
-              <path d="M15 5 L23 23 L15 30 L7 23 Z" fill="#a78bfa" opacity="0.5" />
-            </svg>
-          </div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-20">
+          <svg viewBox="0 0 24 30" className="w-6 h-7 drop-shadow-lg">
+            <defs>
+              <linearGradient id="pointer-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" />
+                <stop offset="100%" stopColor="#7c3aed" />
+              </linearGradient>
+            </defs>
+            <path d="M12 0 L22 22 L12 30 L2 22 Z" fill="url(#pointer-grad)" />
+            <path d="M12 6 L18 20 L12 26 L6 20 Z" fill="white" opacity="0.2" />
+          </svg>
         </div>
 
         {/* Result Popup */}
@@ -264,55 +224,55 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
               exit={{ scale: 0, opacity: 0 }}
               className="absolute inset-0 flex items-center justify-center bg-background/95 backdrop-blur-md rounded-full z-30"
             >
-              <div className="text-center p-6">
+              <div className="text-center p-4">
                 {isUnlucky ? (
                   <>
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: [0, 1.3, 1], rotate: 0 }}
+                      animate={{ scale: [0, 1.2, 1], rotate: 0 }}
                       transition={{ delay: 0.1, type: "spring" }}
-                      className="w-16 h-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center"
+                      className="w-14 h-14 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center"
                     >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-10 text-muted-foreground">
-                        <path d="M12 2C6.48 2 2 6.48 2 12c0 3.69 2.47 6.86 6 8.25V22h8v-1.75c3.53-1.39 6-4.56 6-8.25 0-5.52-4.48-10-10-10zm-2.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm5 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
-                      </svg>
+                      <span className="text-3xl">💀</span>
                     </motion.div>
-                    <p className="text-2xl font-display font-bold text-muted-foreground">Unlucky!</p>
-                    <p className="text-sm text-muted-foreground/70 mt-1">Try again!</p>
+                    <p className="text-xl font-display font-bold text-muted-foreground">Unlucky!</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">Try again!</p>
                   </>
                 ) : (
                   <>
                     <motion.div
                       initial={{ scale: 0 }}
-                      animate={{ scale: [0, 1.4, 1] }}
+                      animate={{ scale: [0, 1.3, 1] }}
                       transition={{ delay: 0.1, type: "spring" }}
                       className="relative"
                     >
-                      <Sparkles className="size-12 text-gold mx-auto mb-2" />
+                      <div className="w-14 h-14 mx-auto mb-2 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Sparkles className="size-8 text-primary" />
+                      </div>
                       <motion.div
                         className="absolute inset-0"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.6, repeat: 3 }}
+                        transition={{ duration: 0.5, repeat: 3 }}
                       >
                         {[...Array(6)].map((_, i) => (
                           <motion.div
                             key={i}
-                            className="absolute size-2 rounded-full bg-gold"
-                            initial={{ x: 24, y: 24 }}
+                            className="absolute size-1.5 rounded-full bg-primary"
+                            initial={{ x: 28, y: 28 }}
                             animate={{
-                              x: 24 + Math.cos((i * 60 * Math.PI) / 180) * 40,
-                              y: 24 + Math.sin((i * 60 * Math.PI) / 180) * 40,
+                              x: 28 + Math.cos((i * 60 * Math.PI) / 180) * 35,
+                              y: 28 + Math.sin((i * 60 * Math.PI) / 180) * 35,
                               opacity: [1, 0],
                             }}
-                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                            transition={{ duration: 0.4, delay: i * 0.08 }}
                           />
                         ))}
                       </motion.div>
                     </motion.div>
                     <p className="text-muted-foreground text-xs font-medium">You won!</p>
-                    <p className="text-4xl font-display font-bold text-foreground mt-1">+{result}</p>
-                    <p className="font-bold text-sm text-primary">CASET</p>
+                    <p className="text-3xl font-display font-bold text-foreground">+{result}</p>
+                    <p className="font-bold text-xs text-primary">CASET</p>
                   </>
                 )}
               </div>
@@ -322,9 +282,9 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
       </div>
 
       {/* Cost Display */}
-      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border">
-        <Coins className="size-4 text-gold" />
-        <span className="text-sm font-medium text-foreground">{cost} CASET per spin</span>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
+        <Coins className="size-3.5 text-primary" />
+        <span className="text-xs font-medium text-foreground">{cost} CASET per spin</span>
       </div>
 
       {/* Spin Button */}
@@ -332,16 +292,16 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
         onClick={handleSpin}
         disabled={!canSpin}
         size="lg"
-        className="w-full max-w-[220px] h-14 rounded-2xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-lg shadow-xl shadow-primary/30 disabled:opacity-50 disabled:shadow-none transition-all"
+        className="w-full max-w-[200px] h-12 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none transition-all"
       >
         {spinning || isSpinning ? (
           <>
-            <Loader2 className="size-5 animate-spin mr-2" />
+            <Loader2 className="size-4 animate-spin mr-2" />
             Spinning...
           </>
         ) : (
           <>
-            <Sparkles className="size-5 mr-2" />
+            <Sparkles className="size-4 mr-2" />
             SPIN NOW
           </>
         )}
@@ -349,11 +309,11 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
       {(profile?.balance || 0) < cost && !spinning && !isSpinning && (
         <motion.p 
-          className="text-destructive text-sm font-medium flex items-center gap-2"
+          className="text-destructive text-xs font-medium flex items-center gap-1.5"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Coins className="size-4" />
+          <Coins className="size-3" />
           Not enough coins to spin
         </motion.p>
       )}
@@ -361,10 +321,11 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
       {showResult && (
         <Button
           variant="ghost"
+          size="sm"
           onClick={() => setShowResult(false)}
-          className="text-primary hover:text-primary/80"
+          className="text-primary hover:text-primary/80 text-sm"
         >
-          <Sparkles className="size-4 mr-2" />
+          <Sparkles className="size-3.5 mr-1.5" />
           Spin Again
         </Button>
       )}
