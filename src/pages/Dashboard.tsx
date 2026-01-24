@@ -91,25 +91,25 @@ export default function Dashboard() {
 
       {/* Balance Card */}
       <motion.div
-        className="card-glass p-5 text-center"
+        className="card-glass-strong p-6 text-center"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <p className="text-xs text-muted-foreground mb-1">Total Balance</p>
+        <p className="text-xs font-medium text-foreground/60 mb-2">Total Balance</p>
         <div className="flex items-center justify-center gap-2">
-          <Coins className="size-6 text-gold" />
-          <span className="text-3xl font-display font-bold text-foreground">
+          <Coins className="size-7 text-gold" />
+          <span className="text-4xl font-display font-bold text-foreground">
             {Number(profile?.balance || 0).toLocaleString("en-US", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
           </span>
-          <span className="text-sm font-medium text-primary">CASET</span>
+          <span className="text-base font-semibold text-primary">CASET</span>
         </div>
         {isMining && liveEarnings > 0 && (
           <motion.p 
-            className="text-xs text-primary mt-2"
+            className="text-sm font-medium text-primary mt-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -178,43 +178,43 @@ export default function Dashboard() {
         transition={{ delay: 0.25 }}
       >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
-          <Link to="/wallet" className="text-xs text-primary font-medium flex items-center">
-            View all <ChevronRight className="size-3" />
+          <h2 className="text-sm font-bold text-foreground">Recent Activity</h2>
+          <Link to="/wallet" className="text-xs text-primary font-semibold flex items-center gap-0.5 hover:text-primary/80 transition-colors">
+            View all <ChevronRight className="size-4" />
           </Link>
         </div>
         
-        <div className="card-glass divide-y divide-white/[0.06]">
+        <div className="card-glass-strong divide-y divider-glass">
           {txLoading ? (
-            <div className="p-6 flex justify-center">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            <div className="p-8 flex justify-center">
+              <Loader2 className="size-6 animate-spin text-foreground/40" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="p-6 text-center">
-              <Zap className="size-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No activity yet</p>
+            <div className="p-8 text-center">
+              <Zap className="size-10 text-foreground/20 mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground/60">No activity yet</p>
             </div>
           ) : (
             transactions.map((tx, i) => (
               <motion.div
                 key={tx.id}
-                className="flex items-center justify-between p-3"
+                className="flex items-center justify-between p-4 list-item-glass"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-primary/15 backdrop-blur-sm flex items-center justify-center">
-                    <Zap className="size-4 text-primary" />
+                  <div className="size-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <Zap className="size-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{tx.description || tx.type}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm font-semibold text-foreground">{tx.description || tx.type}</p>
+                    <p className="text-xs text-foreground/60">
                       {((tx.created_at as any)?.toDate?.() ?? new Date(tx.created_at as any)).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </p>
                   </div>
                 </div>
-                <span className={`text-sm font-semibold ${Number(tx.amount) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                <span className={`text-sm font-bold ${Number(tx.amount) >= 0 ? 'text-primary' : 'text-destructive'}`}>
                   {Number(tx.amount) >= 0 ? '+' : ''}{Number(tx.amount).toFixed(2)}
                 </span>
               </motion.div>

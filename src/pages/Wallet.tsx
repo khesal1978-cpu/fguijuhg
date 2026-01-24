@@ -30,62 +30,62 @@ export default function Wallet() {
 
       {/* Balance Card */}
       <motion.div
-        className="card-glass p-5 space-y-4"
+        className="card-glass-strong p-6 space-y-5"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="flex items-center gap-2">
-          <div className="size-8 rounded-lg bg-primary/15 backdrop-blur-sm flex items-center justify-center">
-            <WalletIcon className="size-4 text-primary" />
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <WalletIcon className="size-5 text-primary" />
           </div>
-          <span className="text-xs text-muted-foreground font-medium">Total Balance</span>
+          <span className="text-sm font-medium text-foreground/70">Total Balance</span>
         </div>
         
         <div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-display font-bold text-foreground">
+            <span className="text-4xl font-display font-bold text-foreground">
               {Number(profile?.balance || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </span>
-            <span className="text-sm font-medium text-primary">CASET</span>
+            <span className="text-base font-semibold text-primary">CASET</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-            <TrendingUp className="size-3 text-success" />
+          <p className="text-sm text-foreground/60 mt-2 flex items-center gap-1.5">
+            <TrendingUp className="size-4 text-success" />
             ≈ ${(Number(profile?.balance || 0) * 0.34).toFixed(2)} USD
           </p>
         </div>
 
         {/* Balance Split */}
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.06]">
-          <div className="p-3 rounded-xl card-glass-subtle">
-            <p className="text-[10px] text-muted-foreground mb-1">Available</p>
-            <p className="text-lg font-display font-bold text-foreground">
+        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/[0.1]">
+          <div className="p-4 rounded-xl card-glass-subtle">
+            <p className="text-xs font-medium text-foreground/60 mb-1">Available</p>
+            <p className="text-xl font-display font-bold text-foreground">
               {Number(profile?.balance || 0).toLocaleString()}
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-gold/10 border border-gold/20">
-            <p className="text-[10px] text-muted-foreground mb-1">Pending</p>
-            <p className="text-lg font-display font-bold text-foreground">
+          <div className="p-4 rounded-xl bg-gold/15 border border-gold/30">
+            <p className="text-xs font-medium text-foreground/60 mb-1">Pending</p>
+            <p className="text-xl font-display font-bold text-foreground">
               {Number(profile?.pending_balance || 0).toLocaleString()}
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="size-3" />
+        <div className="flex items-center justify-between pt-4 border-t border-white/[0.1]">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground/60">
+            <Clock className="size-4" />
             Network: PingNet
           </div>
           <div className="relative">
-            <Button variant="secondary" disabled className="opacity-50 text-xs h-8">
-              <ArrowUpRight className="size-3 mr-1" />
+            <Button variant="secondary" disabled className="opacity-50 text-sm h-10">
+              <ArrowUpRight className="size-4 mr-1.5" />
               Withdraw
             </Button>
-            <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+            <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
               SOON
             </span>
           </div>
@@ -98,41 +98,41 @@ export default function Wallet() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <History className="size-4 text-primary" />
+        <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+          <History className="size-5 text-primary" />
           Activity
         </h2>
 
-        <div className="card-glass divide-y divide-white/[0.06]">
+        <div className="card-glass-strong divide-y divider-glass">
           {loading ? (
-            <div className="p-6 flex justify-center">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            <div className="p-8 flex justify-center">
+              <Loader2 className="size-6 animate-spin text-foreground/40" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="p-6 text-center">
-              <History className="size-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No transactions yet</p>
+            <div className="p-8 text-center">
+              <History className="size-10 text-foreground/20 mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground/60">No transactions yet</p>
             </div>
           ) : (
             transactions.map((tx, i) => (
               <motion.div
                 key={tx.id}
-                className="flex items-center justify-between p-3"
+                className="flex items-center justify-between p-4 list-item-glass"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`size-8 rounded-lg backdrop-blur-sm flex items-center justify-center ${
+                  <div className={`size-10 rounded-xl flex items-center justify-center ${
                     tx.type === "referral"
-                      ? "bg-gold/15 text-gold"
-                      : "bg-primary/15 text-primary"
+                      ? "bg-gold/20 border border-gold/30 text-gold"
+                      : "bg-primary/20 border border-primary/30 text-primary"
                   }`}>
                     {getTransactionIcon(tx.type)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{tx.description || tx.type}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm font-semibold text-foreground">{tx.description || tx.type}</p>
+                    <p className="text-xs text-foreground/60">
                       {((tx.created_at as any)?.toDate?.() ?? new Date(tx.created_at as any)).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -142,7 +142,7 @@ export default function Wallet() {
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-primary">
+                <span className="text-sm font-bold text-primary">
                   +{Number(tx.amount).toFixed(2)}
                 </span>
               </motion.div>

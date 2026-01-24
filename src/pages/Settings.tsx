@@ -129,24 +129,28 @@ export default function Settings() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <p className="text-xs font-medium text-muted-foreground px-1">{title}</p>
-      <div className="card-glass divide-y divide-white/[0.06]">
+      <p className="text-xs font-semibold text-foreground/70 uppercase tracking-wider px-1">{title}</p>
+      <div className="card-glass-strong divide-y divider-glass">
         {items.map((item, i) => (
           <button 
             key={i}
-            className={`w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors ${item.disabled ? 'opacity-50' : ''}`}
+            className={`w-full flex items-center justify-between p-4 list-item-glass ${item.disabled ? 'opacity-50' : ''}`}
             onClick={item.onClick}
           >
             <div className="flex items-center gap-3">
-              <div className={`size-9 rounded-lg backdrop-blur-sm flex items-center justify-center ${item.highlight ? 'bg-primary/20' : 'bg-muted/50'}`}>
-                <item.icon className={`size-4 ${item.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
+              <div className={`size-10 rounded-xl flex items-center justify-center ${
+                item.highlight 
+                  ? 'bg-primary/25 border border-primary/30' 
+                  : 'bg-white/[0.08] border border-white/[0.06]'
+              }`}>
+                <item.icon className={`size-5 ${item.highlight ? 'text-primary' : 'text-foreground/80'}`} />
               </div>
               <div className="text-left">
-                <p className={`text-sm font-medium ${item.highlight ? 'text-primary' : 'text-foreground'}`}>{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                <p className={`text-sm font-semibold ${item.highlight ? 'text-primary' : 'text-foreground'}`}>{item.title}</p>
+                <p className="text-xs text-foreground/60">{item.subtitle}</p>
               </div>
             </div>
-            <ChevronRight className="size-4 text-muted-foreground" />
+            <ChevronRight className="size-5 text-foreground/40" />
           </button>
         ))}
       </div>
@@ -159,14 +163,14 @@ export default function Settings() {
     return (
       <AnimatePresence>
         <motion.div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setActiveModal(null)}
         >
           <motion.div
-            className="w-full max-w-md card-glass p-6 space-y-4"
+            className="w-full max-w-md modal-glass p-6 space-y-4"
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
@@ -180,31 +184,31 @@ export default function Settings() {
                 {activeModal === "passcode" && "Change Password"}
                 {activeModal === "id" && "Your PingCaset ID"}
               </h3>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-muted rounded-lg">
-                <X className="size-4 text-muted-foreground" />
+              <button onClick={() => setActiveModal(null)} className="p-2.5 hover:bg-white/10 rounded-xl transition-colors">
+                <X className="size-5 text-foreground/70" />
               </button>
             </div>
 
             {activeModal === "profile" && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1.5 block">Display Name</label>
+                  <label className="text-xs font-medium text-foreground/70 mb-2 block">Display Name</label>
                   <Input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Enter display name"
-                    className="bg-muted/50 text-foreground"
+                    className="input-elevated h-12 text-foreground placeholder:text-foreground/40"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1.5 block">Email</label>
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-                    <Mail className="size-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{user?.email || "Not set"}</span>
+                  <label className="text-xs font-medium text-foreground/70 mb-2 block">Email</label>
+                  <div className="flex items-center gap-3 p-3.5 rounded-xl input-elevated">
+                    <Mail className="size-5 text-foreground/60" />
+                    <span className="text-sm font-medium text-foreground">{user?.email || "Not set"}</span>
                   </div>
                 </div>
                 <Button 
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold"
                   onClick={() => {
                     toast.success("Profile update coming soon!");
                     setActiveModal(null);
@@ -216,21 +220,21 @@ export default function Settings() {
             )}
 
             {activeModal === "notifications" && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
                   { label: "Mining Alerts", desc: "Get notified when mining session ends", value: miningNotifs, onChange: setMiningNotifs },
                   { label: "Referral Updates", desc: "New team member notifications", value: referralNotifs, onChange: setReferralNotifs },
                   { label: "Game Rewards", desc: "Spin & scratch win alerts", value: gameNotifs, onChange: setGameNotifs },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div key={i} className="flex items-center justify-between p-4 rounded-xl card-glass-subtle">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                      <p className="text-xs text-foreground/60">{item.desc}</p>
                     </div>
                     <Switch checked={item.value} onCheckedChange={item.onChange} />
                   </div>
                 ))}
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-xs text-foreground/50 text-center pt-2">
                   Push notifications coming soon!
                 </p>
               </div>
@@ -238,25 +242,25 @@ export default function Settings() {
 
             {activeModal === "security" && (
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <div className="p-4 rounded-xl bg-primary/15 border border-primary/30">
                   <div className="flex items-center gap-2 mb-2">
-                    <Shield className="size-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Account Protected</span>
+                    <Shield className="size-5 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">Account Protected</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-foreground/70">
                     Your account is secured with email & password authentication.
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Security Features:</p>
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-foreground/70">Security Features:</p>
                   {[
                     "Email verification",
                     "Password encryption",
                     "Device tracking",
                     "Session management"
                   ].map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-foreground">
-                      <Check className="size-3 text-primary" />
+                    <div key={i} className="flex items-center gap-3 text-sm font-medium text-foreground p-2.5 rounded-lg bg-white/[0.04]">
+                      <Check className="size-4 text-primary" />
                       {feature}
                     </div>
                   ))}
@@ -267,87 +271,87 @@ export default function Settings() {
             {activeModal === "passcode" && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1.5 block">Current Password</label>
+                  <label className="text-xs font-medium text-foreground/70 mb-2 block">Current Password</label>
                   <div className="relative">
                     <Input
                       type={showCurrentPassword ? "text" : "password"}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter current password"
-                      className="bg-muted/50 text-foreground pr-10"
+                      className="input-elevated h-12 text-foreground placeholder:text-foreground/40 pr-12"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                     >
                       {showCurrentPassword ? (
-                        <EyeOff className="size-4 text-muted-foreground" />
+                        <EyeOff className="size-5 text-foreground/60" />
                       ) : (
-                        <Eye className="size-4 text-muted-foreground" />
+                        <Eye className="size-5 text-foreground/60" />
                       )}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1.5 block">New Password</label>
+                  <label className="text-xs font-medium text-foreground/70 mb-2 block">New Password</label>
                   <div className="relative">
                     <Input
                       type={showNewPassword ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
-                      className="bg-muted/50 text-foreground pr-10"
+                      className="input-elevated h-12 text-foreground placeholder:text-foreground/40 pr-12"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
                     >
                       {showNewPassword ? (
-                        <EyeOff className="size-4 text-muted-foreground" />
+                        <EyeOff className="size-5 text-foreground/60" />
                       ) : (
-                        <Eye className="size-4 text-muted-foreground" />
+                        <Eye className="size-5 text-foreground/60" />
                       )}
                     </button>
                   </div>
                 </div>
                 <Button 
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold"
                   onClick={handleChangePassword}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Update Password"}
+                  {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : "Update Password"}
                 </Button>
               </div>
             )}
 
             {activeModal === "id" && (
               <div className="space-y-4">
-                <div className="p-5 rounded-xl bg-primary/10 border border-primary/30 text-center">
-                  <p className="text-xs text-muted-foreground mb-2">Your Unique PingCaset ID</p>
-                  <p className="text-2xl font-mono font-bold text-primary tracking-wider">
+                <div className="p-6 rounded-xl bg-primary/15 border border-primary/30 text-center">
+                  <p className="text-xs font-medium text-foreground/60 mb-3">Your Unique PingCaset ID</p>
+                  <p className="text-3xl font-mono font-bold text-primary tracking-wider">
                     {profile?.referral_code || "Loading..."}
                   </p>
                 </div>
                 <Button 
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold"
                   onClick={copyPingCasetId}
                   variant="outline"
                 >
                   {idCopied ? (
                     <>
-                      <Check className="size-4 mr-2" />
+                      <Check className="size-5 mr-2" />
                       Copied!
                     </>
                   ) : (
                     <>
-                      <Copy className="size-4 mr-2" />
+                      <Copy className="size-5 mr-2" />
                       Copy ID
                     </>
                   )}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-xs text-foreground/50 text-center">
                   Share this ID with friends to earn referral bonuses!
                 </p>
               </div>
@@ -372,27 +376,27 @@ export default function Settings() {
 
         {/* Profile Card */}
         <motion.div
-          className="card-glass p-5"
+          className="card-glass-strong p-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
           <div className="flex items-center gap-4">
-            <div className="size-16 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">
+            <div className="size-18 w-18 h-18 rounded-2xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-lg shadow-primary/30">
+              <span className="text-3xl font-bold text-white">
                 {(profile?.display_name || "M")[0].toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-display font-bold text-foreground truncate">
+              <h3 className="text-xl font-display font-bold text-foreground truncate">
                 {profile?.display_name || "Miner"}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-medium text-foreground/70">
                 {profile?.is_premium ? "⭐ PRO Member" : "Free Member"}
               </p>
               <button 
                 onClick={() => setActiveModal("id")}
-                className="text-xs text-primary font-medium mt-1 hover:underline"
+                className="text-xs text-primary font-semibold mt-1.5 hover:text-primary/80 transition-colors"
               >
                 ID: {profile?.referral_code}
               </button>
@@ -400,15 +404,15 @@ export default function Settings() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-white/[0.06]">
+          <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-white/[0.1]">
             {[
               { icon: Zap, value: Number(profile?.total_mined || 0).toLocaleString(), label: "Total Mined", color: "text-primary" },
               { icon: Award, value: `${Number(profile?.mining_rate || 10)}`, label: "Rate/Session", color: "text-gold" },
             ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <stat.icon className={`size-4 mx-auto mb-1 ${stat.color}`} />
-                <p className="text-lg font-display font-bold text-foreground">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+              <div key={i} className="text-center p-3 rounded-xl bg-white/[0.04]">
+                <stat.icon className={`size-5 mx-auto mb-1.5 ${stat.color}`} />
+                <p className="text-xl font-display font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-foreground/60">{stat.label}</p>
               </div>
             ))}
           </div>
