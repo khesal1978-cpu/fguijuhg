@@ -1,18 +1,23 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2, AlertTriangle, Key, Copy, Check } from "lucide-react";
+import { 
+  Hexagon, Mail, Lock, User, Gift, ArrowRight, Loader2, 
+  AlertTriangle, Key, Copy, Check, Sparkles, Zap, Shield, ChevronLeft
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+type AuthScreen = "welcome" | "login" | "register";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
   
-  const [isLogin, setIsLogin] = useState(true);
+  const [screen, setScreen] = useState<AuthScreen>("welcome");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,25 +56,23 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        // If using unique ID, convert to email format
+      if (screen === "login") {
         const loginEmail = useUniqueId ? `${uniqueId.toLowerCase()}@pingcaset.id` : email;
         const { error } = await signIn(loginEmail, password);
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Credentials verified! Face verification required.");
-          navigate("/face-auth?mode=login");
+          toast.success("Welcome back!");
+          navigate("/");
         }
       } else {
-        // For signup with unique ID
         const signupEmail = generatedId ? `${generatedId.toLowerCase()}@pingcaset.id` : email;
         const { error } = await signUp(signupEmail, password, displayName || generatedId, referralCode);
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Account created! Set up face verification.");
-          navigate("/face-auth?mode=register");
+          toast.success("Account created! Happy mining!");
+          navigate("/");
         }
       }
     } catch (err) {
@@ -79,6 +82,129 @@ export default function Auth() {
     }
   };
 
+  // Welcome/Get Started Screen
+  if (screen === "welcome") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 dark">
+        {/* Background Effects */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-violet-500/10 rounded-full blur-[100px]" />
+        </div>
+
+        <motion.div
+          className="relative z-10 w-full max-w-sm text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Logo */}
+          <motion.div
+            className="flex items-center justify-center gap-3 mb-8"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
+          >
+            <div className="size-16 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-2xl shadow-primary/30">
+              <Hexagon className="size-9 text-white" />
+            </div>
+          </motion.div>
+
+          <motion.h1
+            className="text-3xl font-display font-bold text-foreground mb-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            PingCaset
+          </motion.h1>
+          
+          <motion.p
+            className="text-primary font-semibold tracking-[0.3em] text-xs mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            MINING HUB
+          </motion.p>
+
+          <motion.p
+            className="text-muted-foreground text-sm leading-relaxed mb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Earn CASET tokens through time-based mining. 
+            No hardware required — just your time.
+          </motion.p>
+
+          {/* Features */}
+          <motion.div
+            className="grid grid-cols-3 gap-3 mb-10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            {[
+              { icon: Zap, label: "10 CASET", sub: "per session" },
+              { icon: Sparkles, label: "4 Sessions", sub: "per day" },
+              { icon: Shield, label: "Secure", sub: "& fair" },
+            ].map((item, i) => (
+              <div key={i} className="p-3 rounded-xl bg-card/50 border border-border/50">
+                <item.icon className="size-5 text-primary mx-auto mb-1" />
+                <p className="text-xs font-semibold text-foreground">{item.label}</p>
+                <p className="text-[10px] text-muted-foreground">{item.sub}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* CTA Buttons */}
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            <Button
+              onClick={() => setScreen("register")}
+              className="w-full h-14 rounded-2xl gradient-primary font-bold text-lg shadow-xl shadow-primary/30"
+            >
+              Get Started
+              <ArrowRight className="size-5 ml-2" />
+            </Button>
+
+            <button
+              onClick={() => setScreen("login")}
+              className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Already have an account? <span className="text-primary font-medium">Sign in</span>
+            </button>
+          </motion.div>
+
+          {/* Microsoft Badge */}
+          <motion.div
+            className="mt-12 flex items-center justify-center gap-2 text-muted-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            <span className="text-xs">Supported by</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border">
+              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#f25022" d="M1 1h10v10H1z"/>
+                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+                <path fill="#7fba00" d="M12 1h10v10H12z"/>
+                <path fill="#ffb900" d="M12 12h10v10H12z"/>
+              </svg>
+              <span className="text-xs font-medium text-foreground">Microsoft for Startups</span>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Login/Register Screen
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
       {/* Background glow */}
@@ -88,10 +214,24 @@ export default function Auth() {
 
       <motion.div
         className="relative w-full max-w-sm z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
       >
+        {/* Back Button */}
+        <button
+          onClick={() => {
+            setScreen("welcome");
+            setGeneratedId("");
+            setShowIdWarning(false);
+            setUseUniqueId(false);
+          }}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        >
+          <ChevronLeft className="size-4" />
+          Back
+        </button>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="size-10 rounded-xl bg-primary flex items-center justify-center">
@@ -106,14 +246,14 @@ export default function Auth() {
         {/* Auth Card */}
         <div className="card-dark p-6">
           <h2 className="text-lg font-display font-bold text-foreground text-center mb-1">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {screen === "login" ? "Welcome Back" : "Create Account"}
           </h2>
           <p className="text-sm text-muted-foreground text-center mb-6">
-            {isLogin ? "Sign in to continue" : "Start your mining journey"}
+            {screen === "login" ? "Sign in to continue mining" : "Start your mining journey"}
           </p>
 
           {/* Login Method Toggle (Login only) */}
-          {isLogin && (
+          {screen === "login" && (
             <div className="flex gap-2 mb-4 p-1 bg-muted/50 rounded-xl">
               <button
                 type="button"
@@ -139,7 +279,7 @@ export default function Auth() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            {!isLogin && (
+            {screen === "register" && (
               <>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -148,7 +288,7 @@ export default function Auth() {
                     placeholder="Display Name"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="pl-10 h-11 bg-muted/50 border-border"
+                    className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                     required={!generatedId}
                   />
                 </div>
@@ -163,7 +303,7 @@ export default function Auth() {
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 h-11 bg-muted/50 border-border"
+                        className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                         required={!generatedId}
                       />
                     </div>
@@ -246,7 +386,7 @@ export default function Auth() {
               </>
             )}
 
-            {isLogin && (
+            {screen === "login" && (
               <div className="relative">
                 {useUniqueId ? (
                   <>
@@ -256,7 +396,7 @@ export default function Auth() {
                       placeholder="Your Unique ID (e.g. PC-ABCD1234)"
                       value={uniqueId}
                       onChange={(e) => setUniqueId(e.target.value.toUpperCase())}
-                      className="pl-10 h-11 bg-muted/50 border-border font-mono"
+                      className="pl-10 h-11 bg-muted/50 border-border font-mono text-foreground placeholder:text-muted-foreground"
                       required
                     />
                   </>
@@ -268,7 +408,7 @@ export default function Auth() {
                       placeholder="Email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-11 bg-muted/50 border-border"
+                      className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                       required
                     />
                   </>
@@ -283,13 +423,13 @@ export default function Auth() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 h-11 bg-muted/50 border-border"
+                className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                 required
                 minLength={6}
               />
             </div>
 
-            {!isLogin && (
+            {screen === "register" && (
               <div className="relative">
                 <Gift className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
@@ -297,7 +437,7 @@ export default function Auth() {
                   placeholder="Referral Code (optional)"
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                  className="pl-10 h-11 bg-muted/50 border-border"
+                  className="pl-10 h-11 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
                 />
                 {referralCode && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
@@ -310,13 +450,13 @@ export default function Auth() {
             <Button
               type="submit"
               className="w-full h-11 gradient-primary font-semibold mt-2"
-              disabled={loading || (!isLogin && !email && !generatedId)}
+              disabled={loading || (screen === "register" && !email && !generatedId)}
             >
               {loading ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <>
-                  {isLogin ? "Sign In" : "Create Account"}
+                  {screen === "login" ? "Sign In" : "Create Account"}
                   <ArrowRight className="size-4 ml-2" />
                 </>
               )}
@@ -327,27 +467,18 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => {
-                setIsLogin(!isLogin);
+                setScreen(screen === "login" ? "register" : "login");
                 setGeneratedId("");
                 setShowIdWarning(false);
                 setUseUniqueId(false);
               }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <span className="font-medium text-primary">{isLogin ? "Sign up" : "Sign in"}</span>
+              {screen === "login" ? "Don't have an account? " : "Already have an account? "}
+              <span className="font-medium text-primary">{screen === "login" ? "Sign up" : "Sign in"}</span>
             </button>
-            
-            {isLogin && !useUniqueId && (
-              <Link 
-                to="/face-auth?mode=recovery"
-                className="block text-sm text-primary hover:underline"
-              >
-                Forgot password? Recover with Face ID
-              </Link>
-            )}
 
-            {isLogin && useUniqueId && (
+            {screen === "login" && useUniqueId && (
               <p className="text-xs text-muted-foreground/70 px-4">
                 ⚠️ If you lost your Unique ID, your account cannot be recovered.
               </p>
