@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Loader2, CheckCircle2, AlertCircle, Eye, Move, Sparkles, RefreshCw } from 'lucide-react';
+import { Camera, Loader2, CheckCircle2, AlertCircle, Eye, Move, Sparkles, RefreshCw, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -9,6 +9,7 @@ import {
   getFaceDescriptor,
   checkLiveness,
   createLivenessState,
+  type MovementDirection,
 } from '@/lib/faceVerification';
 
 interface FaceVerificationCameraProps {
@@ -37,6 +38,8 @@ export function FaceVerificationCamera({
   const [blinkCount, setBlinkCount] = useState(0);
   const [faceDetected, setFaceDetected] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [movementDirection, setMovementDirection] = useState<MovementDirection>('none');
+  const [movementComplete, setMovementComplete] = useState(false);
 
   // Initialize camera and models
   useEffect(() => {
@@ -152,13 +155,17 @@ export function FaceVerificationCamera({
             livenessStateRef.current
           );
           setBlinkCount(livenessResult.blinkCount);
+          setMovementDirection(livenessResult.movementDirection);
+          setMovementComplete(livenessResult.movementDirection === 'complete');
 
           if (stage === 'detecting') {
             setStage('liveness');
           }
 
           setMessage(livenessResult.message);
-          setProgress(Math.min((livenessResult.blinkCount / 2) * 50 + (livenessStateRef.current.headMovements.length > 15 ? 50 : 0), 100));
+          const blinkProgress = (livenessResult.blinkCount / 2) * 50;
+          const moveProgress = livenessResult.movementProgress * 0.5;
+          setProgress(Math.min(blinkProgress + moveProgress, 100));
 
           if (livenessResult.passed) {
             setStage('capturing');
@@ -207,6 +214,8 @@ export function FaceVerificationCamera({
     setBlinkCount(0);
     setProgress(0);
     setFaceDetected(false);
+    setMovementDirection('none');
+    setMovementComplete(false);
     setStage('ready');
     setMessage('Position your face in the oval');
   };
@@ -250,9 +259,90 @@ export function FaceVerificationCamera({
           )}
         </AnimatePresence>
 
-        {/* Face Guide Overlay */}
+        {/* Face Guide Overlay with Movement Arrows */}
         {stage !== 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {/* Movement direction arrows */}
+            {(stage === 'liveness' || stage === 'detecting') && !movementComplete && (
+              <>
+                {/* Left arrow */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ 
+                    opacity: movementDirection === 'left' ? 1 : 0.2,
+                    x: movementDirection === 'left' ? [0, -10, 0] : 0,
+                    scale: movementDirection === 'left' ? 1.2 : 1
+                  }}
+                  transition={{ 
+                    x: { repeat: Infinity, duration: 0.8 },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2"
+                >
+                  <div className={`p-2 rounded-full ${movementDirection === 'left' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
+                    <ChevronLeft className="size-8" />
+                  </div>
+                </motion.div>
+                
+                {/* Right arrow */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ 
+                    opacity: movementDirection === 'right' ? 1 : 0.2,
+                    x: movementDirection === 'right' ? [0, 10, 0] : 0,
+                    scale: movementDirection === 'right' ? 1.2 : 1
+                  }}
+                  transition={{ 
+                    x: { repeat: Infinity, duration: 0.8 },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                >
+                  <div className={`p-2 rounded-full ${movementDirection === 'right' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
+                    <ChevronRight className="size-8" />
+                  </div>
+                </motion.div>
+                
+                {/* Up arrow */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: movementDirection === 'up' ? 1 : 0.2,
+                    y: movementDirection === 'up' ? [0, -10, 0] : 0,
+                    scale: movementDirection === 'up' ? 1.2 : 1
+                  }}
+                  transition={{ 
+                    y: { repeat: Infinity, duration: 0.8 },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="absolute top-16 left-1/2 -translate-x-1/2"
+                >
+                  <div className={`p-2 rounded-full ${movementDirection === 'up' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
+                    <ChevronUp className="size-8" />
+                  </div>
+                </motion.div>
+                
+                {/* Down arrow */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ 
+                    opacity: movementDirection === 'down' ? 1 : 0.2,
+                    y: movementDirection === 'down' ? [0, 10, 0] : 0,
+                    scale: movementDirection === 'down' ? 1.2 : 1
+                  }}
+                  transition={{ 
+                    y: { repeat: Infinity, duration: 0.8 },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="absolute bottom-24 left-1/2 -translate-x-1/2"
+                >
+                  <div className={`p-2 rounded-full ${movementDirection === 'down' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'}`}>
+                    <ChevronDown className="size-8" />
+                  </div>
+                </motion.div>
+              </>
+            )}
+
             {/* Oval guide */}
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -324,8 +414,8 @@ export function FaceVerificationCamera({
                 <div
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
                     blinkCount >= 2 
-                      ? 'bg-green-500/90 text-white' 
-                      : 'bg-black/40 text-white/80 backdrop-blur-sm'
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-background/60 text-foreground backdrop-blur-sm'
                   }`}
                 >
                   <Eye className="size-3" />
@@ -334,14 +424,14 @@ export function FaceVerificationCamera({
                 </div>
                 <div
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
-                    progress >= 50 
-                      ? 'bg-green-500/90 text-white' 
-                      : 'bg-black/40 text-white/80 backdrop-blur-sm'
+                    movementComplete
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-background/60 text-foreground backdrop-blur-sm'
                   }`}
                 >
                   <Move className="size-3" />
-                  <span>Move</span>
-                  {progress >= 50 && <CheckCircle2 className="size-3" />}
+                  <span>{movementComplete ? 'Done' : 'Move'}</span>
+                  {movementComplete && <CheckCircle2 className="size-3" />}
                 </div>
               </div>
             </motion.div>
