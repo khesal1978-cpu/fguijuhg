@@ -157,6 +157,7 @@ export interface Referral {
   referred_id: string;
   bonus_earned: number;
   is_active: boolean;
+  level: number; // 1 = direct, 2 = indirect
   created_at: Timestamp;
   referred_profile?: {
     display_name: string | null;
@@ -221,35 +222,71 @@ export const createProfile = async (
     
     if (!referrerSnap.empty) {
       const referrerId = referrerSnap.docs[0].id;
+      const referrerProfile = referrerSnap.docs[0].data() as Profile;
       newProfile.referred_by = referrerId;
       newProfile.balance = 50; // Welcome bonus for referred user
       
-      // Update referrer balance
+      // Update referrer balance (direct referral bonus: 25)
       const referrerRef = doc(db, 'profiles', referrerId);
       await updateDoc(referrerRef, {
         balance: increment(25),
         updated_at: now,
       });
       
-      // Create referral record
+      // Create DIRECT referral record (level 1)
       await addDoc(collection(db, 'referrals'), {
         referrer_id: referrerId,
         referred_id: userId,
         bonus_earned: 25,
         is_active: false,
+        level: 1, // Direct referral
         created_at: now,
       });
       
-      // Create transactions
+      // Create transaction for direct referrer
       await addDoc(collection(db, 'transactions'), {
         user_id: referrerId,
         type: 'referral',
         amount: 25,
-        description: 'Referral bonus for inviting a friend',
-        metadata: null,
+        description: 'Direct referral bonus',
+        metadata: { level: 1 },
         created_at: now,
       });
       
+      // Check for INDIRECT referral (if the referrer was referred by someone else)
+      if (referrerProfile.referred_by) {
+        const indirectReferrerId = referrerProfile.referred_by;
+        const indirectBonus = 10; // Indirect referral bonus
+        
+        // Update indirect referrer balance
+        const indirectReferrerRef = doc(db, 'profiles', indirectReferrerId);
+        await updateDoc(indirectReferrerRef, {
+          balance: increment(indirectBonus),
+          updated_at: now,
+        });
+        
+        // Create INDIRECT referral record (level 2)
+        await addDoc(collection(db, 'referrals'), {
+          referrer_id: indirectReferrerId,
+          referred_id: userId,
+          bonus_earned: indirectBonus,
+          is_active: false,
+          level: 2, // Indirect referral
+          created_at: now,
+        });
+        
+        // Create transaction for indirect referrer
+        await addDoc(collection(db, 'transactions'), {
+          user_id: indirectReferrerId,
+          type: 'referral',
+          amount: indirectBonus,
+          description: 'Indirect referral bonus (2nd level)',
+          metadata: { level: 2 },
+          created_at: now,
+        });
+      }
+      
+      // Create welcome bonus transaction for new user
       await addDoc(collection(db, 'transactions'), {
         user_id: userId,
         type: 'referral',
