@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Hexagon,
   Mail,
   Lock,
   User,
@@ -11,6 +10,7 @@ import {
   Shield,
   Fingerprint,
   AlertTriangle,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,10 +20,39 @@ import {
   descriptorToArray,
   arrayToDescriptor,
   facesMatch,
-  encryptFaceTemplate,
-  decryptFaceTemplate,
 } from '@/lib/faceVerification';
 import { toast } from 'sonner';
+
+// Step indicator component
+function StepIndicator({ 
+  active, 
+  completed, 
+  label, 
+  isComplete 
+}: { 
+  active: boolean; 
+  completed: boolean; 
+  label: string; 
+  isComplete?: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ scale: 0.8 }}
+      animate={{ scale: active ? 1.1 : 1 }}
+      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+        isComplete 
+          ? 'bg-green-500 text-white' 
+          : active 
+          ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' 
+          : completed 
+          ? 'bg-primary/20 text-primary' 
+          : 'bg-muted text-muted-foreground'
+      }`}
+    >
+      {isComplete ? <Check className="size-4" /> : label}
+    </motion.div>
+  );
+}
 
 type AuthStep = 'credentials' | 'face-verify' | 'complete' | 'recovery';
 type AuthMode = 'login' | 'register';
@@ -278,9 +307,10 @@ export default function FaceAuth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
-      {/* Background glow */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+      {/* Background effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]" />
       </div>
 
       <motion.div
@@ -290,41 +320,34 @@ export default function FaceAuth() {
         transition={{ duration: 0.4 }}
       >
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="size-10 rounded-xl bg-primary flex items-center justify-center">
-            <Shield className="size-5 text-primary-foreground" />
-          </div>
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <motion.div 
+            className="size-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20"
+            initial={{ rotate: -10 }}
+            animate={{ rotate: 0 }}
+            transition={{ type: 'spring', damping: 10 }}
+          >
+            <Shield className="size-6 text-primary-foreground" />
+          </motion.div>
           <div>
-            <h1 className="font-display font-bold text-xl text-foreground">
-              Level-2 Auth
+            <h1 className="font-display font-bold text-2xl text-foreground">
+              Secure Login
             </h1>
-            <p className="text-[10px] text-primary font-medium tracking-widest">
-              HUMAN VERIFICATION
+            <p className="text-xs text-primary font-medium tracking-widest uppercase">
+              Biometric Verification
             </p>
           </div>
         </div>
 
         {/* Auth Card */}
-        <div className="card-dark p-6">
+        <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-3xl p-6 shadow-2xl">
           {/* Step indicator */}
-          <div className="flex justify-center gap-2 mb-6">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                step === 'credentials' ? 'bg-primary' : 'bg-muted'
-              }`}
-            />
-            <div
-              className={`w-3 h-3 rounded-full ${
-                step === 'face-verify' || step === 'recovery'
-                  ? 'bg-primary'
-                  : 'bg-muted'
-              }`}
-            />
-            <div
-              className={`w-3 h-3 rounded-full ${
-                step === 'complete' ? 'bg-green-500' : 'bg-muted'
-              }`}
-            />
+          <div className="flex justify-center items-center gap-2 mb-6">
+            <StepIndicator active={step === 'credentials'} completed={step !== 'credentials'} label="1" />
+            <div className={`w-8 h-0.5 ${step !== 'credentials' ? 'bg-primary' : 'bg-muted'}`} />
+            <StepIndicator active={step === 'face-verify' || step === 'recovery'} completed={step === 'complete'} label="2" />
+            <div className={`w-8 h-0.5 ${step === 'complete' ? 'bg-green-500' : 'bg-muted'}`} />
+            <StepIndicator active={step === 'complete'} completed={false} label="✓" isComplete={step === 'complete'} />
           </div>
 
           {/* Credentials Step */}
