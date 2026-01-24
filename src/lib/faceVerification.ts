@@ -1,8 +1,5 @@
 import * as faceapi from 'face-api.js';
 
-// Face verification utilities using face-api.js
-// No external API required - all client-side processing
-
 let modelsLoaded = false;
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
@@ -28,7 +25,6 @@ export function areModelsLoaded(): boolean {
   return modelsLoaded;
 }
 
-// Detect face and get landmarks
 export async function detectFace(
   video: HTMLVideoElement
 ): Promise<faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }, faceapi.FaceLandmarks68> | null> {
@@ -37,13 +33,12 @@ export async function detectFace(
   }
   
   const detection = await faceapi
-    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
     .withFaceLandmarks();
   
   return detection || null;
 }
 
-// Get face descriptor (embedding) for matching
 export async function getFaceDescriptor(
   video: HTMLVideoElement
 ): Promise<Float32Array | null> {
@@ -52,14 +47,13 @@ export async function getFaceDescriptor(
   }
   
   const detection = await faceapi
-    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
     .withFaceLandmarks()
     .withFaceDescriptor();
   
   return detection?.descriptor || null;
 }
 
-// Compare two face descriptors
 export function compareFaces(
   descriptor1: Float32Array,
   descriptor2: Float32Array
@@ -67,7 +61,6 @@ export function compareFaces(
   return faceapi.euclideanDistance(descriptor1, descriptor2);
 }
 
-// Check if faces match (threshold-based)
 export function facesMatch(
   descriptor1: Float32Array,
   descriptor2: Float32Array,
@@ -77,17 +70,14 @@ export function facesMatch(
   return distance < threshold;
 }
 
-// Convert descriptor to storable format
 export function descriptorToArray(descriptor: Float32Array): number[] {
   return Array.from(descriptor);
 }
 
-// Convert stored array back to descriptor
 export function arrayToDescriptor(array: number[]): Float32Array {
   return new Float32Array(array);
 }
 
-// Encrypt face template for storage (simple XOR encryption - use proper encryption in production)
 export async function encryptFaceTemplate(
   descriptor: Float32Array,
   key: string
@@ -96,7 +86,6 @@ export async function encryptFaceTemplate(
   const encoder = new TextEncoder();
   const keyData = encoder.encode(key);
   
-  // Simple encryption for demo - use AES in production
   const encrypted = array.map((val, idx) => {
     const keyByte = keyData[idx % keyData.length];
     return val + (keyByte / 255);
@@ -105,7 +94,6 @@ export async function encryptFaceTemplate(
   return btoa(JSON.stringify(encrypted));
 }
 
-// Decrypt face template
 export async function decryptFaceTemplate(
   encryptedData: string,
   key: string
@@ -123,53 +111,53 @@ export async function decryptFaceTemplate(
   return new Float32Array(decrypted);
 }
 
-// Liveness detection state
+// Liveness detection state with improved tracking
 interface LivenessState {
   blinkCount: number;
-  leftEyeHistory: number[];
-  rightEyeHistory: number[];
-  headMovements: { x: number; y: number }[];
-  lastCheck: number;
+  earHistory: number[];
+  lastBlinkTime: number;
+  eyeWasOpen: boolean;
+  eyeWentClosed: boolean;
+  // Persistent movement tracking - doesn't reset
+  movementMinX: number;
+  movementMaxX: number;
+  movementMinY: number;
+  movementMaxY: number;
+  movementDone: boolean;
+  recentPositions: { x: number; y: number }[];
 }
 
 export function createLivenessState(): LivenessState {
   return {
     blinkCount: 0,
-    leftEyeHistory: [],
-    rightEyeHistory: [],
-    headMovements: [],
-    lastCheck: Date.now(),
+    earHistory: [],
+    lastBlinkTime: 0,
+    eyeWasOpen: false,
+    eyeWentClosed: false,
+    movementMinX: Infinity,
+    movementMaxX: -Infinity,
+    movementMinY: Infinity,
+    movementMaxY: -Infinity,
+    movementDone: false,
+    recentPositions: [],
   };
 }
 
-// Calculate Eye Aspect Ratio (EAR) for blink detection - improved algorithm
+// Calculate Eye Aspect Ratio (EAR) - simplified and more reliable
 function calculateEAR(eyeLandmarks: faceapi.Point[]): number {
-  // Eye landmarks order: 0=inner, 1=upper1, 2=upper2, 3=outer, 4=lower2, 5=lower1
-  // Vertical distances
-  const v1 = Math.sqrt(
-    Math.pow(eyeLandmarks[1].x - eyeLandmarks[5].x, 2) +
-    Math.pow(eyeLandmarks[1].y - eyeLandmarks[5].y, 2)
-  );
-  const v2 = Math.sqrt(
-    Math.pow(eyeLandmarks[2].x - eyeLandmarks[4].x, 2) +
-    Math.pow(eyeLandmarks[2].y - eyeLandmarks[4].y, 2)
-  );
-  // Horizontal distance
-  const h = Math.sqrt(
-    Math.pow(eyeLandmarks[0].x - eyeLandmarks[3].x, 2) +
-    Math.pow(eyeLandmarks[0].y - eyeLandmarks[3].y, 2)
-  );
+  // Vertical distances (between upper and lower eyelid)
+  const v1 = Math.abs(eyeLandmarks[1].y - eyeLandmarks[5].y);
+  const v2 = Math.abs(eyeLandmarks[2].y - eyeLandmarks[4].y);
+  // Horizontal distance (eye width)
+  const h = Math.abs(eyeLandmarks[0].x - eyeLandmarks[3].x);
   
-  // Avoid division by zero
   if (h === 0) return 0.3;
   
   return (v1 + v2) / (2.0 * h);
 }
 
-// Movement direction for visual guides
 export type MovementDirection = 'none' | 'left' | 'right' | 'up' | 'down' | 'complete';
 
-// Enhanced liveness result
 export interface LivenessResult {
   passed: boolean;
   message: string;
@@ -178,7 +166,7 @@ export interface LivenessResult {
   movementProgress: number;
 }
 
-// Check liveness based on landmarks - improved version
+// Improved liveness check with better blink detection
 export function checkLiveness(
   landmarks: faceapi.FaceLandmarks68,
   state: LivenessState
@@ -191,122 +179,101 @@ export function checkLiveness(
   const rightEAR = calculateEAR(rightEye);
   const avgEAR = (leftEAR + rightEAR) / 2;
   
-  // Track eye state history
-  state.leftEyeHistory.push(avgEAR);
-  state.rightEyeHistory.push(avgEAR);
+  // More forgiving thresholds for blink detection
+  const EAR_OPEN = 0.22;   // Eyes considered open
+  const EAR_CLOSED = 0.16; // Eyes considered closed
   
-  // Keep only last 20 frames for faster response
-  if (state.leftEyeHistory.length > 20) {
-    state.leftEyeHistory.shift();
-    state.rightEyeHistory.shift();
-  }
+  // Simple state machine for blink detection
+  const now = Date.now();
   
-  // Improved blink detection with adaptive threshold
-  const EAR_OPEN_THRESHOLD = 0.25; // Eyes open
-  const EAR_CLOSED_THRESHOLD = 0.18; // Eyes closed
-  
-  if (state.leftEyeHistory.length >= 4) {
-    const history = state.leftEyeHistory;
-    const len = history.length;
-    
-    // Check for blink pattern: open -> closed -> open
-    const wasOpen = history[len - 4] > EAR_OPEN_THRESHOLD;
-    const wentClosed = history[len - 3] < EAR_CLOSED_THRESHOLD || history[len - 2] < EAR_CLOSED_THRESHOLD;
-    const isOpen = history[len - 1] > EAR_OPEN_THRESHOLD;
-    
-    if (wasOpen && wentClosed && isOpen) {
-      // Prevent counting same blink twice
-      const timeSinceLastBlink = Date.now() - state.lastCheck;
-      if (timeSinceLastBlink > 300) { // 300ms minimum between blinks
-        state.blinkCount++;
-        state.lastCheck = Date.now();
-      }
+  // Track blinks with state machine: OPEN -> CLOSED -> OPEN = 1 blink
+  if (avgEAR > EAR_OPEN) {
+    if (state.eyeWentClosed && (now - state.lastBlinkTime) > 200) {
+      // Completed a blink cycle
+      state.blinkCount++;
+      state.lastBlinkTime = now;
+      console.log('Blink detected! Count:', state.blinkCount, 'EAR:', avgEAR);
     }
+    state.eyeWasOpen = true;
+    state.eyeWentClosed = false;
+  } else if (avgEAR < EAR_CLOSED && state.eyeWasOpen) {
+    state.eyeWentClosed = true;
   }
   
-  // Track head movement with nose position
+  // Track head movement with nose position - persistent min/max tracking
   const nosePos = { x: nose[3].x, y: nose[3].y };
-  state.headMovements.push(nosePos);
   
-  if (state.headMovements.length > 30) {
-    state.headMovements.shift();
+  // Update min/max for entire session (doesn't reset)
+  if (!state.movementDone) {
+    state.movementMinX = Math.min(state.movementMinX, nosePos.x);
+    state.movementMaxX = Math.max(state.movementMaxX, nosePos.x);
+    state.movementMinY = Math.min(state.movementMinY, nosePos.y);
+    state.movementMaxY = Math.max(state.movementMaxY, nosePos.y);
   }
   
-  // Calculate movement ranges
-  let xRange = 0;
-  let yRange = 0;
+  // Keep recent positions for direction guidance
+  state.recentPositions.push(nosePos);
+  if (state.recentPositions.length > 10) {
+    state.recentPositions.shift();
+  }
+  
+  // Calculate total movement range
+  const xRange = state.movementMaxX === -Infinity ? 0 : state.movementMaxX - state.movementMinX;
+  const yRange = state.movementMaxY === -Infinity ? 0 : state.movementMaxY - state.movementMinY;
+  
+  const X_THRESHOLD = 30; // Pixels needed for horizontal movement
+  const Y_THRESHOLD = 20; // Pixels needed for vertical movement
+  
   let movementDirection: MovementDirection = 'none';
   let movementProgress = 0;
   
-  if (state.headMovements.length > 5) {
-    const xValues = state.headMovements.map(p => p.x);
-    const yValues = state.headMovements.map(p => p.y);
-    
-    const minX = Math.min(...xValues);
-    const maxX = Math.max(...xValues);
-    const minY = Math.min(...yValues);
-    const maxY = Math.max(...yValues);
-    
-    xRange = maxX - minX;
-    yRange = maxY - minY;
-    
-    const currentX = nosePos.x;
-    const currentY = nosePos.y;
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-    
-    const MOVEMENT_THRESHOLD = 25; // Pixels needed for movement
-    
-    // Determine which direction to guide user
-    if (xRange < MOVEMENT_THRESHOLD) {
-      // Need more horizontal movement
-      if (currentX <= centerX) {
-        movementDirection = 'right';
-      } else {
-        movementDirection = 'left';
-      }
-      movementProgress = Math.min((xRange / MOVEMENT_THRESHOLD) * 100, 100);
-    } else if (yRange < MOVEMENT_THRESHOLD * 0.5) {
-      // Horizontal done, check vertical
-      if (currentY <= centerY) {
-        movementDirection = 'down';
-      } else {
-        movementDirection = 'up';
-      }
-      movementProgress = Math.min(((xRange + yRange) / (MOVEMENT_THRESHOLD * 1.5)) * 100, 100);
-    } else {
-      movementDirection = 'complete';
-      movementProgress = 100;
-    }
+  // Calculate center from accumulated range
+  const centerX = state.movementMinX === Infinity ? nosePos.x : (state.movementMinX + state.movementMaxX) / 2;
+  const centerY = state.movementMinY === Infinity ? nosePos.y : (state.movementMinY + state.movementMaxY) / 2;
+  
+  // Determine guidance direction based on what's still needed
+  if (xRange >= X_THRESHOLD && yRange >= Y_THRESHOLD) {
+    movementDirection = 'complete';
+    movementProgress = 100;
+    state.movementDone = true;
+  } else if (xRange < X_THRESHOLD) {
+    // Need more horizontal - guide user to opposite side of where they've been most
+    movementProgress = (xRange / X_THRESHOLD) * 50;
+    movementDirection = nosePos.x > centerX ? 'left' : 'right';
+  } else {
+    // Horizontal done, need vertical
+    movementProgress = 50 + (yRange / Y_THRESHOLD) * 50;
+    movementDirection = nosePos.y > centerY ? 'up' : 'down';
   }
   
-  // Liveness criteria
+  // Check if liveness is verified
   const hasEnoughBlinks = state.blinkCount >= 2;
-  const hasHeadMovement = xRange > 20 || yRange > 15;
+  const hasEnoughMovement = state.movementDone || (xRange >= X_THRESHOLD && yRange >= Y_THRESHOLD);
   
-  if (hasEnoughBlinks && hasHeadMovement) {
+  if (hasEnoughBlinks && hasEnoughMovement) {
     return { 
       passed: true, 
-      message: 'Liveness verified!', 
+      message: 'Verified!', 
       blinkCount: state.blinkCount,
       movementDirection: 'complete',
       movementProgress: 100
     };
   }
   
+  // Generate helpful message
+  let message = '';
   if (!hasEnoughBlinks) {
-    return { 
-      passed: false, 
-      message: `Blink naturally (${state.blinkCount}/2)`, 
-      blinkCount: state.blinkCount,
-      movementDirection,
-      movementProgress
-    };
+    message = `Blink your eyes (${state.blinkCount}/2)`;
+  } else if (!hasEnoughMovement) {
+    const dir = movementDirection === 'left' ? '← Left' : 
+                movementDirection === 'right' ? 'Right →' :
+                movementDirection === 'up' ? '↑ Up' : '↓ Down';
+    message = `Turn head: ${dir}`;
   }
   
   return { 
     passed: false, 
-    message: 'Move your head as shown', 
+    message, 
     blinkCount: state.blinkCount,
     movementDirection,
     movementProgress
