@@ -74,10 +74,16 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
       
       const numSegments = SEGMENTS.length;
       const segmentAngle = 360 / numSegments;
-      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.6);
-      const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
+      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.5);
+      // The pointer is at the top (0°). Segments start at -90° in SVG.
+      // To land segment N under the pointer: rotate so segment center aligns with top.
+      // Segment center angle from top = (segmentIndex * segmentAngle) + (segmentAngle / 2)
+      // We need to rotate the wheel so this angle is at 0° (top), meaning we rotate by -(that angle)
+      // But CSS rotation is additive and clockwise, so we add full spins then position correctly.
+      const segmentCenterAngle = segmentIndex * segmentAngle + segmentAngle / 2;
       const spins = 5 + Math.floor(Math.random() * 3);
-      const newRotation = rotation + spins * 360 + (360 - targetAngle) + randomOffset;
+      // Rotate clockwise: to bring segmentCenterAngle to top (where pointer is), we need to rotate by (360 - segmentCenterAngle)
+      const newRotation = spins * 360 + (360 - segmentCenterAngle) + randomOffset;
 
       setRotation(newRotation);
       setResult(reward);
