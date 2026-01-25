@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   MiningSession,
@@ -15,15 +15,21 @@ export function useMining() {
   const [timeRemaining, setTimeRemaining] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch active mining session
+  // Memoized fetch active session
   const fetchActiveSession = useCallback(async () => {
-    if (!user) return;
+    if (!user?.uid) return;
 
-    const session = await getActiveSession(user.uid);
-    setActiveSession(session);
-    setLoading(false);
-  }, [user]);
+    try {
+      const session = await getActiveSession(user.uid);
+      setActiveSession(session);
+    } catch (error) {
+      console.error('Error fetching mining session:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.uid]);
 
   useEffect(() => {
     fetchActiveSession();
@@ -31,7 +37,7 @@ export function useMining() {
 
   // Subscribe to mining session changes
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
 
     const unsubscribe = subscribeToMiningSession(user.uid, (session) => {
       setActiveSession(session);
@@ -39,9 +45,9 @@ export function useMining() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
-  // Calculate time remaining and progress
+  // Calculate time remaining and progress with optimized updates
   useEffect(() => {
     if (!activeSession) {
       setTimeRemaining(null);
@@ -49,54 +55,83 @@ export function useMining() {
       return;
     }
 
-    const updateTimer = () => {
-      const now = new Date();
-      const endsAt = activeSession.ends_at.toDate();
-      const startedAt = activeSession.started_at.toDate();
-      const totalDuration = endsAt.getTime() - startedAt.getTime();
-      const elapsed = now.getTime() - startedAt.getTime();
-      const remaining = endsAt.getTime() - now.getTime();
+    let animationFrameId: number;
+    let lastUpdate = 0;
+    const UPDATE_INTERVAL = 1000; // Update every second
 
-      if (remaining <= 0) {
-        setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 });
-        setProgress(100);
-        return;
+    const updateTimer = (timestamp: number) => {
+      if (timestamp - lastUpdate >= UPDATE_INTERVAL) {
+        lastUpdate = timestamp;
+        
+        const now = Date.now();
+        const endsAt = activeSession.ends_at.toDate().getTime();
+        const startedAt = activeSession.started_at.toDate().getTime();
+        const totalDuration = endsAt - startedAt;
+        const elapsed = now - startedAt;
+        const remaining = endsAt - now;
+
+        if (remaining <= 0) {
+          setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 });
+          setProgress(100);
+          return;
+        }
+
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+        setTimeRemaining({ hours, minutes, seconds });
+        setProgress(Math.min((elapsed / totalDuration) * 100, 100));
       }
-
-      const hours = Math.floor(remaining / (1000 * 60 * 60));
-      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-
-      setTimeRemaining({ hours, minutes, seconds });
-      setProgress(Math.min((elapsed / totalDuration) * 100, 100));
+      
+      animationFrameId = requestAnimationFrame(updateTimer);
     };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    animationFrameId = requestAnimationFrame(updateTimer);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [activeSession]);
 
-  const startMining = async () => {
-    if (!user) {
+  // Memoized start mining with debounce protection
+  const startMining = useCallback(async () => {
+    if (!user?.uid) {
       toast.error("Please sign in to start mining");
       return false;
     }
 
-    const result = await firebaseStartMining(user.uid);
-
-    if (!result.success) {
-      toast.error(result.error || "Failed to start mining");
+    if (isProcessing) {
       return false;
     }
 
-    toast.success("Mining session started! ⛏️");
-    await fetchActiveSession();
-    return true;
-  };
+    setIsProcessing(true);
 
-  const claimReward = async () => {
-    if (!activeSession || !user) {
+    try {
+      const result = await firebaseStartMining(user.uid);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to start mining");
+        return false;
+      }
+
+      toast.success("Mining session started! ⛏️");
+      await fetchActiveSession();
+      return true;
+    } catch (error) {
+      console.error('Error starting mining:', error);
+      toast.error("An error occurred. Please try again.");
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [user?.uid, isProcessing, fetchActiveSession]);
+
+  // Memoized claim reward with debounce protection
+  const claimReward = useCallback(async () => {
+    if (!activeSession || !user?.uid) {
       toast.error("No active session to claim");
       return false;
     }
@@ -106,22 +141,39 @@ export function useMining() {
       return false;
     }
 
-    const result = await firebaseClaimReward(user.uid, activeSession.id);
-
-    if (!result.success) {
-      toast.error(result.error || "Failed to claim reward");
+    if (isProcessing) {
       return false;
     }
 
-    toast.success(`+${result.amount} CASET claimed! 🎉`);
-    await fetchActiveSession();
-    await refreshProfile();
-    return true;
-  };
+    setIsProcessing(true);
 
-  const canStartMining = !activeSession;
-  const canClaim = activeSession && progress >= 100;
-  const isMining = activeSession && progress < 100;
+    try {
+      const result = await firebaseClaimReward(user.uid, activeSession.id);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to claim reward");
+        return false;
+      }
+
+      toast.success(`+${result.amount} CASET claimed! 🎉`);
+      await fetchActiveSession();
+      await refreshProfile();
+      return true;
+    } catch (error) {
+      console.error('Error claiming reward:', error);
+      toast.error("An error occurred. Please try again.");
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [activeSession, user?.uid, progress, isProcessing, fetchActiveSession, refreshProfile]);
+
+  // Memoized derived state
+  const derivedState = useMemo(() => ({
+    canStartMining: !activeSession && !isProcessing,
+    canClaim: activeSession && progress >= 100 && !isProcessing,
+    isMining: activeSession && progress < 100,
+  }), [activeSession, progress, isProcessing]);
 
   return {
     activeSession,
@@ -130,9 +182,8 @@ export function useMining() {
     loading,
     startMining,
     claimReward,
-    canStartMining,
-    canClaim,
-    isMining,
+    ...derivedState,
+    isProcessing,
     refreshSession: fetchActiveSession,
   };
 }

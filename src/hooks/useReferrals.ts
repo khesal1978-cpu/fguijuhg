@@ -8,8 +8,9 @@ export function useReferrals() {
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
 
+  // Memoized fetch function
   const fetchReferrals = useCallback(async () => {
-    if (!user) {
+    if (!user?.uid) {
       setLoading(false);
       return;
     }
@@ -17,14 +18,14 @@ export function useReferrals() {
     try {
       console.log('Fetching referrals for user:', user.uid);
       const data = await getReferrals(user.uid);
-      console.log('Fetched referrals:', data.length, data);
+      console.log('Fetched referrals:', data.length);
       setReferrals(data);
     } catch (error) {
       console.error('Error fetching referrals:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
     fetchReferrals();
@@ -32,21 +33,21 @@ export function useReferrals() {
 
   // Subscribe to referral changes (real-time updates)
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
 
     console.log('Subscribing to referrals for user:', user.uid);
     const unsubscribe = subscribeToReferrals(user.uid, (data) => {
-      console.log('Real-time referral update:', data.length, data);
+      console.log('Real-time referral update:', data.length);
       setReferrals(data);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
-  // Claim pending bonuses manually
+  // Memoized claim bonuses with debounce protection
   const claimBonuses = useCallback(async () => {
-    if (!user) return { claimed: 0, total: 0 };
+    if (!user?.uid || claiming) return { claimed: 0, total: 0 };
     
     setClaiming(true);
     try {
@@ -62,11 +63,11 @@ export function useReferrals() {
     } finally {
       setClaiming(false);
     }
-  }, [user, refreshProfile]);
+  }, [user?.uid, claiming, refreshProfile]);
 
-  // Separate direct and indirect referrals
+  // Memoized direct and indirect referrals
   const directReferrals = useMemo(() => 
-    referrals.filter((r) => r.level === 1 || !r.level), // level 1 or undefined (legacy)
+    referrals.filter((r) => r.level === 1 || !r.level),
     [referrals]
   );
 
@@ -75,10 +76,9 @@ export function useReferrals() {
     [referrals]
   );
 
-  // Calculate stats
+  // Memoized stats calculation
   const stats = useMemo(() => {
     const totalReferrals = referrals.length;
-    // Count all referrals as active for now (is_active field was being set incorrectly)
     const activeReferrals = referrals.length;
     const totalEarnings = referrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);
     
