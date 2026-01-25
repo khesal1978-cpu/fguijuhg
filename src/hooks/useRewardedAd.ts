@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { initializeAdMob, showRewardedAd, prepareRewardedAd, isNativePlatform, calculateAdGameReward } from '@/lib/admob';
+import { initializeAdMob, showRewardedAd, prepareRewardedAd, isNativePlatform, calculateAdGameReward, DAILY_AD_LIMITS } from '@/lib/admob';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, updateDoc, addDoc, collection, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -43,6 +43,25 @@ const incrementTeamClaimCount = async (userId: string): Promise<number> => {
   const currentCount = snap.exists() ? (snap.data().claim_count || 0) : 0;
   const newCount = currentCount + 1;
   await setDoc(statsRef, { claim_count: newCount, user_id: userId }, { merge: true });
+  return newCount;
+};
+
+// Get today's game ad count for spin/scratch
+const getTodayGameAdCount = async (userId: string, gameType: 'spin' | 'scratch'): Promise<number> => {
+  const today = new Date().toISOString().split('T')[0];
+  const statsRef = doc(db, 'user_ad_stats', `${userId}_${gameType}_${today}`);
+  const snap = await getDoc(statsRef);
+  return snap.exists() ? (snap.data().ad_count || 0) : 0;
+};
+
+// Increment game ad count
+const incrementGameAdCount = async (userId: string, gameType: 'spin' | 'scratch'): Promise<number> => {
+  const today = new Date().toISOString().split('T')[0];
+  const statsRef = doc(db, 'user_ad_stats', `${userId}_${gameType}_${today}`);
+  const snap = await getDoc(statsRef);
+  const currentCount = snap.exists() ? (snap.data().ad_count || 0) : 0;
+  const newCount = currentCount + 1;
+  await setDoc(statsRef, { ad_count: newCount, date: today, user_id: userId, game_type: gameType }, { merge: true });
   return newCount;
 };
 
@@ -107,15 +126,33 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
     }
   }, [user?.uid, profile, rewardAmount, refreshProfile]);
 
-  // Watch ad for free game (spin/scratch) with limited rewards
-  const watchAdForFreeGame = useCallback(async (): Promise<{ success: boolean; reward: number }> => {
+  // Watch ad for free game (spin/scratch) with limited rewards and daily limit
+  const watchAdForFreeGame = useCallback(async (gameType: 'spin' | 'scratch'): Promise<{ success: boolean; reward: number }> => {
     if (!user?.uid || !profile) {
       toast.error('Please sign in to watch ads');
       return { success: false, reward: 0 };
     }
 
     if (!isNativePlatform()) {
-      toast.info('Rewarded ads only work on mobile devices');
+      // Demo mode for web - simulate ad watching
+      const gameReward = calculateAdGameReward();
+      if (gameReward > 0) {
+        const profileRef = doc(db, 'profiles', user.uid);
+        await updateDoc(profileRef, {
+          balance: (profile.balance || 0) + gameReward,
+        });
+        await refreshProfile();
+        toast.success(`+${gameReward} CASET won! 🎉`);
+      } else {
+        toast.info('Unlucky! Try again next time 💀');
+      }
+      return { success: true, reward: gameReward };
+    }
+
+    // Check daily limit
+    const currentAdCount = await getTodayGameAdCount(user.uid, gameType);
+    if (currentAdCount >= DAILY_AD_LIMITS[gameType]) {
+      toast.error(`Daily ${gameType} ad limit reached (${DAILY_AD_LIMITS[gameType]}/day)`);
       return { success: false, reward: 0 };
     }
 
@@ -125,6 +162,9 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
       const adReward = await showRewardedAd();
 
       if (adReward) {
+        // Increment ad count
+        await incrementGameAdCount(user.uid, gameType);
+        
         // Calculate reward: 40% = 10, 60% = 0
         const gameReward = calculateAdGameReward();
         
@@ -137,9 +177,9 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
           // Add transaction
           await addDoc(collection(db, 'transactions'), {
             user_id: user.uid,
-            type: rewardType === 'spin' ? 'ad_spin' : 'ad_scratch',
+            type: gameType === 'spin' ? 'ad_spin' : 'ad_scratch',
             amount: gameReward,
-            description: `Free ${rewardType === 'spin' ? 'spin' : 'scratch'} via ad`,
+            description: `Free ${gameType} via ad`,
             created_at: Timestamp.now(),
             metadata: { source: 'rewarded_ad' },
           });
@@ -164,7 +204,14 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.uid, profile, rewardType, refreshProfile]);
+  }, [user?.uid, profile, refreshProfile]);
+
+  // Get remaining ads for a game type today
+  const getRemainingGameAds = useCallback(async (gameType: 'spin' | 'scratch'): Promise<number> => {
+    if (!user?.uid) return 0;
+    const count = await getTodayGameAdCount(user.uid, gameType);
+    return Math.max(0, DAILY_AD_LIMITS[gameType] - count);
+  }, [user?.uid]);
 
   // Show ad for mining session (based on session number and timing)
   const showMiningAd = useCallback(async (timing: 'after_start' | 'before_claim'): Promise<boolean> => {
@@ -236,6 +283,7 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
   return {
     watchAd,
     watchAdForFreeGame,
+    getRemainingGameAds,
     showMiningAd,
     trackMiningSession,
     showTeamClaimAd,

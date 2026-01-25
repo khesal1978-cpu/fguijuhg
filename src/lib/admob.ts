@@ -196,3 +196,25 @@ export const calculateAdGameReward = (): number => {
   }
   return 0; // 60% chance - unlucky
 };
+
+// Daily ad limits for games
+export const DAILY_AD_LIMITS = {
+  spin: 3,
+  scratch: 3,
+};
+
+// Get game ad count for today
+export const getGameAdCount = async (userId: string, gameType: 'spin' | 'scratch'): Promise<number> => {
+  // This is a placeholder - actual implementation in useRewardedAd.ts
+  return 0;
+};
+
+// Check if user can watch ad for game today
+export const canWatchGameAd = (adCount: number, gameType: 'spin' | 'scratch'): boolean => {
+  return adCount < DAILY_AD_LIMITS[gameType];
+};
+
+// Get remaining ads for today
+export const getRemainingAds = (adCount: number, gameType: 'spin' | 'scratch'): number => {
+  return Math.max(0, DAILY_AD_LIMITS[gameType] - adCount);
+};
