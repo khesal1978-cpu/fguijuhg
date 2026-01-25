@@ -65,27 +65,39 @@ export const WatchAdButton = memo(function WatchAdButton({
 interface FreeGameAdButtonProps {
   gameType: 'spin' | 'scratch';
   onReward: (reward: number) => void;
+  remainingAds: number;
   className?: string;
 }
 
 export const FreeGameAdButton = memo(function FreeGameAdButton({
   gameType,
   onReward,
+  remainingAds,
   className = ""
 }: FreeGameAdButtonProps) {
-  const { watchAdForFreeGame, isLoading, isNative } = useRewardedAd({ 
+  const { watchAdForFreeGame, isLoading } = useRewardedAd({ 
     rewardType: gameType 
   });
 
   const handleClick = async () => {
-    const result = await watchAdForFreeGame();
+    const result = await watchAdForFreeGame(gameType);
     if (result.success) {
       onReward(result.reward);
     }
   };
 
-  if (!isNative) {
-    return null;
+  if (remainingAds <= 0) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        disabled
+        className={`rounded-lg border-muted-foreground/30 ${className}`}
+      >
+        <Play className="size-4 mr-1.5 text-muted-foreground" />
+        No ads left today
+      </Button>
+    );
   }
 
   return (
@@ -101,7 +113,7 @@ export const FreeGameAdButton = memo(function FreeGameAdButton({
       ) : (
         <Play className="size-4 mr-1.5 fill-current text-primary" />
       )}
-      Free {gameType === 'spin' ? 'Spin' : 'Scratch'}
+      Watch Ad ({remainingAds}/3)
       {gameType === 'spin' ? (
         <Sparkles className="size-3.5 ml-1.5 text-primary" />
       ) : (

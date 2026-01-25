@@ -1,17 +1,19 @@
 import { useState, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, RotateCcw, Coins, Skull, Gift, Star, Zap } from "lucide-react";
+import { Sparkles, RotateCcw, Coins, Skull, Gift, Star, Zap, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 interface ScratchCardProps {
   onScratch: () => Promise<{ success: boolean; reward?: number; error?: string }>;
+  onAdScratch: () => Promise<{ success: boolean; reward: number }>;
   scratching: boolean;
   cost: number;
+  remainingAds: number;
 }
 
-export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
+export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, scratching, cost, remainingAds }: ScratchCardProps) {
   const { profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -20,6 +22,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, co
   const [reward, setReward] = useState<number | null>(null);
   const [isUnlucky, setIsUnlucky] = useState(false);
   const [scratchProgress, setScratchProgress] = useState(0);
+  const [showOptions, setShowOptions] = useState(false);
 
   const resetCard = () => {
     setScratched(false);
@@ -27,6 +30,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, co
     setReward(null);
     setIsUnlucky(false);
     setScratchProgress(0);
+    setShowOptions(false);
   };
 
   const initCanvas = () => {
@@ -82,6 +86,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, co
 
   const handleBuyCard = async () => {
     if (scratching || (profile?.balance || 0) < cost) return;
+    setShowOptions(false);
 
     const response = await onScratch();
 
@@ -91,6 +96,25 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, co
       setScratched(true);
       setTimeout(() => initCanvas(), 50);
     }
+  };
+
+  const handleAdCard = async () => {
+    if (scratching || remainingAds <= 0) return;
+    setShowOptions(false);
+
+    const response = await onAdScratch();
+
+    if (response.success) {
+      setReward(response.reward);
+      setIsUnlucky(response.reward === 0);
+      setScratched(true);
+      setTimeout(() => initCanvas(), 50);
+    }
+  };
+
+  const handleBuyClick = () => {
+    if (scratching) return;
+    setShowOptions(true);
   };
 
   const scratch = (e: React.MouseEvent | React.TouchEvent) => {
@@ -133,10 +157,70 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, co
     }
   };
 
-  const canBuy = (profile?.balance || 0) >= cost && !scratching && !scratched;
+  const canBuy = !scratching && !scratched;
 
   return (
     <div className="flex flex-col items-center gap-5">
+      {/* Options Modal */}
+      <AnimatePresence>
+        {showOptions && !scratched && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowOptions(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card border border-border rounded-2xl p-6 mx-4 max-w-[300px] w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-display font-bold text-foreground text-center mb-4">
+                Choose Scratch Method
+              </h3>
+              
+              <div className="space-y-3">
+                {/* Pay with coins */}
+                <Button
+                  onClick={handleBuyCard}
+                  disabled={(profile?.balance || 0) < cost}
+                  className="w-full h-14 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"
+                >
+                  <Coins className="size-5 mr-2" />
+                  Pay {cost} CASET
+                </Button>
+
+                {/* Watch ad */}
+                <Button
+                  onClick={handleAdCard}
+                  disabled={remainingAds <= 0}
+                  variant="outline"
+                  className="w-full h-14 rounded-xl border-primary/40 hover:bg-primary/10 font-bold"
+                >
+                  <Play className="size-5 mr-2 fill-current text-primary" />
+                  Watch Ad ({remainingAds}/3 left)
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center mt-4">
+                Ad scratches: 40% win 10 coins, 60% unlucky
+              </p>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowOptions(false)}
+                className="w-full mt-3 text-muted-foreground"
+              >
+                Cancel
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Card Container */}
       <div className="relative w-[280px] h-[180px]">
         {/* Outer glow */}
@@ -328,7 +412,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, co
       {/* Buttons */}
       {!scratched ? (
         <Button
-          onClick={handleBuyCard}
+          onClick={handleBuyClick}
           disabled={!canBuy}
           size="lg"
           className="w-full max-w-[200px] h-12 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none transition-all"

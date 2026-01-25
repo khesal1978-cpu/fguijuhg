@@ -5,11 +5,12 @@ import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TasksPanel } from "@/components/games/TasksPanel";
 import { BonusTasksPanel } from "@/components/games/BonusTasksPanel";
-import { WatchAdButton, FreeGameAdButton } from "@/components/games/WatchAdButton";
+import { WatchAdButton } from "@/components/games/WatchAdButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGames } from "@/hooks/useGames";
 import { useBonusTasks } from "@/hooks/useBonusTasks";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { toast } from "sonner";
 
 export default function Games() {
@@ -17,8 +18,22 @@ export default function Games() {
   const { tasks, loading, spinning, scratching, playSpin, playScratch, claimTask } = useGames();
   const { bonusTasks, loading: bonusLoading, completeBonusTask, claimBonusTask, checkAndGenerateBonusTask } = useBonusTasks();
   const { isOnline } = useNetworkStatus();
+  const { watchAdForFreeGame, getRemainingGameAds } = useRewardedAd();
+  
   const [activeGame, setActiveGame] = useState<"spin" | "scratch">("spin");
-  const [lastAdReward, setLastAdReward] = useState<number | null>(null);
+  const [spinAdsRemaining, setSpinAdsRemaining] = useState(3);
+  const [scratchAdsRemaining, setScratchAdsRemaining] = useState(3);
+
+  // Load remaining ads on mount and when profile changes
+  useEffect(() => {
+    const loadAdsRemaining = async () => {
+      const spinRemaining = await getRemainingGameAds('spin');
+      const scratchRemaining = await getRemainingGameAds('scratch');
+      setSpinAdsRemaining(spinRemaining);
+      setScratchAdsRemaining(scratchRemaining);
+    };
+    loadAdsRemaining();
+  }, [getRemainingGameAds, profile]);
 
   // Check if all daily tasks are completed to generate bonus tasks
   useEffect(() => {
@@ -27,14 +42,29 @@ export default function Games() {
     }
   }, [loading, tasks, checkAndGenerateBonusTask]);
 
-  // Handle free game reward from ad
-  const handleAdReward = useCallback((reward: number) => {
-    setLastAdReward(reward);
-    refreshProfile();
-    
-    // Clear the reward display after 3 seconds
-    setTimeout(() => setLastAdReward(null), 3000);
-  }, [refreshProfile]);
+  // Handle ad spin
+  const handleAdSpin = useCallback(async () => {
+    const result = await watchAdForFreeGame('spin');
+    if (result.success) {
+      // Refresh remaining ads count
+      const remaining = await getRemainingGameAds('spin');
+      setSpinAdsRemaining(remaining);
+      refreshProfile();
+    }
+    return result;
+  }, [watchAdForFreeGame, getRemainingGameAds, refreshProfile]);
+
+  // Handle ad scratch
+  const handleAdScratch = useCallback(async () => {
+    const result = await watchAdForFreeGame('scratch');
+    if (result.success) {
+      // Refresh remaining ads count
+      const remaining = await getRemainingGameAds('scratch');
+      setScratchAdsRemaining(remaining);
+      refreshProfile();
+    }
+    return result;
+  }, [watchAdForFreeGame, getRemainingGameAds, refreshProfile]);
 
   return (
     <div className="px-4 py-6 pb-24 max-w-lg mx-auto w-full space-y-5">
@@ -120,30 +150,13 @@ export default function Games() {
                 Win up to <span className="text-primary font-bold">500</span> coins!
               </p>
             </div>
-            <SpinWheel onSpin={playSpin} spinning={spinning} cost={5} />
-            
-            {/* Free Spin via Ad Button */}
-            <div className="flex justify-center pt-2">
-              <FreeGameAdButton 
-                gameType="spin" 
-                onReward={handleAdReward} 
-              />
-            </div>
-            
-            {/* Show ad reward result */}
-            {lastAdReward !== null && activeGame === "spin" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center"
-              >
-                {lastAdReward > 0 ? (
-                  <p className="text-primary font-bold">🎉 +{lastAdReward} CASET won!</p>
-                ) : (
-                  <p className="text-muted-foreground">💀 Unlucky! Try again</p>
-                )}
-              </motion.div>
-            )}
+            <SpinWheel 
+              onSpin={playSpin} 
+              onAdSpin={handleAdSpin}
+              spinning={spinning} 
+              cost={5} 
+              remainingAds={spinAdsRemaining}
+            />
           </div>
         )}
         
@@ -157,30 +170,13 @@ export default function Games() {
                 Win up to <span className="text-primary font-bold">100</span> coins!
               </p>
             </div>
-            <ScratchCard onScratch={playScratch} scratching={scratching} cost={3} />
-            
-            {/* Free Scratch via Ad Button */}
-            <div className="flex justify-center pt-2">
-              <FreeGameAdButton 
-                gameType="scratch" 
-                onReward={handleAdReward} 
-              />
-            </div>
-            
-            {/* Show ad reward result */}
-            {lastAdReward !== null && activeGame === "scratch" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center"
-              >
-                {lastAdReward > 0 ? (
-                  <p className="text-primary font-bold">🎉 +{lastAdReward} CASET won!</p>
-                ) : (
-                  <p className="text-muted-foreground">💀 Unlucky! Try again</p>
-                )}
-              </motion.div>
-            )}
+            <ScratchCard 
+              onScratch={playScratch} 
+              onAdScratch={handleAdScratch}
+              scratching={scratching} 
+              cost={3}
+              remainingAds={scratchAdsRemaining}
+            />
           </div>
         )}
       </motion.div>

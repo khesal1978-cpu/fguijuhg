@@ -1,14 +1,16 @@
 import { useState, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles, Coins } from "lucide-react";
+import { Loader2, Sparkles, Coins, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 interface SpinWheelProps {
   onSpin: () => Promise<{ success: boolean; reward?: number; error?: string }>;
+  onAdSpin: () => Promise<{ success: boolean; reward: number }>;
   spinning: boolean;
   cost: number;
+  remainingAds: number;
 }
 
 // Memoize the component to prevent unnecessary re-renders
@@ -47,58 +49,78 @@ const getSegmentIndex = (reward: number): number => {
   return fallbackIndex !== -1 ? fallbackIndex : 1;
 };
 
-export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
+export function SpinWheel({ onSpin, onAdSpin, spinning, cost, remainingAds }: SpinWheelProps) {
   const { profile } = useAuth();
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<number | null>(null);
   const [isUnlucky, setIsUnlucky] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
 
-  const handleSpin = async () => {
+  const animateWheel = (reward: number) => {
+    const segmentIndex = getSegmentIndex(reward);
+    setIsUnlucky(reward === 0);
+    
+    const numSegments = SEGMENTS.length;
+    const segmentAngle = 360 / numSegments;
+    const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.5);
+    const segmentCenterAngle = segmentIndex * segmentAngle + segmentAngle / 2;
+    const spins = 5 + Math.floor(Math.random() * 3);
+    const newRotation = spins * 360 + (360 - segmentCenterAngle) + randomOffset;
+
+    setRotation(newRotation);
+    setResult(reward);
+
+    setTimeout(() => {
+      setShowResult(true);
+      setIsSpinning(false);
+    }, 3500);
+  };
+
+  const handleCoinSpin = async () => {
     if (isSpinning || spinning || (profile?.balance || 0) < cost) return;
 
     setShowResult(false);
     setResult(null);
     setIsUnlucky(false);
     setIsSpinning(true);
+    setShowOptions(false);
 
     const response = await onSpin();
 
     if (response.success && response.reward !== undefined) {
-      const reward = response.reward;
-      const segmentIndex = getSegmentIndex(reward);
-      
-      // Set unlucky state based on actual reward value
-      setIsUnlucky(reward === 0);
-      
-      const numSegments = SEGMENTS.length;
-      const segmentAngle = 360 / numSegments;
-      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.5);
-      // The pointer is at the top (0°). Segments start at -90° in SVG.
-      // To land segment N under the pointer: rotate so segment center aligns with top.
-      // Segment center angle from top = (segmentIndex * segmentAngle) + (segmentAngle / 2)
-      // We need to rotate the wheel so this angle is at 0° (top), meaning we rotate by -(that angle)
-      // But CSS rotation is additive and clockwise, so we add full spins then position correctly.
-      const segmentCenterAngle = segmentIndex * segmentAngle + segmentAngle / 2;
-      const spins = 5 + Math.floor(Math.random() * 3);
-      // Rotate clockwise: to bring segmentCenterAngle to top (where pointer is), we need to rotate by (360 - segmentCenterAngle)
-      const newRotation = spins * 360 + (360 - segmentCenterAngle) + randomOffset;
-
-      setRotation(newRotation);
-      setResult(reward);
-
-      setTimeout(() => {
-        setShowResult(true);
-        setIsSpinning(false);
-      }, 3500);
+      animateWheel(response.reward);
     } else {
       setIsSpinning(false);
     }
   };
 
-  const canSpin = (profile?.balance || 0) >= cost && !spinning && !isSpinning;
+  const handleAdSpin = async () => {
+    if (isSpinning || spinning || remainingAds <= 0) return;
+
+    setShowResult(false);
+    setResult(null);
+    setIsUnlucky(false);
+    setIsSpinning(true);
+    setShowOptions(false);
+
+    const response = await onAdSpin();
+
+    if (response.success) {
+      animateWheel(response.reward);
+    } else {
+      setIsSpinning(false);
+    }
+  };
+
+  const handleSpinClick = () => {
+    if (isSpinning || spinning) return;
+    setShowOptions(true);
+  };
+
+  const canSpin = !spinning && !isSpinning;
 
   return (
     <div className="flex flex-col items-center gap-5">
@@ -295,6 +317,67 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
         </AnimatePresence>
       </div>
 
+      {/* Options Modal */}
+      <AnimatePresence>
+        {showOptions && !isSpinning && !showResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            onClick={() => setShowOptions(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card border border-border rounded-2xl p-6 mx-4 max-w-[300px] w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-display font-bold text-foreground text-center mb-4">
+                Choose Spin Method
+              </h3>
+              
+              <div className="space-y-3">
+                {/* Pay with coins */}
+                <Button
+                  onClick={handleCoinSpin}
+                  disabled={(profile?.balance || 0) < cost}
+                  className="w-full h-14 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50"
+                >
+                  <Coins className="size-5 mr-2" />
+                  Pay {cost} CASET
+                </Button>
+
+                {/* Watch ad */}
+                <Button
+                  onClick={handleAdSpin}
+                  disabled={remainingAds <= 0}
+                  variant="outline"
+                  className="w-full h-14 rounded-xl border-primary/40 hover:bg-primary/10 font-bold"
+                >
+                  <Play className="size-5 mr-2 fill-current text-primary" />
+                  Watch Ad ({remainingAds}/3 left)
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center mt-4">
+                Ad spins: 40% win 10 coins, 60% unlucky
+              </p>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowOptions(false)}
+                className="w-full mt-3 text-muted-foreground"
+              >
+                Cancel
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Cost Display */}
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
         <Coins className="size-3.5 text-primary" />
@@ -303,8 +386,8 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
 
       {/* Spin Button */}
       <Button
-        onClick={handleSpin}
-        disabled={!canSpin}
+        onClick={handleSpinClick}
+        disabled={spinning || isSpinning}
         size="lg"
         className="w-full max-w-[200px] h-12 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none transition-all"
       >
@@ -320,17 +403,6 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
           </>
         )}
       </Button>
-
-      {(profile?.balance || 0) < cost && !spinning && !isSpinning && (
-        <motion.p 
-          className="text-destructive text-xs font-medium flex items-center gap-1.5"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Coins className="size-3" />
-          Not enough coins to spin
-        </motion.p>
-      )}
 
       {showResult && (
         <Button
