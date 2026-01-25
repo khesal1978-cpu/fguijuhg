@@ -88,9 +88,9 @@ const MiningButtonInner = forwardRef<HTMLDivElement, MiningButtonProps>(function
         ))}
       </AnimatePresence>
 
-      {/* Outer glow ring - higher opacity */}
+      {/* Outer glow ring - 25% opacity */}
       {(isMining || canClaim) && (
-        <div className={`absolute w-48 h-48 rounded-full ${canClaim ? 'bg-success/20' : 'bg-primary/20'} animate-pulse-ring`} />
+        <div className={`absolute w-48 h-48 rounded-full ${canClaim ? 'bg-success/25' : 'bg-primary/25'} animate-pulse-ring`} />
       )}
 
       {/* Progress ring */}
