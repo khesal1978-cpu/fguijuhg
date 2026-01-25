@@ -80,7 +80,7 @@ export default function Games() {
   }, [applyGameReward]);
 
   return (
-    <div className="px-4 py-6 pb-24 max-w-lg mx-auto w-full space-y-5">
+    <div className="px-4 py-6 pb-28 max-w-lg mx-auto w-full space-y-5">
       {/* Header */}
       <motion.header 
         className="flex items-center justify-between"
