@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, memo } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -16,8 +16,8 @@ import welcomeVideo from "@/assets/welcome-video.mp4";
 
 type AuthScreen = "welcome" | "landing" | "login" | "register" | "recover" | "unique-id-setup";
 
-// Animated counter for user count
-const AnimatedCounter = () => {
+// Animated counter for user count - wrapped with forwardRef
+const AnimatedCounterInner = forwardRef<HTMLSpanElement, object>(function AnimatedCounter(_, ref) {
   const [count, setCount] = useState(0);
   
   useEffect(() => {
@@ -41,14 +41,16 @@ const AnimatedCounter = () => {
   }, []);
   
   return (
-    <>
+    <span ref={ref}>
       <span className="text-white font-semibold">{count.toLocaleString()}</span>
       <span className="text-[#8E8E9A] ml-1">users mining now</span>
-    </>
+    </span>
   );
-};
+});
 
-export default function Auth() {
+const AnimatedCounter = memo(AnimatedCounterInner);
+
+const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
@@ -356,19 +358,19 @@ export default function Auth() {
   if (screen === "welcome") {
     return (
       <motion.div 
-        className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative"
+        className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative bg-[#0A0A12]"
         initial={{ opacity: 0 }}
-        animate={{ opacity: videoLoaded ? 1 : 0 }}
-        transition={{ duration: 0.4 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
-        {/* Video Background */}
+        {/* Video Background - loads in background */}
         <video
           autoPlay
           loop
           muted
           playsInline
           onCanPlay={() => setVideoLoaded(true)}
-          className="absolute inset-0 w-full h-full object-cover"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
         >
           <source src={welcomeVideo} type="video/mp4" />
         </video>
@@ -1117,4 +1119,6 @@ export default function Auth() {
   }
 
   return null;
-}
+});
+
+export default memo(AuthInner);
