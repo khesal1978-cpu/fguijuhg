@@ -5,6 +5,7 @@ import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TasksPanel } from "@/components/games/TasksPanel";
 import { BonusTasksPanel } from "@/components/games/BonusTasksPanel";
+import { WatchAdButton } from "@/components/games/WatchAdButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGames } from "@/hooks/useGames";
 import { useBonusTasks } from "@/hooks/useBonusTasks";
@@ -46,6 +47,9 @@ export default function Games() {
           </span>
         </motion.div>
       </motion.header>
+
+      {/* Watch Ad for Free Coins */}
+      <WatchAdButton rewardAmount={15} />
 
       {/* Game Selector */}
       <motion.div 
