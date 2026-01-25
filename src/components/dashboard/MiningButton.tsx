@@ -71,26 +71,27 @@ const MiningButtonInner = forwardRef<HTMLDivElement, MiningButtonProps>(function
   const isDisabled = !isOnline || loading || (isMining && !canClaim);
 
   return (
-    <div className="relative flex items-center justify-center py-8">
-      {/* Floating particles */}
-      <AnimatePresence>
+    <div className="relative flex items-center justify-center py-8 transform-gpu">
+      {/* Floating particles - GPU accelerated */}
+      <AnimatePresence mode="popLayout">
         {particles.map(p => (
           <motion.div
             key={p.id}
-            className="absolute text-gold text-xs font-semibold pointer-events-none z-30"
+            className="absolute text-gold text-xs font-semibold pointer-events-none z-30 will-change-transform transform-gpu"
             initial={{ opacity: 1, y: 0, x: p.x }}
             animate={{ opacity: 0, y: -60 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 2 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+            style={{ backfaceVisibility: 'hidden' }}
           >
             <Sparkles className="size-3" />
           </motion.div>
         ))}
       </AnimatePresence>
 
-      {/* Outer glow ring - 25% opacity */}
+      {/* Outer glow ring - 25% opacity, GPU accelerated */}
       {(isMining || canClaim) && (
-        <div className={`absolute w-48 h-48 rounded-full ${canClaim ? 'bg-success/25' : 'bg-primary/25'} animate-pulse-ring`} />
+        <div className={`absolute w-48 h-48 rounded-full ${canClaim ? 'bg-success/25' : 'bg-primary/25'} animate-pulse-ring will-change-transform transform-gpu`} />
       )}
 
       {/* Progress ring */}
@@ -121,9 +122,9 @@ const MiningButtonInner = forwardRef<HTMLDivElement, MiningButtonProps>(function
         </svg>
       </div>
 
-      {/* Main button */}
+      {/* Main button - optimized for 60fps */}
       <motion.button
-        className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center z-20 will-change-transform ${
+        className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center z-20 will-change-transform transform-gpu ${
           !isOnline
             ? "bg-muted opacity-60"
             : canClaim 
@@ -133,6 +134,7 @@ const MiningButtonInner = forwardRef<HTMLDivElement, MiningButtonProps>(function
             : "bg-gradient-to-br from-primary to-violet-600"
         } ${(isMining || canClaim) && isOnline ? (canClaim ? 'shadow-[0_0_30px_-5px_hsl(142_70%_45%/0.5)]' : 'btn-glow') : ''}`}
         whileTap={isDisabled ? {} : { scale: 0.94 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
         onTapStart={() => {
           if (!isDisabled) {
             setIsPressed(true);
@@ -142,7 +144,7 @@ const MiningButtonInner = forwardRef<HTMLDivElement, MiningButtonProps>(function
         onTap={handleTap}
         onTapCancel={() => setIsPressed(false)}
         disabled={isDisabled}
-        style={{ WebkitTapHighlightColor: 'transparent' }}
+        style={{ WebkitTapHighlightColor: 'transparent', backfaceVisibility: 'hidden' }}
       >
         {/* Icon */}
         <motion.div
