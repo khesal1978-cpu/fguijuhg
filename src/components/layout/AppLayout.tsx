@@ -83,21 +83,21 @@ export const AppLayout = memo(function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background dark overflow-hidden select-none">
-      <main className="flex-1 relative flex flex-col h-full">
+    <div className="fixed inset-0 flex flex-col bg-background dark">
+      <main className="flex-1 relative flex flex-col min-h-0">
         {/* Ambient glow effects - GPU accelerated */}
         <AmbientGlow />
         
-        {/* Safe area padding for notched devices */}
+        {/* Scrollable content area */}
         <div 
           ref={scrollRef}
-          className="relative z-10 flex-1 overflow-y-auto scrollbar-hide overscroll-none"
+          className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide overscroll-none"
           data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',
-            paddingTop: 'var(--safe-area-top)',
-            paddingLeft: 'var(--safe-area-left)',
-            paddingRight: 'var(--safe-area-right)',
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingLeft: 'env(safe-area-inset-left, 0px)',
+            paddingRight: 'env(safe-area-inset-right, 0px)',
           }}
         >
           <Outlet />
