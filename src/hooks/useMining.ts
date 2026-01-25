@@ -5,7 +5,8 @@ import {
   getActiveSession,
   subscribeToMiningSession,
   startMiningSession as firebaseStartMining,
-  claimMiningReward as firebaseClaimReward
+  claimMiningReward as firebaseClaimReward,
+  recordGroupMiningActivity
 } from "@/lib/firebase";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { toast } from "sonner";
@@ -160,6 +161,9 @@ export function useMining() {
           toast.info("Watch ads to support the app! ⛏️");
         }
       }
+
+      // Track group mining activity
+      await recordGroupMiningActivity(user.uid);
 
       toast.success("Mining session started! ⛏️");
       await fetchActiveSession();

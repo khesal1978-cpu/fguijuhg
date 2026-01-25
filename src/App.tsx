@@ -17,6 +17,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Wallet = lazy(() => import("./pages/Wallet"));
 const Team = lazy(() => import("./pages/Team"));
+const Groups = lazy(() => import("./pages/Groups"));
 const Games = lazy(() => import("./pages/Games"));
 const Settings = lazy(() => import("./pages/Settings"));
 const TermsConditions = lazy(() => import("./pages/TermsConditions"));
@@ -90,6 +91,13 @@ const AnimatedRoutes = memo(function AnimatedRoutes() {
             <PageTransition>
               <Suspense fallback={<PagePlaceholder />}>
                 <Team />
+              </Suspense>
+            </PageTransition>
+          } />
+          <Route path="/groups" element={
+            <PageTransition>
+              <Suspense fallback={<PagePlaceholder />}>
+                <Groups />
               </Suspense>
             </PageTransition>
           } />

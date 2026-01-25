@@ -1,6 +1,7 @@
 import { useState, forwardRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Zap, Copy, Share2, Plus, Loader2, Gift, UserPlus, TrendingUp, Link2, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Users, Zap, Copy, Share2, Plus, Loader2, Gift, UserPlus, TrendingUp, Link2, ChevronRight, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ function getMultiplierTier(activeReferrals: number) {
 
 const TeamInner = forwardRef<HTMLDivElement, object>(function Team(_, ref) {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const { directReferrals, indirectReferrals, stats, loading, claiming, claimBonuses } = useReferrals();
   const [activeTab, setActiveTab] = useState<"direct" | "indirect">("direct");
   
@@ -96,6 +98,26 @@ const TeamInner = forwardRef<HTMLDivElement, object>(function Team(_, ref) {
         </Button>
       </motion.div>
 
+      {/* Security Groups Card */}
+      <motion.button
+        onClick={() => navigate('/groups')}
+        className="w-full card-glass-strong p-4 flex items-center justify-between hover:border-primary/30 transition-colors"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="size-11 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Shield className="size-5 text-primary" />
+          </div>
+          <div className="text-left">
+            <p className="text-base font-semibold text-foreground">Security Groups</p>
+            <p className="text-xs text-muted-foreground">Join groups • Earn together</p>
+          </div>
+        </div>
+        <ChevronRight className="size-5 text-foreground/40" />
+      </motion.button>
       {/* Stats Overview */}
       <motion.div 
         className="grid grid-cols-2 gap-3"
