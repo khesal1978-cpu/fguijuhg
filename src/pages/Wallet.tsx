@@ -1,11 +1,10 @@
-import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { History, Clock, Loader2, Wallet as WalletIcon, TrendingUp, ArrowUpRight, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTransactions } from "@/hooks/useTransactions";
 
-const Wallet = forwardRef<HTMLDivElement>(function Wallet(_, ref) {
+export default function Wallet() {
   const { profile } = useAuth();
   const { transactions, loading } = useTransactions(10);
 
@@ -19,7 +18,7 @@ const Wallet = forwardRef<HTMLDivElement>(function Wallet(_, ref) {
   };
 
   return (
-    <div ref={ref} className="px-4 py-6 pb-28 max-w-lg mx-auto space-y-6">
+    <div className="px-4 py-6 pb-28 max-w-lg mx-auto space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -153,6 +152,4 @@ const Wallet = forwardRef<HTMLDivElement>(function Wallet(_, ref) {
       </motion.div>
     </div>
   );
-});
-
-export default Wallet;
+}
