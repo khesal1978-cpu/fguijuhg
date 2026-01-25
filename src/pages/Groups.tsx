@@ -239,7 +239,7 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
                   {/* Group Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white font-bold">
+                      <div className="size-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold">
                         {group.name[0].toUpperCase()}
                       </div>
                       <div>
