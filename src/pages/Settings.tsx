@@ -474,6 +474,29 @@ export default function Settings() {
           </Button>
         </motion.div>
 
+        {/* Microsoft for Startups Badge */}
+        <motion.div
+          className="flex justify-center pt-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08]">
+            <span className="text-[10px] text-muted-foreground">Supported by</span>
+            <svg 
+              viewBox="0 0 23 23" 
+              className="size-3"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path fill="#f25022" d="M1 1h10v10H1z"/>
+              <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+              <path fill="#7fba00" d="M12 1h10v10H12z"/>
+              <path fill="#ffb900" d="M12 12h10v10H12z"/>
+            </svg>
+            <span className="text-[10px] font-medium text-foreground/80">Microsoft for Startups</span>
+          </div>
+        </motion.div>
+
         <p className="text-center text-xs text-muted-foreground">
           PingCaset Mining Hub v1.0
         </p>
