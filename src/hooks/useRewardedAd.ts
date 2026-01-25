@@ -141,9 +141,12 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
     }
 
     if (!isNativePlatform()) {
-      // Demo mode for web - simulate ad watching
+      // Demo mode for web - simulate ad watching with brief delay
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate ad loading
       await incrementGameAdCount(user.uid, gameType);
       const gameReward = calculateAdGameReward();
+      setIsLoading(false);
       // Return reward - don't apply here, let animation complete first
       return { success: true, reward: gameReward };
     }
