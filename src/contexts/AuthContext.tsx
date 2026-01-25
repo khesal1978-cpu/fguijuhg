@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from "react";
 import { 
   firebaseAuth, 
   onAuthStateChanged, 
@@ -20,20 +20,27 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+// Secure default context to prevent undefined access
+const defaultContext: AuthContextType = {
   user: null,
   profile: null,
   loading: true,
   refreshProfile: async () => {},
   signOut: async () => {},
-});
+};
+
+const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const fetchProfile = async (userId: string) => {
+  // Memoized fetch profile function
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+    if (!userId) return null;
+    
     try {
       const data = await getProfile(userId);
       if (data) {
@@ -44,74 +51,105 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching profile:', error);
       return null;
     }
-  };
+  }, []);
 
-  const refreshProfile = async () => {
-    if (user) {
+  // Memoized refresh profile function
+  const refreshProfile = useCallback(async () => {
+    if (user?.uid) {
       await fetchProfile(user.uid);
     }
-  };
+  }, [user?.uid, fetchProfile]);
 
+  // Memoized sign out function
+  const signOut = useCallback(async () => {
+    try {
+      await firebaseSignOut();
+      setProfile(null);
+      setUser(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error; // Re-throw for caller to handle
+    }
+  }, []);
+
+  // Auth state listener
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
+    let isMounted = true;
     
     try {
       unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+        if (!isMounted) return;
+        
         try {
           setUser(firebaseUser);
           
           if (firebaseUser) {
-            // Check if profile exists - but DON'T auto-create it here
-            // The Auth page handles profile creation with referral codes
-            // We just wait for the profile to be created
+            // Attempt to get existing profile
             let userProfile = await getProfile(firebaseUser.uid);
             
             if (!userProfile) {
-              // Wait a moment and try again - the Auth page might be creating the profile
+              // Wait briefly for profile creation (handles race condition with Auth page)
               await new Promise(resolve => setTimeout(resolve, 1000));
               userProfile = await getProfile(firebaseUser.uid);
               
-              // If still no profile after waiting, create a basic one
-              // This handles edge cases like direct Google sign-in without going through Auth page
-              if (!userProfile) {
+              // Create fallback profile for edge cases (direct Google sign-in)
+              if (!userProfile && isMounted) {
                 try {
                   console.log('Creating fallback profile for user:', firebaseUser.uid);
-                  userProfile = await createProfile(firebaseUser.uid, firebaseUser.displayName || 'Miner');
+                  // Sanitize display name
+                  const displayName = (firebaseUser.displayName || 'Miner')
+                    .slice(0, 50)
+                    .replace(/[<>"']/g, ''); // Remove potentially dangerous characters
+                  userProfile = await createProfile(firebaseUser.uid, displayName);
                 } catch (createError) {
                   console.error('Error creating fallback profile:', createError);
                 }
               }
             }
             
-            setProfile(userProfile);
+            if (isMounted) {
+              setProfile(userProfile);
+            }
             
-            // Claim any pending referral bonuses (don't await to prevent blocking)
+            // Claim pending referral bonuses (non-blocking)
             if (userProfile) {
-              claimPendingBonuses(firebaseUser.uid).then((result) => {
-                if (result.total > 0) {
-                  console.log(`[REFERRAL] Claimed ${result.total} CASET from ${result.claimed} pending bonuses`);
-                }
-              }).catch(console.error);
+              claimPendingBonuses(firebaseUser.uid)
+                .then((result) => {
+                  if (result.total > 0) {
+                    console.log(`[REFERRAL] Claimed ${result.total} CASET from ${result.claimed} pending bonuses`);
+                  }
+                })
+                .catch((err) => console.error('[REFERRAL] Claim error:', err));
               
-              // Track daily login
+              // Track daily login (non-blocking)
               trackDailyLogin(firebaseUser.uid).catch(console.error);
             }
           } else {
-            setProfile(null);
+            if (isMounted) {
+              setProfile(null);
+            }
           }
         } catch (error) {
           console.error('Auth state change error:', error);
-          setProfile(null);
+          if (isMounted) {
+            setProfile(null);
+          }
         } finally {
-          setLoading(false);
+          if (isMounted) {
+            setLoading(false);
+            setIsInitialized(true);
+          }
         }
       });
     } catch (error) {
       console.error('Error setting up auth listener:', error);
       setLoading(false);
+      setIsInitialized(true);
     }
 
     return () => {
+      isMounted = false;
       if (unsubscribe) {
         unsubscribe();
       }
@@ -120,50 +158,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Subscribe to profile changes in real-time
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
 
     let unsubscribe: (() => void) | undefined;
+    let isMounted = true;
     
     try {
       unsubscribe = subscribeToProfile(user.uid, (updatedProfile) => {
-        setProfile(updatedProfile);
+        if (isMounted) {
+          setProfile(updatedProfile);
+        }
       });
     } catch (error) {
       console.error('Error subscribing to profile:', error);
     }
 
     return () => {
+      isMounted = false;
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, [user]);
+  }, [user?.uid]);
 
-  const signOut = async () => {
-    try {
-      await firebaseSignOut();
-      setProfile(null);
-      setUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo<AuthContextType>(() => ({
+    user,
+    profile,
+    loading,
+    refreshProfile,
+    signOut,
+  }), [user, profile, loading, refreshProfile, signOut]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        signOut,
-        profile,
-        loading,
-        refreshProfile,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  
+  // Safety check - should never happen with proper provider setup
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
 }

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ interface SpinWheelProps {
   cost: number;
 }
 
-// 8 segments matching the backend reward probabilities
+// Memoize the component to prevent unnecessary re-renders
 // Backend: Unlucky/0 (35%), 10 (35%), 20 (20%), 50 (7%), 100 (3%), 500 (0%)
 const SEGMENTS = [
   { value: 0, label: "X", color: ["#334155", "#1e293b"], isUnlucky: true },
