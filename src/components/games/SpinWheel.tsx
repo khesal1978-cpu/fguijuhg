@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, memo } from "react";
+import { useState, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 interface SpinWheelProps {
   onSpin: () => Promise<{ success: boolean; reward?: number; error?: string }>;
@@ -191,19 +192,26 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
                   </g>
                 );
               })}
-              {/* Center circle for visual appeal */}
-              <circle cx="100" cy="100" r="25" fill="transparent" />
+              {/* Center circle with logo */}
+              <circle cx="100" cy="100" r="28" fill="url(#center-grad)" />
+              <defs>
+                <radialGradient id="center-grad" cx="50%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="hsl(262 83% 65%)" />
+                  <stop offset="100%" stopColor="hsl(262 83% 35%)" />
+                </radialGradient>
+              </defs>
             </svg>
           </motion.div>
 
-          {/* Center Button */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg border-2 border-white/20 z-10">
-            <motion.div
+          {/* Center Logo */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-gradient-to-br from-primary/90 to-violet-700 flex items-center justify-center shadow-xl border-2 border-white/30 z-10 overflow-hidden">
+            <motion.img
+              src={pingcasetLogo}
+              alt="PingCaset"
+              className="w-10 h-10 object-contain"
               animate={isSpinning ? { rotate: 360 } : { rotate: 0 }}
-              transition={{ duration: 1, repeat: isSpinning ? Infinity : 0, ease: "linear" }}
-            >
-              <Sparkles className="size-5 text-white" />
-            </motion.div>
+              transition={{ duration: 2, repeat: isSpinning ? Infinity : 0, ease: "linear" }}
+            />
           </div>
         </div>
 
