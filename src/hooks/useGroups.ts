@@ -106,10 +106,10 @@ export function useGroups() {
         const myActivity = activities.find(a => a.user_id === user.uid);
         const myMines = myActivity?.mines_today || 0;
 
-        // Group reward formula: 180 × A/5
+        // Group reward formula: 180 × A/5 (A = active members, max 5)
         const groupReward = Math.floor((BASE_GROUP_REWARD * Math.min(activeMembers, 5)) / 5);
-        // Your reward: Group reward × M/6
-        const myReward = Math.floor((groupReward * myMines) / MAX_MINES_PER_DAY);
+        // Your reward: Group reward × M/4 (M = your mines today, max 4)
+        const myReward = Math.floor((groupReward * Math.min(myMines, MAX_MINES_PER_DAY)) / MAX_MINES_PER_DAY);
 
         groupsWithData.push({
           ...groupData,
@@ -386,7 +386,7 @@ export function useGroups() {
             is_active: true
           });
         } else {
-          // Update existing (max 6 mines per day)
+          // Update existing (max 4 mines per day - matches app's session limit)
           const activityDoc = activitySnap.docs[0];
           const currentMines = activityDoc.data().mines_today || 0;
           if (currentMines < MAX_MINES_PER_DAY) {

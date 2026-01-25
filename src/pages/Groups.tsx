@@ -269,8 +269,8 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
                       <p className="text-[10px] text-foreground/50">Active Today</p>
                     </div>
                     <div className="p-2 rounded-lg bg-white/[0.04]">
-                      <p className="text-lg font-bold text-gold">{group.myActivity?.mines_today || 0}/6</p>
-                      <p className="text-[10px] text-foreground/50">My Mines</p>
+                      <p className="text-lg font-bold text-gold">{group.myActivity?.mines_today || 0}/4</p>
+                      <p className="text-[10px] text-foreground/50">My Sessions</p>
                     </div>
                   </div>
 
@@ -409,7 +409,7 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
                 Overview
               </div>
               <div className="p-4 rounded-xl bg-white/[0.04] space-y-3 text-sm text-foreground/80">
-                <p>Group rewards are based on your daily mining activity (up to 6 sessions) and the activity of other group members.</p>
+                <p>Group rewards are based on your daily mining sessions (up to 4) and the activity of other group members.</p>
                 <p>You can join up to <strong>5 groups</strong>, and each group can have up to <strong>5 members</strong>.</p>
                 <p>Each day, you may claim from exactly <strong>one</strong> of your groups.</p>
                 <p>To earn any reward, your chosen group must have at least <strong>3 members</strong> and at least <strong>2 active members</strong> (including you).</p>
@@ -425,7 +425,7 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
               </div>
               <div className="p-4 rounded-xl bg-white/[0.04] space-y-2 font-mono text-sm text-foreground/80">
                 <p>Group reward = 180 × A/5</p>
-                <p>Your reward = Group reward × M/6</p>
+                <p>Your reward = Group reward × M/4</p>
               </div>
             </div>
 
@@ -437,7 +437,7 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
               </div>
               <div className="p-4 rounded-xl bg-white/[0.04] space-y-2 text-sm text-foreground/80">
                 <p>• <strong>A</strong> = number of active members (max 5)</p>
-                <p>• <strong>M</strong> = your mines today (0–6, only counted after joining the group)</p>
+                <p>• <strong>M</strong> = your sessions today (0–4, only counted after joining the group)</p>
               </div>
             </div>
 
@@ -450,7 +450,7 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
               <div className="p-4 rounded-xl bg-white/[0.04] space-y-2 text-sm text-foreground/80">
                 <p>• A group must have at least 3 members, with at least 2 active.</p>
                 <p>• You must mine at least once.</p>
-                <p>• Mines before joining a group will not be counted. Only mines after joining count, up to 6 per day.</p>
+                <p>• Sessions before joining a group will not be counted. Only sessions after joining count, up to 4 per day.</p>
               </div>
             </div>
 
@@ -466,11 +466,11 @@ const GroupsInner = forwardRef<HTMLDivElement, object>(function Groups(_, ref) {
                   <p className="font-mono mt-1">Group reward = 180 × 3/5 = <strong>108</strong></p>
                 </div>
                 <div className="p-4 rounded-xl bg-white/[0.04] text-sm text-foreground/80">
-                  <p>You mined 1 time after joining group (M = 1).</p>
-                  <p className="font-mono mt-1">Your reward = 108 × 1/6 = <strong>18</strong></p>
+                  <p>You completed 2 sessions after joining group (M = 2).</p>
+                  <p className="font-mono mt-1">Your reward = 108 × 2/4 = <strong>54</strong></p>
                 </div>
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-sm text-foreground">
-                  <p>You will receive <strong className="text-primary">18 CASET</strong> when claiming from this group.</p>
+                  <p>You will receive <strong className="text-primary">54 CASET</strong> when claiming from this group.</p>
                 </div>
               </div>
             </div>

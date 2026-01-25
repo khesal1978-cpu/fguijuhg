@@ -22,7 +22,7 @@ export interface GroupDailyActivity {
   date: string; // YYYY-MM-DD format
   group_id: string;
   user_id: string;
-  mines_today: number; // 0-6
+  mines_today: number; // 0-4 (matches app's 4 session limit)
   is_active: boolean; // mined at least once today
 }
 
@@ -52,4 +52,4 @@ export const MAX_MEMBERS_PER_GROUP = 5;
 export const MIN_MEMBERS_TO_EARN = 3;
 export const MIN_ACTIVE_MEMBERS = 2;
 export const BASE_GROUP_REWARD = 180;
-export const MAX_MINES_PER_DAY = 6;
+export const MAX_MINES_PER_DAY = 4; // Matches app's 4 session limit
