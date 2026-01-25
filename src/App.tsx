@@ -3,11 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageLoader } from "@/components/PageLoader";
+import { NetworkStatus } from "@/components/NetworkStatus";
+import { PageTransition } from "@/components/PageTransition";
 
 // Lazy load pages for better performance
 const Auth = lazy(() => import("./pages/Auth"));
@@ -38,6 +41,75 @@ const queryClient = new QueryClient({
   },
 });
 
+// Animated routes wrapper
+const AnimatedRoutes = memo(function AnimatedRoutes() {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/auth" element={
+          <PageTransition>
+            <Auth />
+          </PageTransition>
+        } />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={
+            <PageTransition>
+              <Dashboard />
+            </PageTransition>
+          } />
+          <Route path="/games" element={
+            <PageTransition>
+              <Games />
+            </PageTransition>
+          } />
+          <Route path="/wallet" element={
+            <PageTransition>
+              <Wallet />
+            </PageTransition>
+          } />
+          <Route path="/team" element={
+            <PageTransition>
+              <Team />
+            </PageTransition>
+          } />
+          <Route path="/settings" element={
+            <PageTransition>
+              <Settings />
+            </PageTransition>
+          } />
+          <Route path="/terms" element={
+            <PageTransition>
+              <TermsConditions />
+            </PageTransition>
+          } />
+          <Route path="/privacy" element={
+            <PageTransition>
+              <PrivacyPolicy />
+            </PageTransition>
+          } />
+          <Route path="/help" element={
+            <PageTransition>
+              <HelpCenter />
+            </PageTransition>
+          } />
+          <Route path="/whitepaper" element={
+            <PageTransition>
+              <Whitepaper />
+            </PageTransition>
+          } />
+        </Route>
+        <Route path="*" element={
+          <PageTransition>
+            <NotFound />
+          </PageTransition>
+        } />
+      </Routes>
+    </AnimatePresence>
+  );
+});
+
 const App = memo(() => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -51,23 +123,10 @@ const App = memo(() => (
               className: "!bg-card !border-border !text-foreground",
             }}
           />
+          <NetworkStatus />
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/games" element={<Games />} />
-                  <Route path="/wallet" element={<Wallet />} />
-                  <Route path="/team" element={<Team />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/terms" element={<TermsConditions />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/help" element={<HelpCenter />} />
-                  <Route path="/whitepaper" element={<Whitepaper />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AnimatedRoutes />
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>

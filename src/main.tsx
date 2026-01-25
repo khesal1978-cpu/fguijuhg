@@ -10,19 +10,24 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// Native app behaviors
+// Native app behaviors - comprehensive setup
 const setupNativeApp = () => {
   // Disable context menu (long press menu)
   document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    return false;
+    const target = e.target as HTMLElement;
+    // Allow context menu on inputs for paste functionality
+    if (!['INPUT', 'TEXTAREA'].includes(target.tagName)) {
+      e.preventDefault();
+      return false;
+    }
   });
 
   // Disable text selection on non-input elements
   document.addEventListener('selectstart', (e) => {
     const target = e.target as HTMLElement;
     if (!['INPUT', 'TEXTAREA'].includes(target.tagName) && 
-        !target.isContentEditable) {
+        !target.isContentEditable &&
+        !target.closest('.selectable')) {
       e.preventDefault();
     }
   });
@@ -42,12 +47,60 @@ const setupNativeApp = () => {
     e.preventDefault();
   });
 
-  // Handle iOS status bar taps (scroll to top)
-  window.addEventListener('scroll', () => {
-    if (window.scrollY < 0) {
-      window.scrollTo(0, 0);
+  // Prevent wheel zoom (Ctrl+scroll)
+  document.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
     }
+  }, { passive: false });
+
+  // Handle keyboard showing/hiding on mobile
+  const handleVisualViewport = () => {
+    const viewport = window.visualViewport;
+    if (viewport) {
+      const updateViewport = () => {
+        // Adjust for keyboard
+        document.documentElement.style.setProperty(
+          '--viewport-height',
+          `${viewport.height}px`
+        );
+      };
+      viewport.addEventListener('resize', updateViewport);
+      updateViewport();
+    }
+  };
+  handleVisualViewport();
+
+  // Prevent iOS elastic scrolling on body
+  document.body.addEventListener('touchmove', (e) => {
+    if (e.target === document.body) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // Handle back button for Android (basic implementation)
+  window.addEventListener('popstate', () => {
+    // This allows native back behavior
+    // Custom handling can be added in components
   });
+
+  // Optimize for 60fps scrolling
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
+  // Detect if running as standalone app (PWA)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true;
+  
+  if (isStandalone) {
+    document.documentElement.classList.add('standalone');
+  }
+
+  // Add touch device class
+  if ('ontouchstart' in window) {
+    document.documentElement.classList.add('touch-device');
+  }
 };
 
 // Initialize native behaviors
@@ -69,5 +122,22 @@ if (typeof window !== "undefined") {
     // Preload logo
     const logo = new Image();
     logo.src = "/src/assets/pingcaset-logo.png";
+    
+    // Request idle callback for non-critical tasks
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(() => {
+        // Prefetch other pages for faster navigation
+        const links = document.querySelectorAll('link[rel="prefetch"]');
+        links.forEach(link => {
+          const href = link.getAttribute('href');
+          if (href) {
+            const prefetch = document.createElement('link');
+            prefetch.rel = 'prefetch';
+            prefetch.href = href;
+            document.head.appendChild(prefetch);
+          }
+        });
+      });
+    }
   });
 }
