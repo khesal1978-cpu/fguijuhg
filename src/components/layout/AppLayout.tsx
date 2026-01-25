@@ -1,8 +1,8 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { MobileNav } from "./MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useEffect, useRef } from "react";
 
 // Memoized ambient gradient to prevent re-renders
 const AmbientGlow = memo(() => (
@@ -30,6 +30,15 @@ AmbientGlow.displayName = "AmbientGlow";
 
 export const AppLayout = memo(function AppLayout() {
   const { user, loading } = useAuth();
+  const { pathname } = useLocation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top on route change (native behavior)
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    }
+  }, [pathname]);
 
   // Memoize loading state UI
   const loadingUI = useMemo(() => (
@@ -59,7 +68,8 @@ export const AppLayout = memo(function AppLayout() {
         
         {/* Safe area padding for notched devices */}
         <div 
-          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-none"
+          ref={scrollRef}
+          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-none scroll-smooth"
           data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',

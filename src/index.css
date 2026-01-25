@@ -614,7 +614,9 @@ img {
   display: none;
 }
 
-/* Active state for mobile */
+/* ===== Native App Enhancements ===== */
+
+/* Active state for mobile touch */
 @media (hover: none) and (pointer: coarse) {
   .active\:scale-95:active {
     transform: scale(0.95);
@@ -622,5 +624,114 @@ img {
   
   .active\:opacity-80:active {
     opacity: 0.8;
+  }
+  
+  /* Faster active state feedback */
+  button, a, [role="button"] {
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+}
+
+/* Prevent rubber-banding on iOS */
+@supports (-webkit-touch-callout: none) {
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+  
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Native scroll momentum */
+.scroll-native {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Native list item press effect */
+.list-item-press {
+  transition: background-color 0.1s ease;
+}
+
+.list-item-press:active {
+  background-color: hsl(0 0% 100% / 0.05);
+}
+
+/* Native card press effect */
+.card-press {
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+              box-shadow 0.15s ease;
+}
+
+.card-press:active {
+  transform: scale(0.98);
+}
+
+/* iOS-style blur navigation */
+.blur-nav {
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Prevent text selection on drag */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Image loading placeholder */
+.img-loading {
+  background: linear-gradient(90deg, 
+    hsl(240 10% 12%) 0%, 
+    hsl(240 10% 16%) 50%, 
+    hsl(240 10% 12%) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Skeleton loading animation */
+.skeleton {
+  @apply animate-pulse bg-muted rounded;
+}
+
+/* Pull indicator (for future pull-to-refresh) */
+.pull-indicator {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.pull-indicator.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(10px);
+}
+
+/* Hardware acceleration for smooth animations */
+.gpu-accelerate {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
