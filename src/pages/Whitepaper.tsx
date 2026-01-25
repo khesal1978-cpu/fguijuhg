@@ -3,6 +3,7 @@ import { ArrowLeft, Coins, Users, Zap, Shield, Wallet, TrendingUp, Target, Alert
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 const sections = [
   {
@@ -116,7 +117,7 @@ const sections = [
 
 const generateWhitepaperText = () => {
   let text = `============================================================
-PINGCASET (CASET) WHITE PAPER
+PING CASET (CASET) WHITE PAPER
 ============================================================
 
 Version: 1.1
@@ -250,11 +251,13 @@ export default function Whitepaper() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="size-14 mx-auto rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-            <Coins className="size-7 text-white" />
-          </div>
+          <img 
+            src={pingcasetLogo} 
+            alt="Ping Caset" 
+            className="size-16 mx-auto rounded-2xl object-cover"
+          />
           <div>
-            <h2 className="text-xl font-display font-bold text-foreground">PINGCASET</h2>
+            <h2 className="text-xl font-display font-bold text-foreground">Ping Caset</h2>
             <p className="text-xs text-primary font-medium">CASET Token</p>
           </div>
           <div className="flex justify-center gap-4 pt-2">
