@@ -5,26 +5,11 @@ interface PageTransitionProps {
   children: ReactNode;
 }
 
-// Native iOS-like page transition
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 8,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-  },
-  exit: {
-    opacity: 0,
-    y: -8,
-  },
-};
-
+// Fast, smooth page transition - minimal delay
 const pageTransition = {
-  type: "spring" as const,
-  stiffness: 380,
-  damping: 35,
+  type: "tween" as const,
+  duration: 0.15,
+  ease: "easeOut" as const,
 };
 
 export const PageTransition = memo(function PageTransition({ 
@@ -32,10 +17,9 @@ export const PageTransition = memo(function PageTransition({
 }: PageTransitionProps) {
   return (
     <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={pageTransition}
       className="w-full h-full"
     >
