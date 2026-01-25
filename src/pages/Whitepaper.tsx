@@ -219,59 +219,58 @@ export default function Whitepaper() {
   };
 
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-          <Link to="/settings" className="p-2.5 -ml-2 bg-white/[0.08] border border-white/[0.1] rounded-xl hover:bg-white/[0.12] transition-colors">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link to="/settings" className="p-2 -ml-1 bg-white/[0.08] border border-white/[0.1] rounded-xl hover:bg-white/[0.12] transition-colors shrink-0">
               <ArrowLeft className="size-5 text-foreground" />
             </Link>
-            <div>
-              <h1 className="text-lg font-display font-bold text-foreground">CASET Whitepaper</h1>
-              <p className="text-xs text-muted-foreground">Version 1.1 • Token Symbol: CASET</p>
+            <div className="min-w-0">
+              <h1 className="text-base font-display font-bold text-foreground truncate">CASET Whitepaper</h1>
+              <p className="text-[10px] text-muted-foreground">v1.1 • CASET</p>
             </div>
           </div>
           <Button 
             size="sm" 
             variant="outline"
             onClick={handleDownload}
-            className="gap-1.5 bg-white/[0.08] border-white/[0.15] text-foreground hover:bg-white/[0.12]"
+            className="gap-1 px-2.5 bg-white/[0.08] border-white/[0.15] text-foreground hover:bg-white/[0.12] shrink-0"
           >
             <Download className="size-4" />
-            <span className="hidden sm:inline">Download</span>
           </Button>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-24">
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-4 pb-24">
         {/* Hero Card */}
         <motion.div
-          className="card-dark p-6 text-center space-y-4 border-primary/20"
+          className="card-dark p-5 text-center space-y-3 border-primary/20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="size-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-            <Coins className="size-8 text-white" />
+          <div className="size-14 mx-auto rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+            <Coins className="size-7 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-display font-bold text-foreground">PINGCASET</h2>
-            <p className="text-sm text-primary font-medium">CASET Token</p>
+            <h2 className="text-xl font-display font-bold text-foreground">PINGCASET</h2>
+            <p className="text-xs text-primary font-medium">CASET Token</p>
           </div>
-          <div className="flex justify-center gap-6 pt-2">
+          <div className="flex justify-center gap-4 pt-2">
             <div>
-              <p className="text-2xl font-display font-bold text-foreground">50B</p>
-              <p className="text-xs text-muted-foreground">Total Supply</p>
+              <p className="text-lg font-display font-bold text-foreground">50B</p>
+              <p className="text-[10px] text-muted-foreground">Total Supply</p>
             </div>
             <div className="w-px bg-border" />
             <div>
-              <p className="text-2xl font-display font-bold text-foreground">4</p>
-              <p className="text-xs text-muted-foreground">Sessions/Day</p>
+              <p className="text-lg font-display font-bold text-foreground">4</p>
+              <p className="text-[10px] text-muted-foreground">Sessions/Day</p>
             </div>
             <div className="w-px bg-border" />
             <div>
-              <p className="text-2xl font-display font-bold text-foreground">10</p>
-              <p className="text-xs text-muted-foreground">CASET/Session</p>
+              <p className="text-lg font-display font-bold text-foreground">10</p>
+              <p className="text-[10px] text-muted-foreground">CASET/Sess</p>
             </div>
           </div>
         </motion.div>
