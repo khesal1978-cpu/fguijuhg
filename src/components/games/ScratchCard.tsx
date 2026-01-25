@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, memo } from "react";
+import { useState, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, RotateCcw, Coins, Skull } from "lucide-react";
+import { Sparkles, RotateCcw, Coins, Skull, Gift, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import pingcasetLogo from "@/assets/pingcaset-logo.png";
 
 interface ScratchCardProps {
   onScratch: () => Promise<{ success: boolean; reward?: number; error?: string }>;
@@ -10,7 +11,7 @@ interface ScratchCardProps {
   cost: number;
 }
 
-export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
+export const ScratchCard = memo(function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
   const { profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -40,29 +41,43 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
     canvas.height = rect.height * 2;
     ctx.scale(2, 2);
 
-    // Create gradient background
+    // Create premium gradient background
     const gradient = ctx.createLinearGradient(0, 0, rect.width, rect.height);
     gradient.addColorStop(0, "hsl(262 83% 58%)");
+    gradient.addColorStop(0.5, "hsl(280 80% 50%)");
     gradient.addColorStop(1, "hsl(262 83% 40%)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, rect.width, rect.height);
 
-    // Add sparkle pattern
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    for (let i = 0; i < 15; i++) {
+    // Add shimmer pattern
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    for (let i = 0; i < 20; i++) {
       const x = Math.random() * rect.width;
       const y = Math.random() * rect.height;
+      const size = 1 + Math.random() * 4;
       ctx.beginPath();
-      ctx.arc(x, y, 1 + Math.random() * 3, 0, Math.PI * 2);
+      ctx.arc(x, y, size, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Add text
-    ctx.font = "bold 14px Inter, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    // Add diagonal lines pattern
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    for (let i = -rect.height; i < rect.width + rect.height; i += 15) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + rect.height, rect.height);
+      ctx.stroke();
+    }
+
+    // Add text with shadow
+    ctx.shadowColor = "rgba(0,0,0,0.3)";
+    ctx.shadowBlur = 4;
+    ctx.font = "bold 16px 'Space Grotesk', sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("SCRATCH HERE", rect.width / 2, rect.height / 2);
+    ctx.fillText("✨ SCRATCH TO WIN ✨", rect.width / 2, rect.height / 2);
   };
 
   const handleBuyCard = async () => {
@@ -101,7 +116,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
 
     ctx.globalCompositeOperation = "destination-out";
     ctx.beginPath();
-    ctx.arc(x, y, 25, 0, Math.PI * 2);
+    ctx.arc(x, y, 30, 0, Math.PI * 2);
     ctx.fill();
 
     // Calculate scratch progress
@@ -113,7 +128,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
     const progress = (transparent / (imageData.data.length / 4)) * 100;
     setScratchProgress(progress);
 
-    if (progress > 45 && !revealed) {
+    if (progress > 40 && !revealed) {
       setRevealed(true);
     }
   };
@@ -121,67 +136,146 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
   const canBuy = (profile?.balance || 0) >= cost && !scratching && !scratched;
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-5">
       {/* Card Container */}
-      <div className="relative w-[260px] h-[160px]">
+      <div className="relative w-[280px] h-[180px]">
+        {/* Outer glow */}
+        <div className="absolute inset-[-8px] rounded-2xl bg-gradient-to-r from-primary/20 via-violet-500/15 to-primary/20 blur-xl" />
+        
         {!scratched ? (
-          // Unscratched card preview
+          // Unscratched card preview - Premium design
           <motion.div
-            className="w-full h-full rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-dashed border-primary/20 flex flex-col items-center justify-center gap-2"
-            whileHover={{ scale: 1.01 }}
+            className="relative w-full h-full rounded-2xl overflow-hidden border border-primary/30 shadow-2xl"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <Coins className="size-10 text-primary/40" />
-            <p className="text-muted-foreground font-medium text-sm">
-              Buy a card to scratch
-            </p>
-            <p className="text-xs text-muted-foreground/70">
-              Win 5, 10, 30 or 100 coins!
-            </p>
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-card to-primary/10" />
+            
+            {/* Pattern overlay */}
+            <div className="absolute inset-0 opacity-10">
+              {[...Array(6)].map((_, i) => (
+                <Star 
+                  key={i} 
+                  className="absolute text-primary" 
+                  style={{ 
+                    left: `${15 + (i % 3) * 35}%`, 
+                    top: `${20 + Math.floor(i / 3) * 50}%`,
+                    width: 16,
+                    height: 16,
+                  }} 
+                />
+              ))}
+            </div>
+            
+            {/* Content */}
+            <div className="relative z-10 flex flex-col items-center justify-center h-full gap-3 p-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-violet-600/30 border border-primary/40 flex items-center justify-center backdrop-blur-sm">
+                  <img src={pingcasetLogo} alt="PingCaset" className="w-10 h-10 object-contain" />
+                </div>
+                <motion.div 
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Zap className="w-3 h-3 text-primary-foreground" />
+                </motion.div>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-foreground font-bold text-base">Scratch & Win</p>
+                <p className="text-muted-foreground text-xs mt-0.5">Win up to 100 CASET!</p>
+              </div>
+              
+              <div className="flex gap-2 mt-1">
+                {[5, 10, 30, 100].map((val) => (
+                  <span 
+                    key={val} 
+                    className="px-2 py-0.5 rounded-full bg-primary/15 border border-primary/25 text-[10px] font-bold text-primary"
+                  >
+                    {val}
+                  </span>
+                ))}
+              </div>
+            </div>
           </motion.div>
         ) : (
           // Active scratch card
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
             {/* Reward underneath */}
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 to-accent/20 border border-border flex flex-col items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-card via-background to-card border border-border flex flex-col items-center justify-center">
               <AnimatePresence>
                 {revealed && reward !== null && (
                   <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    initial={{ scale: 0, opacity: 0, rotate: -10 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className="text-center"
                   >
                     {isUnlucky ? (
                       <>
-                        <Skull className="size-8 text-muted-foreground mx-auto mb-1" />
+                        <motion.div
+                          initial={{ y: 20 }}
+                          animate={{ y: 0 }}
+                          className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3"
+                        >
+                          <Skull className="size-10 text-muted-foreground" />
+                        </motion.div>
                         <p className="text-2xl font-display font-bold text-muted-foreground">Unlucky!</p>
-                        <p className="text-sm text-muted-foreground/70">Better luck next time</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">Try again for better luck</p>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="size-6 text-primary mx-auto mb-1" />
-                        <p className="text-muted-foreground text-xs font-medium">You won!</p>
-                        <p className="text-3xl font-display font-bold text-foreground">
-                          +{reward}
-                        </p>
-                        <p className="text-primary font-bold text-sm">coins</p>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: [0, 1.2, 1] }}
+                          transition={{ delay: 0.1 }}
+                          className="relative"
+                        >
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center mx-auto mb-3 border-2 border-primary/40">
+                            <Gift className="size-8 text-primary" />
+                          </div>
+                          {/* Confetti particles */}
+                          {[...Array(8)].map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="absolute w-2 h-2 rounded-full bg-primary"
+                              initial={{ x: 32, y: 32, opacity: 1 }}
+                              animate={{
+                                x: 32 + Math.cos((i * 45 * Math.PI) / 180) * 50,
+                                y: 32 + Math.sin((i * 45 * Math.PI) / 180) * 50,
+                                opacity: 0,
+                                scale: 0,
+                              }}
+                              transition={{ duration: 0.6, delay: 0.2 + i * 0.05 }}
+                            />
+                          ))}
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          <p className="text-muted-foreground text-xs font-medium">You won!</p>
+                          <p className="text-4xl font-display font-bold text-foreground">
+                            +{reward}
+                          </p>
+                          <p className="text-primary font-bold text-sm">CASET</p>
+                        </motion.div>
                       </>
                     )}
                   </motion.div>
                 )}
               </AnimatePresence>
               {!revealed && reward !== null && (
-                <div className="text-center opacity-20">
+                <div className="text-center opacity-15">
                   {isUnlucky ? (
-                    <>
-                      <Skull className="size-8 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-xl font-display font-bold text-muted-foreground">💀</p>
-                    </>
+                    <Skull className="size-12 text-muted-foreground mx-auto" />
                   ) : (
                     <>
-                      <p className="text-3xl font-display font-bold text-foreground">
-                        +{reward}
-                      </p>
-                      <p className="text-primary font-bold text-sm">coins</p>
+                      <p className="text-4xl font-display font-bold text-foreground">+{reward}</p>
+                      <p className="text-primary font-bold">CASET</p>
                     </>
                   )}
                 </div>
@@ -192,7 +286,7 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
             {!revealed && (
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 w-full h-full rounded-xl cursor-crosshair touch-none"
+                className="absolute inset-0 w-full h-full rounded-2xl cursor-crosshair touch-none"
                 onMouseDown={() => setIsScratching(true)}
                 onMouseUp={() => setIsScratching(false)}
                 onMouseLeave={() => setIsScratching(false)}
@@ -208,18 +302,26 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
 
       {/* Progress indicator */}
       {scratched && !revealed && (
-        <div className="w-full max-w-[260px]">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Scratching...</span>
-            <span>{Math.round(scratchProgress)}%</span>
+        <div className="w-full max-w-[280px]">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+            <span className="font-medium">Scratching...</span>
+            <span className="font-bold text-primary">{Math.round(scratchProgress)}%</span>
           </div>
-          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+          <div className="h-2 bg-secondary rounded-full overflow-hidden border border-border">
             <motion.div
-              className="h-full bg-primary rounded-full"
+              className="h-full bg-gradient-to-r from-primary to-violet-500 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${scratchProgress}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Cost Display */}
+      {!scratched && (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border">
+          <Coins className="size-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">{cost} CASET per card</span>
         </div>
       )}
 
@@ -228,14 +330,15 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
         <Button
           onClick={handleBuyCard}
           disabled={!canBuy}
-          className="w-full max-w-[180px] h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:shadow-none"
+          size="lg"
+          className="w-full max-w-[200px] h-12 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white font-bold text-base shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none transition-all"
         >
           {scratching ? (
             <span className="animate-pulse">Buying...</span>
           ) : (
             <>
-              <Coins className="size-4 mr-2" />
-              Buy • {cost} coins
+              <Sparkles className="size-4 mr-2" />
+              BUY CARD
             </>
           )}
         </Button>
@@ -243,22 +346,33 @@ export function ScratchCard({ onScratch, scratching, cost }: ScratchCardProps) {
         <Button
           onClick={resetCard}
           variant="outline"
-          className="w-full max-w-[180px] h-10 rounded-xl font-medium"
+          size="lg"
+          className="w-full max-w-[200px] h-11 rounded-xl font-semibold border-primary/30 hover:bg-primary/10"
         >
           <RotateCcw className="size-4 mr-2" />
           Play Again
         </Button>
       ) : (
-        <p className="text-muted-foreground text-xs font-medium animate-pulse">
+        <motion.p 
+          className="text-primary text-sm font-semibold flex items-center gap-2"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <Sparkles className="size-4" />
           Scratch to reveal your prize!
-        </p>
+        </motion.p>
       )}
 
       {(profile?.balance || 0) < cost && !scratched && !scratching && (
-        <p className="text-destructive text-xs font-medium">
+        <motion.p 
+          className="text-destructive text-xs font-medium flex items-center gap-1.5"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Coins className="size-3" />
           Not enough coins
-        </p>
+        </motion.p>
       )}
     </div>
   );
-}
+});

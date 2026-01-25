@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Coins, Sparkles, TicketPercent, Gift } from "lucide-react";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TasksPanel } from "@/components/games/TasksPanel";
+import { BonusTasksPanel } from "@/components/games/BonusTasksPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGames } from "@/hooks/useGames";
+import { useBonusTasks } from "@/hooks/useBonusTasks";
 
 export default function Games() {
   const { profile } = useAuth();
   const { tasks, loading, spinning, scratching, playSpin, playScratch, claimTask } = useGames();
+  const { bonusTasks, loading: bonusLoading, completeBonusTask, claimBonusTask, checkAndGenerateBonusTask } = useBonusTasks();
   const [activeGame, setActiveGame] = useState<"spin" | "scratch">("spin");
+
+  // Check if all daily tasks are completed to generate bonus tasks
+  useEffect(() => {
+    if (!loading && tasks.length > 0) {
+      checkAndGenerateBonusTask(tasks);
+    }
+  }, [loading, tasks, checkAndGenerateBonusTask]);
 
   return (
     <div className="px-4 py-6 pb-24 max-w-lg mx-auto w-full space-y-5">
@@ -100,6 +110,23 @@ export default function Games() {
           </div>
         )}
       </motion.div>
+
+      {/* Bonus Tasks (shown when daily tasks are all completed) */}
+      {bonusTasks.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="card-glass-strong p-5"
+        >
+          <BonusTasksPanel 
+            tasks={bonusTasks} 
+            loading={bonusLoading} 
+            onComplete={completeBonusTask}
+            onClaim={claimBonusTask}
+          />
+        </motion.div>
+      )}
 
       {/* Daily Tasks */}
       <motion.div
