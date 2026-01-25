@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { Home, Gamepad2, Users, Wallet, Settings } from "lucide-react";
 import { usePendingBonuses } from "@/hooks/usePendingBonuses";
+import { haptic } from "@/lib/haptics";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
@@ -27,10 +28,18 @@ const NavItem = memo(function NavItem({
   showBadge: boolean; 
   badgeCount: number;
 }) {
+  const handleClick = useCallback(() => {
+    if (!isActive) {
+      haptic('selection');
+    }
+  }, [isActive]);
+
   return (
     <Link
       to={path}
-      className="relative flex flex-col items-center justify-center w-14 h-14 gap-0.5 active:scale-95 transition-transform duration-100"
+      onClick={handleClick}
+      className="relative flex flex-col items-center justify-center w-14 h-14 gap-0.5 active:scale-90 transition-transform duration-75 will-change-transform select-none"
+      style={{ WebkitTapHighlightColor: 'transparent' }}
       aria-current={isActive ? "page" : undefined}
       aria-label={label}
     >
@@ -39,7 +48,7 @@ const NavItem = memo(function NavItem({
       )}
       <div className="relative">
         <Icon 
-          className={`size-5 transition-colors duration-150 ${
+          className={`size-5 transition-colors duration-100 ${
             isActive ? "text-primary" : "text-muted-foreground"
           }`} 
         />
@@ -50,7 +59,7 @@ const NavItem = memo(function NavItem({
         )}
       </div>
       <span 
-        className={`text-[10px] font-medium transition-colors duration-150 ${
+        className={`text-[10px] font-medium transition-colors duration-100 ${
           isActive ? "text-primary" : "text-muted-foreground"
         }`}
       >
