@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Coins, Sparkles, TicketPercent, Gift } from "lucide-react";
+import { Coins, Sparkles, TicketPercent, Gift, WifiOff } from "lucide-react";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TasksPanel } from "@/components/games/TasksPanel";
@@ -8,11 +8,13 @@ import { BonusTasksPanel } from "@/components/games/BonusTasksPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGames } from "@/hooks/useGames";
 import { useBonusTasks } from "@/hooks/useBonusTasks";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function Games() {
   const { profile } = useAuth();
   const { tasks, loading, spinning, scratching, playSpin, playScratch, claimTask } = useGames();
   const { bonusTasks, loading: bonusLoading, completeBonusTask, claimBonusTask, checkAndGenerateBonusTask } = useBonusTasks();
+  const { isOnline } = useNetworkStatus();
   const [activeGame, setActiveGame] = useState<"spin" | "scratch">("spin");
 
   // Check if all daily tasks are completed to generate bonus tasks
@@ -82,9 +84,18 @@ export default function Games() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        className="card-glass-strong p-6"
+        className={`card-glass-strong p-6 ${!isOnline ? 'opacity-60' : ''}`}
       >
-        {activeGame === "spin" ? (
+        {/* Offline Overlay */}
+        {!isOnline && (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <WifiOff className="size-12 text-muted-foreground mb-3" />
+            <p className="text-sm font-semibold text-foreground">Games Unavailable</p>
+            <p className="text-xs text-muted-foreground mt-1">Connect to internet to play</p>
+          </div>
+        )}
+        
+        {isOnline && activeGame === "spin" && (
           <div className="space-y-5">
             <div className="text-center">
               <h2 className="text-xl font-display font-bold text-foreground">
@@ -96,7 +107,9 @@ export default function Games() {
             </div>
             <SpinWheel onSpin={playSpin} spinning={spinning} cost={5} />
           </div>
-        ) : (
+        )}
+        
+        {isOnline && activeGame === "scratch" && (
           <div className="space-y-5">
             <div className="text-center">
               <h2 className="text-xl font-display font-bold text-foreground">
