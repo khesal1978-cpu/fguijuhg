@@ -215,10 +215,6 @@ export function ScratchCard({ onScratch, onAdScratch, onAdRewardComplete, scratc
                 </Button>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center mt-4">
-                Ad scratches: 40% win 10 coins, 60% unlucky
-              </p>
-
               <Button
                 variant="ghost"
                 size="sm"
