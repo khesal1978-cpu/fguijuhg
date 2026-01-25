@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMining } from "@/hooks/useMining";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBurning } from "@/hooks/useBurning";
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, memo, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
 
@@ -19,10 +19,11 @@ const fadeInUp = {
   transition: { type: "spring" as const, stiffness: 300, damping: 30, duration: 0.25 }
 };
 
-// Memoized activity item
-const ActivityItem = memo(function ActivityItem({ tx, index }: { tx: any; index: number }) {
+// Memoized activity item with forwardRef to avoid React warnings
+const ActivityItemInner = forwardRef<HTMLDivElement, { tx: any; index: number }>(function ActivityItem({ tx, index }, ref) {
   return (
     <motion.div
+      ref={ref}
       className="flex items-center justify-between p-4 list-item-glass active:bg-white/[0.04] transition-colors"
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
@@ -45,6 +46,8 @@ const ActivityItem = memo(function ActivityItem({ tx, index }: { tx: any; index:
     </motion.div>
   );
 });
+
+const ActivityItem = memo(ActivityItemInner);
 
 export default function Dashboard() {
   const { profile } = useAuth();
