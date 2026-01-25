@@ -7,8 +7,44 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMining } from "@/hooks/useMining";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBurning } from "@/hooks/useBurning";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
+import { haptic } from "@/lib/haptics";
+
+// Native-like spring animation config
+const springConfig = { type: "spring" as const, stiffness: 300, damping: 30 };
+const fadeInUp = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { type: "spring" as const, stiffness: 300, damping: 30, duration: 0.25 }
+};
+
+// Memoized activity item
+const ActivityItem = memo(function ActivityItem({ tx, index }: { tx: any; index: number }) {
+  return (
+    <motion.div
+      className="flex items-center justify-between p-4 list-item-glass active:bg-white/[0.04] transition-colors"
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: index * 0.03 }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="size-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+          <Zap className="size-5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{tx.description || tx.type}</p>
+          <p className="text-xs text-foreground/60">
+            {((tx.created_at as any)?.toDate?.() ?? new Date(tx.created_at as any)).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </p>
+        </div>
+      </div>
+      <span className={`text-sm font-bold ${Number(tx.amount) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+        {Number(tx.amount) >= 0 ? '+' : ''}{Number(tx.amount).toFixed(2)}
+      </span>
+    </motion.div>
+  );
+});
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -41,14 +77,16 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isMining, profile?.mining_rate]);
 
-  const handleMiningTap = async () => {
+  const handleMiningTap = useCallback(async () => {
     if (canClaim) {
+      haptic('success');
       await claimReward();
       setLiveEarnings(0);
     } else if (canStartMining) {
+      haptic('medium');
       await startMining();
     }
-  };
+  }, [canClaim, canStartMining, claimReward, startMining]);
 
   const formatTime = (num: number) => String(num).padStart(2, "0");
 
@@ -65,12 +103,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
+    <div className="px-4 py-6 max-w-lg mx-auto space-y-6 select-none">
       {/* Header */}
       <motion.div
         className="flex items-center justify-between"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
+        {...fadeInUp}
       >
         <div>
           <p className="text-muted-foreground text-sm">Welcome back,</p>
@@ -94,10 +131,9 @@ export default function Dashboard() {
 
       {/* Balance Card */}
       <motion.div
-        className="card-glass-strong p-6 text-center"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        className="card-glass-strong p-6 text-center active:scale-[0.98] transition-transform will-change-transform"
+        {...fadeInUp}
+        transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: 0.05 }}
       >
         <p className="text-xs font-medium text-foreground/60 mb-2">Total Balance</p>
         <div className="flex items-center justify-center gap-2">
@@ -123,9 +159,8 @@ export default function Dashboard() {
 
       {/* Mining Button */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.15 }}
+        {...fadeInUp}
+        transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: 0.1 }}
       >
         <MiningButton 
           progress={progress} 
@@ -156,9 +191,8 @@ export default function Dashboard() {
       {/* Stats */}
       <motion.div 
         className="grid grid-cols-3 gap-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        {...fadeInUp}
+        transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: 0.15 }}
       >
         <StatCard
           icon={<Gauge className="size-4" />}
@@ -181,18 +215,21 @@ export default function Dashboard() {
 
       {/* Recent Activity */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
+        {...fadeInUp}
+        transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: 0.2 }}
       >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-foreground">Recent Activity</h2>
-          <Link to="/wallet" className="text-xs text-primary font-semibold flex items-center gap-0.5 hover:text-primary/80 transition-colors">
+          <Link 
+            to="/wallet" 
+            className="text-xs text-primary font-semibold flex items-center gap-0.5 active:opacity-70 transition-opacity"
+            onClick={() => haptic('light')}
+          >
             View all <ChevronRight className="size-4" />
           </Link>
         </div>
         
-        <div className="card-glass-strong divide-y divider-glass">
+        <div className="card-glass-strong divide-y divider-glass overflow-hidden rounded-2xl">
           {txLoading ? (
             <div className="p-8 flex justify-center">
               <Loader2 className="size-6 animate-spin text-foreground/40" />
@@ -204,28 +241,7 @@ export default function Dashboard() {
             </div>
           ) : (
             transactions.map((tx, i) => (
-              <motion.div
-                key={tx.id}
-                className="flex items-center justify-between p-4 list-item-glass"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
-                    <Zap className="size-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{tx.description || tx.type}</p>
-                    <p className="text-xs text-foreground/60">
-                      {((tx.created_at as any)?.toDate?.() ?? new Date(tx.created_at as any)).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </p>
-                  </div>
-                </div>
-                <span className={`text-sm font-bold ${Number(tx.amount) >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                  {Number(tx.amount) >= 0 ? '+' : ''}{Number(tx.amount).toFixed(2)}
-                </span>
-              </motion.div>
+              <ActivityItem key={tx.id} tx={tx} index={i} />
             ))
           )}
         </div>
@@ -234,9 +250,8 @@ export default function Dashboard() {
       {/* Microsoft for Startups Badge */}
       <motion.div
         className="flex items-center justify-center gap-2 pt-2 pb-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
+        {...fadeInUp}
+        transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: 0.25 }}
       >
         <span className="text-xs text-muted-foreground">Supported by</span>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md card-glass-subtle">

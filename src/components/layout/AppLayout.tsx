@@ -52,17 +52,20 @@ export const AppLayout = memo(function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background dark overflow-hidden">
+    <div className="flex h-screen w-full bg-background dark overflow-hidden select-none">
       <main className="flex-1 relative flex flex-col h-full">
         {/* Ambient glow effects - GPU accelerated */}
         <AmbientGlow />
         
-        {/* Main content area with optimized scrolling */}
+        {/* Safe area padding for notched devices */}
         <div 
-          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-contain"
+          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-none"
+          data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',
-            willChange: 'scroll-position',
+            paddingTop: 'var(--safe-area-top)',
+            paddingLeft: 'var(--safe-area-left)',
+            paddingRight: 'var(--safe-area-right)',
           }}
         >
           <Outlet />

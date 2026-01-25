@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Check, Play, Sparkles } from "lucide-react";
+import { haptic } from "@/lib/haptics";
 
 interface MiningButtonProps {
   progress?: number;
@@ -12,7 +13,7 @@ interface MiningButtonProps {
   miningRate?: number;
 }
 
-export function MiningButton({ 
+export const MiningButton = memo(function MiningButton({ 
   progress = 0, 
   isMining = false, 
   canClaim = false,
@@ -23,6 +24,16 @@ export function MiningButton({
 }: MiningButtonProps) {
   const [isPressed, setIsPressed] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number }[]>([]);
+
+  const handleTap = useCallback(() => {
+    setIsPressed(false);
+    if (canClaim) {
+      haptic('success');
+    } else {
+      haptic('medium');
+    }
+    onTap?.();
+  }, [canClaim, onTap]);
   
   const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -103,22 +114,22 @@ export function MiningButton({
 
       {/* Main button */}
       <motion.button
-        className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center z-20 ${
+        className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center z-20 will-change-transform ${
           canClaim 
             ? "bg-gradient-to-br from-success to-emerald-500" 
             : isInactive 
             ? "bg-muted" 
             : "bg-gradient-to-br from-primary to-violet-600"
         } ${(isMining || canClaim) ? (canClaim ? 'shadow-[0_0_30px_-5px_hsl(142_70%_45%/0.5)]' : 'btn-glow') : ''}`}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        onTapStart={() => setIsPressed(true)}
-        onTap={() => {
-          setIsPressed(false);
-          onTap?.();
+        whileTap={{ scale: 0.94 }}
+        onTapStart={() => {
+          setIsPressed(true);
+          haptic('light');
         }}
+        onTap={handleTap}
         onTapCancel={() => setIsPressed(false)}
         disabled={loading || (isMining && !canClaim)}
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {/* Icon */}
         <motion.div
@@ -159,12 +170,12 @@ export function MiningButton({
           <motion.div
             className={`absolute w-36 h-36 rounded-full border-2 ${canClaim ? 'border-success/50' : 'border-primary/50'}`}
             initial={{ scale: 1, opacity: 1 }}
-            animate={{ scale: 1.4, opacity: 0 }}
+            animate={{ scale: 1.5, opacity: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           />
         )}
       </AnimatePresence>
     </div>
   );
-}
+});
