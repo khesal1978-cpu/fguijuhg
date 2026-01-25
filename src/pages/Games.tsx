@@ -5,7 +5,6 @@ import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TasksPanel } from "@/components/games/TasksPanel";
 import { BonusTasksPanel } from "@/components/games/BonusTasksPanel";
-import { WatchAdButton } from "@/components/games/WatchAdButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGames } from "@/hooks/useGames";
 import { useBonusTasks } from "@/hooks/useBonusTasks";
@@ -18,7 +17,7 @@ export default function Games() {
   const { tasks, loading, spinning, scratching, playSpin, playScratch, claimTask } = useGames();
   const { bonusTasks, loading: bonusLoading, completeBonusTask, claimBonusTask, checkAndGenerateBonusTask } = useBonusTasks();
   const { isOnline } = useNetworkStatus();
-  const { watchAdForFreeGame, getRemainingGameAds } = useRewardedAd();
+  const { watchAdForFreeGame, applyGameReward, getRemainingGameAds } = useRewardedAd();
   
   const [activeGame, setActiveGame] = useState<"spin" | "scratch">("spin");
   const [spinAdsRemaining, setSpinAdsRemaining] = useState(3);
@@ -42,29 +41,43 @@ export default function Games() {
     }
   }, [loading, tasks, checkAndGenerateBonusTask]);
 
-  // Handle ad spin
+  // Handle ad spin - returns reward for animation, applies after
   const handleAdSpin = useCallback(async () => {
     const result = await watchAdForFreeGame('spin');
     if (result.success) {
       // Refresh remaining ads count
       const remaining = await getRemainingGameAds('spin');
       setSpinAdsRemaining(remaining);
-      refreshProfile();
     }
     return result;
-  }, [watchAdForFreeGame, getRemainingGameAds, refreshProfile]);
+  }, [watchAdForFreeGame, getRemainingGameAds]);
 
-  // Handle ad scratch
+  // Handle ad scratch - returns reward for animation, applies after
   const handleAdScratch = useCallback(async () => {
     const result = await watchAdForFreeGame('scratch');
     if (result.success) {
       // Refresh remaining ads count
       const remaining = await getRemainingGameAds('scratch');
       setScratchAdsRemaining(remaining);
-      refreshProfile();
     }
     return result;
-  }, [watchAdForFreeGame, getRemainingGameAds, refreshProfile]);
+  }, [watchAdForFreeGame, getRemainingGameAds]);
+
+  // Apply spin reward after animation
+  const handleSpinRewardComplete = useCallback(async (reward: number) => {
+    if (reward > 0) {
+      await applyGameReward('spin', reward);
+      toast.success(`+${reward} CASET won! 🎉`);
+    }
+  }, [applyGameReward]);
+
+  // Apply scratch reward after animation
+  const handleScratchRewardComplete = useCallback(async (reward: number) => {
+    if (reward > 0) {
+      await applyGameReward('scratch', reward);
+      toast.success(`+${reward} CASET won! 🎉`);
+    }
+  }, [applyGameReward]);
 
   return (
     <div className="px-4 py-6 pb-24 max-w-lg mx-auto w-full space-y-5">
@@ -88,9 +101,6 @@ export default function Games() {
           </span>
         </motion.div>
       </motion.header>
-
-      {/* Watch Ad for Free Coins */}
-      <WatchAdButton rewardAmount={15} />
 
       {/* Game Selector */}
       <motion.div 
@@ -153,6 +163,7 @@ export default function Games() {
             <SpinWheel 
               onSpin={playSpin} 
               onAdSpin={handleAdSpin}
+              onAdRewardComplete={handleSpinRewardComplete}
               spinning={spinning} 
               cost={5} 
               remainingAds={spinAdsRemaining}
@@ -173,6 +184,7 @@ export default function Games() {
             <ScratchCard 
               onScratch={playScratch} 
               onAdScratch={handleAdScratch}
+              onAdRewardComplete={handleScratchRewardComplete}
               scratching={scratching} 
               cost={3}
               remainingAds={scratchAdsRemaining}

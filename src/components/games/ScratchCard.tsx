@@ -8,12 +8,13 @@ import pingcasetLogo from "@/assets/pingcaset-logo.png";
 interface ScratchCardProps {
   onScratch: () => Promise<{ success: boolean; reward?: number; error?: string }>;
   onAdScratch: () => Promise<{ success: boolean; reward: number }>;
+  onAdRewardComplete?: (reward: number) => Promise<void>;
   scratching: boolean;
   cost: number;
   remainingAds: number;
 }
 
-export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, scratching, cost, remainingAds }: ScratchCardProps) {
+export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, onAdRewardComplete, scratching, cost, remainingAds }: ScratchCardProps) {
   const { profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -23,6 +24,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, s
   const [isUnlucky, setIsUnlucky] = useState(false);
   const [scratchProgress, setScratchProgress] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
+  const [isAdScratch, setIsAdScratch] = useState(false);
 
   const resetCard = () => {
     setScratched(false);
@@ -31,6 +33,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, s
     setIsUnlucky(false);
     setScratchProgress(0);
     setShowOptions(false);
+    setIsAdScratch(false);
   };
 
   const initCanvas = () => {
@@ -87,6 +90,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, s
   const handleBuyCard = async () => {
     if (scratching || (profile?.balance || 0) < cost) return;
     setShowOptions(false);
+    setIsAdScratch(false);
 
     const response = await onScratch();
 
@@ -101,6 +105,7 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, s
   const handleAdCard = async () => {
     if (scratching || remainingAds <= 0) return;
     setShowOptions(false);
+    setIsAdScratch(true);
 
     const response = await onAdScratch();
 
@@ -154,6 +159,11 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, s
 
     if (progress > 40 && !revealed) {
       setRevealed(true);
+      
+      // Apply reward after reveal if it was an ad scratch
+      if (isAdScratch && reward !== null && reward > 0 && onAdRewardComplete) {
+        onAdRewardComplete(reward);
+      }
     }
   };
 
