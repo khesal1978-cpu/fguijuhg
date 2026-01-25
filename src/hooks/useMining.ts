@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   MiningSession,
@@ -16,35 +16,72 @@ export function useMining() {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Track mounted state to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
   // Memoized fetch active session
   const fetchActiveSession = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!user?.uid || !isMountedRef.current) return;
 
     try {
       const session = await getActiveSession(user.uid);
-      setActiveSession(session);
+      if (isMountedRef.current) {
+        setActiveSession(session);
+      }
     } catch (error) {
       console.error('Error fetching mining session:', error);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [user?.uid]);
 
+  // Initial fetch only - no subscription to avoid conflicts
   useEffect(() => {
+    isMountedRef.current = true;
     fetchActiveSession();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [fetchActiveSession]);
 
-  // Subscribe to mining session changes
+  // Subscribe to mining session changes with proper cleanup
   useEffect(() => {
     if (!user?.uid) return;
 
-    const unsubscribe = subscribeToMiningSession(user.uid, (session) => {
-      setActiveSession(session);
-      setLoading(false);
-    });
+    let unsubscribe: (() => void) | undefined;
+    let isActive = true;
+    
+    // Delay subscription slightly to avoid race with initial fetch
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+      
+      try {
+        unsubscribe = subscribeToMiningSession(user.uid, (session) => {
+          if (isActive && isMountedRef.current) {
+            setActiveSession(session);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Error subscribing to mining session:', error);
+      }
+    }, 100);
 
-    return () => unsubscribe();
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Ignore unsubscribe errors during cleanup
+        }
+      }
+    };
   }, [user?.uid]);
 
   // Calculate time remaining and progress with optimized updates
@@ -60,6 +97,8 @@ export function useMining() {
     const UPDATE_INTERVAL = 1000; // Update every second
 
     const updateTimer = (timestamp: number) => {
+      if (!isMountedRef.current) return;
+      
       if (timestamp - lastUpdate >= UPDATE_INTERVAL) {
         lastUpdate = timestamp;
         
@@ -125,7 +164,9 @@ export function useMining() {
       toast.error("An error occurred. Please try again.");
       return false;
     } finally {
-      setIsProcessing(false);
+      if (isMountedRef.current) {
+        setIsProcessing(false);
+      }
     }
   }, [user?.uid, isProcessing, fetchActiveSession]);
 
@@ -164,7 +205,9 @@ export function useMining() {
       toast.error("An error occurred. Please try again.");
       return false;
     } finally {
-      setIsProcessing(false);
+      if (isMountedRef.current) {
+        setIsProcessing(false);
+      }
     }
   }, [activeSession, user?.uid, progress, isProcessing, fetchActiveSession, refreshProfile]);
 
