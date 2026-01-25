@@ -34,7 +34,50 @@ html, body {
 }
 
 @layer base {
+  /* Dark mode as DEFAULT - prevents light flash on load */
   :root {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 10% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 262 83% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 6% 15%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 240 6% 15%;
+    --muted-foreground: 240 5% 55%;
+
+    --accent: 262 50% 15%;
+    --accent-foreground: 262 83% 75%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --gold: 45 93% 58%;
+    --gold-foreground: 0 0% 10%;
+
+    --border: 240 6% 15%;
+    --input: 240 6% 15%;
+    --ring: 262 83% 65%;
+
+    --radius: 0.75rem;
+    
+    /* Ensure dark background immediately */
+    color-scheme: dark;
+  }
+
+  /* Light mode - only if explicitly set */
+  .light {
     --background: 0 0% 100%;
     --foreground: 240 10% 10%;
 
@@ -68,10 +111,11 @@ html, body {
     --border: 240 6% 90%;
     --input: 240 6% 90%;
     --ring: 262 83% 58%;
-
-    --radius: 0.75rem;
+    
+    color-scheme: light;
   }
 
+  /* Keep .dark class for compatibility */
   .dark {
     --background: 240 10% 4%;
     --foreground: 0 0% 95%;
