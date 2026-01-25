@@ -450,14 +450,17 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
           <div className="flex-1" />
         </div>
 
-        {/* Bottom Section - improved spacing */}
-        <div className="relative z-10 px-6 pb-8 sm:pb-10">
+        {/* Bottom Section - with safe area support */}
+        <div 
+          className="relative z-10 px-6"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 24px)' }}
+        >
           {/* Mining Status Pill */}
           <motion.div
-            className="flex justify-center mb-5"
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="flex justify-center mb-4"
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 220, damping: 22 }}
           >
             <motion.div 
               className="inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 backdrop-blur-2xl"
@@ -532,9 +535,9 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
             </motion.span>
           </motion.button>
 
-          {/* Helper text */}
+          {/* Helper text - reduced spacing */}
           <motion.p
-            className="text-center text-[14px] text-white/50 mt-4 font-medium"
+            className="text-center text-[13px] text-white/40 mt-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
