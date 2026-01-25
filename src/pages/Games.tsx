@@ -1,22 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Coins, Sparkles, TicketPercent, Gift, WifiOff } from "lucide-react";
 import { SpinWheel } from "@/components/games/SpinWheel";
 import { ScratchCard } from "@/components/games/ScratchCard";
 import { TasksPanel } from "@/components/games/TasksPanel";
 import { BonusTasksPanel } from "@/components/games/BonusTasksPanel";
-import { WatchAdButton } from "@/components/games/WatchAdButton";
+import { WatchAdButton, FreeGameAdButton } from "@/components/games/WatchAdButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGames } from "@/hooks/useGames";
 import { useBonusTasks } from "@/hooks/useBonusTasks";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { toast } from "sonner";
 
 export default function Games() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { tasks, loading, spinning, scratching, playSpin, playScratch, claimTask } = useGames();
   const { bonusTasks, loading: bonusLoading, completeBonusTask, claimBonusTask, checkAndGenerateBonusTask } = useBonusTasks();
   const { isOnline } = useNetworkStatus();
   const [activeGame, setActiveGame] = useState<"spin" | "scratch">("spin");
+  const [lastAdReward, setLastAdReward] = useState<number | null>(null);
 
   // Check if all daily tasks are completed to generate bonus tasks
   useEffect(() => {
@@ -24,6 +26,15 @@ export default function Games() {
       checkAndGenerateBonusTask(tasks);
     }
   }, [loading, tasks, checkAndGenerateBonusTask]);
+
+  // Handle free game reward from ad
+  const handleAdReward = useCallback((reward: number) => {
+    setLastAdReward(reward);
+    refreshProfile();
+    
+    // Clear the reward display after 3 seconds
+    setTimeout(() => setLastAdReward(null), 3000);
+  }, [refreshProfile]);
 
   return (
     <div className="px-4 py-6 pb-24 max-w-lg mx-auto w-full space-y-5">
@@ -110,6 +121,29 @@ export default function Games() {
               </p>
             </div>
             <SpinWheel onSpin={playSpin} spinning={spinning} cost={5} />
+            
+            {/* Free Spin via Ad Button */}
+            <div className="flex justify-center pt-2">
+              <FreeGameAdButton 
+                gameType="spin" 
+                onReward={handleAdReward} 
+              />
+            </div>
+            
+            {/* Show ad reward result */}
+            {lastAdReward !== null && activeGame === "spin" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center"
+              >
+                {lastAdReward > 0 ? (
+                  <p className="text-primary font-bold">🎉 +{lastAdReward} CASET won!</p>
+                ) : (
+                  <p className="text-muted-foreground">💀 Unlucky! Try again</p>
+                )}
+              </motion.div>
+            )}
           </div>
         )}
         
@@ -124,6 +158,29 @@ export default function Games() {
               </p>
             </div>
             <ScratchCard onScratch={playScratch} scratching={scratching} cost={3} />
+            
+            {/* Free Scratch via Ad Button */}
+            <div className="flex justify-center pt-2">
+              <FreeGameAdButton 
+                gameType="scratch" 
+                onReward={handleAdReward} 
+              />
+            </div>
+            
+            {/* Show ad reward result */}
+            {lastAdReward !== null && activeGame === "scratch" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center"
+              >
+                {lastAdReward > 0 ? (
+                  <p className="text-primary font-bold">🎉 +{lastAdReward} CASET won!</p>
+                ) : (
+                  <p className="text-muted-foreground">💀 Unlucky! Try again</p>
+                )}
+              </motion.div>
+            )}
           </div>
         )}
       </motion.div>

@@ -24,7 +24,7 @@ export const initializeAdMob = async (): Promise<boolean> => {
 
   try {
     await AdMob.initialize({
-      testingDevices: [], // Add your test device IDs here in development
+      testingDevices: [],
       initializeForTesting: true, // Set to false in production
     });
 
@@ -50,14 +50,12 @@ export const initializeAdMob = async (): Promise<boolean> => {
     AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
       console.log('[AdMob] Rewarded ad dismissed');
       rewardedAdLoaded = false;
-      // Pre-load the next ad
       prepareRewardedAd();
     });
 
     isInitialized = true;
     console.log('[AdMob] Initialized successfully');
     
-    // Pre-load the first rewarded ad
     await prepareRewardedAd();
     
     return true;
@@ -103,7 +101,6 @@ export const showRewardedAd = async (): Promise<AdMobRewardItem | null> => {
   }
 
   try {
-    // Create a promise that resolves when the user earns a reward
     const rewardPromise = new Promise<AdMobRewardItem | null>((resolve) => {
       let hasRewarded = false;
 
@@ -136,7 +133,6 @@ export const showRewardedAd = async (): Promise<AdMobRewardItem | null> => {
           }
         );
 
-        // Timeout after 60 seconds
         setTimeout(() => {
           if (!hasRewarded) {
             resolve(null);
@@ -147,15 +143,12 @@ export const showRewardedAd = async (): Promise<AdMobRewardItem | null> => {
       setupListeners();
     });
 
-    // Show the ad
     await AdMob.showRewardVideoAd();
 
-    // Wait for reward
     const reward = await rewardPromise;
     return reward;
   } catch (error) {
     console.error('[AdMob] Failed to show rewarded ad:', error);
-    // Try to prepare the next ad
     prepareRewardedAd();
     return null;
   }
@@ -169,4 +162,37 @@ export const isRewardedAdReady = (): boolean => {
 // Check if we're on a native platform
 export const isNativePlatform = (): boolean => {
   return Capacitor.isNativePlatform();
+};
+
+// ============================================
+// AD STRATEGY HELPERS
+// ============================================
+
+// Mining session ad strategy
+// Session 2: Ad after starting
+// Session 3: Ad before claiming  
+// Session 4: Ad after starting
+export const shouldShowMiningAd = (sessionNumber: number, timing: 'after_start' | 'before_claim'): boolean => {
+  if (timing === 'after_start') {
+    return sessionNumber === 2 || sessionNumber === 4;
+  }
+  if (timing === 'before_claim') {
+    return sessionNumber === 3;
+  }
+  return false;
+};
+
+// Team claim ad strategy - show ad on every 2nd claim
+export const shouldShowTeamClaimAd = (claimCount: number): boolean => {
+  return claimCount % 2 === 0; // 2nd, 4th, 6th, etc.
+};
+
+// Free game via ad - reward calculation
+// 40% chance = 10 coins, 60% chance = 0 (unlucky)
+export const calculateAdGameReward = (): number => {
+  const random = Math.random();
+  if (random < 0.4) {
+    return 10; // 40% chance
+  }
+  return 0; // 60% chance - unlucky
 };

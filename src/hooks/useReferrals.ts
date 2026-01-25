@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Referral, getReferrals, subscribeToReferrals, claimPendingBonuses } from "@/lib/firebase";
+import { useRewardedAd } from "@/hooks/useRewardedAd";
+import { toast } from "sonner";
 
 export function useReferrals() {
   const { user, refreshProfile } = useAuth();
+  const { showTeamClaimAd, isNative } = useRewardedAd();
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   
-  // Track mounted state
   const isMountedRef = useRef(true);
 
-  // Memoized fetch function
   const fetchReferrals = useCallback(async () => {
     if (!user?.uid || !isMountedRef.current) {
       if (isMountedRef.current) setLoading(false);
@@ -34,7 +35,6 @@ export function useReferrals() {
     }
   }, [user?.uid]);
 
-  // Initial mount and cleanup
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -42,7 +42,6 @@ export function useReferrals() {
     };
   }, []);
 
-  // Subscribe to referral changes with proper cleanup
   useEffect(() => {
     if (!user?.uid) {
       setReferrals([]);
@@ -53,7 +52,6 @@ export function useReferrals() {
     let unsubscribe: (() => void) | undefined;
     let isActive = true;
 
-    // Delay subscription to avoid rapid mount/unmount issues
     const timeoutId = setTimeout(() => {
       if (!isActive) return;
       
@@ -68,7 +66,6 @@ export function useReferrals() {
         });
       } catch (error) {
         console.error('Error subscribing to referrals:', error);
-        // Fallback to one-time fetch
         fetchReferrals();
       }
     }, 100);
@@ -79,36 +76,44 @@ export function useReferrals() {
       if (unsubscribe) {
         try {
           unsubscribe();
-        } catch (e) {
-          // Ignore unsubscribe errors during cleanup
-        }
+        } catch (e) {}
       }
     };
   }, [user?.uid, fetchReferrals]);
 
-  // Memoized claim bonuses with debounce protection
+  // Claim bonuses with ad integration (every 2nd claim shows an ad)
   const claimBonuses = useCallback(async () => {
     if (!user?.uid || claiming) return { claimed: 0, total: 0 };
     
     setClaiming(true);
     try {
+      // Show ad on every 2nd claim
+      if (isNative) {
+        const adCompleted = await showTeamClaimAd();
+        if (!adCompleted) {
+          toast.info('Watch the ad to claim your bonus');
+          setClaiming(false);
+          return { claimed: 0, total: 0 };
+        }
+      }
+
       const result = await claimPendingBonuses(user.uid);
       if (result.total > 0) {
-        // Refresh profile to show updated balance
         await refreshProfile();
+        toast.success(`+${result.total} CASET claimed from referrals! 🎉`);
       }
       return result;
     } catch (error) {
       console.error('Error claiming bonuses:', error);
+      toast.error('Failed to claim bonuses');
       return { claimed: 0, total: 0 };
     } finally {
       if (isMountedRef.current) {
         setClaiming(false);
       }
     }
-  }, [user?.uid, claiming, refreshProfile]);
+  }, [user?.uid, claiming, refreshProfile, showTeamClaimAd, isNative]);
 
-  // Memoized direct and indirect referrals
   const directReferrals = useMemo(() => 
     referrals.filter((r) => r.level === 1 || !r.level),
     [referrals]
@@ -119,18 +124,15 @@ export function useReferrals() {
     [referrals]
   );
 
-  // Memoized stats calculation
   const stats = useMemo(() => {
     const totalReferrals = referrals.length;
     const activeReferrals = referrals.length;
     const totalEarnings = referrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);
     
-    // Direct stats
     const directTotal = directReferrals.length;
     const directActive = directReferrals.length;
     const directEarnings = directReferrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);
     
-    // Indirect stats
     const indirectTotal = indirectReferrals.length;
     const indirectActive = indirectReferrals.length;
     const indirectEarnings = indirectReferrals.reduce((sum, r) => sum + (r.bonus_earned || 0), 0);

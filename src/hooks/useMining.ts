@@ -7,20 +7,20 @@ import {
   startMiningSession as firebaseStartMining,
   claimMiningReward as firebaseClaimReward
 } from "@/lib/firebase";
+import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { toast } from "sonner";
 
 export function useMining() {
   const { user, refreshProfile } = useAuth();
+  const { showMiningAd, trackMiningSession, isNative } = useRewardedAd();
   const [activeSession, setActiveSession] = useState<MiningSession | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Track mounted state to prevent state updates after unmount
   const isMountedRef = useRef(true);
 
-  // Memoized fetch active session
   const fetchActiveSession = useCallback(async () => {
     if (!user?.uid || !isMountedRef.current) return;
 
@@ -38,7 +38,6 @@ export function useMining() {
     }
   }, [user?.uid]);
 
-  // Initial fetch only - no subscription to avoid conflicts
   useEffect(() => {
     isMountedRef.current = true;
     fetchActiveSession();
@@ -48,14 +47,12 @@ export function useMining() {
     };
   }, [fetchActiveSession]);
 
-  // Subscribe to mining session changes with proper cleanup
   useEffect(() => {
     if (!user?.uid) return;
 
     let unsubscribe: (() => void) | undefined;
     let isActive = true;
     
-    // Delay subscription slightly to avoid race with initial fetch
     const timeoutId = setTimeout(() => {
       if (!isActive) return;
       
@@ -77,14 +74,11 @@ export function useMining() {
       if (unsubscribe) {
         try {
           unsubscribe();
-        } catch (e) {
-          // Ignore unsubscribe errors during cleanup
-        }
+        } catch (e) {}
       }
     };
   }, [user?.uid]);
 
-  // Calculate time remaining and progress with optimized updates
   useEffect(() => {
     if (!activeSession) {
       setTimeRemaining(null);
@@ -94,7 +88,7 @@ export function useMining() {
 
     let animationFrameId: number;
     let lastUpdate = 0;
-    const UPDATE_INTERVAL = 1000; // Update every second
+    const UPDATE_INTERVAL = 1000;
 
     const updateTimer = (timestamp: number) => {
       if (!isMountedRef.current) return;
@@ -135,7 +129,6 @@ export function useMining() {
     };
   }, [activeSession]);
 
-  // Memoized start mining with debounce protection
   const startMining = useCallback(async () => {
     if (!user?.uid) {
       toast.error("Please sign in to start mining");
@@ -156,6 +149,18 @@ export function useMining() {
         return false;
       }
 
+      // Track session count and show ad for sessions 2 & 4
+      const sessionNumber = await trackMiningSession();
+      
+      // Show ad after starting for sessions 2 and 4
+      if (isNative && (sessionNumber === 2 || sessionNumber === 4)) {
+        const adCompleted = await showMiningAd('after_start');
+        if (!adCompleted) {
+          // Ad was skipped, but we already started the session
+          toast.info("Watch ads to support the app! ⛏️");
+        }
+      }
+
       toast.success("Mining session started! ⛏️");
       await fetchActiveSession();
       return true;
@@ -168,9 +173,8 @@ export function useMining() {
         setIsProcessing(false);
       }
     }
-  }, [user?.uid, isProcessing, fetchActiveSession]);
+  }, [user?.uid, isProcessing, fetchActiveSession, trackMiningSession, showMiningAd, isNative]);
 
-  // Memoized claim reward with debounce protection
   const claimReward = useCallback(async () => {
     if (!activeSession || !user?.uid) {
       toast.error("No active session to claim");
@@ -189,6 +193,16 @@ export function useMining() {
     setIsProcessing(true);
 
     try {
+      // For session 3, show ad before claiming
+      if (isNative) {
+        const adCompleted = await showMiningAd('before_claim');
+        if (!adCompleted) {
+          toast.info("Watch the ad to claim your reward");
+          setIsProcessing(false);
+          return false;
+        }
+      }
+
       const result = await firebaseClaimReward(user.uid, activeSession.id);
 
       if (!result.success) {
@@ -209,9 +223,8 @@ export function useMining() {
         setIsProcessing(false);
       }
     }
-  }, [activeSession, user?.uid, progress, isProcessing, fetchActiveSession, refreshProfile]);
+  }, [activeSession, user?.uid, progress, isProcessing, fetchActiveSession, refreshProfile, showMiningAd, isNative]);
 
-  // Memoized derived state
   const derivedState = useMemo(() => ({
     canStartMining: !activeSession && !isProcessing,
     canClaim: activeSession && progress >= 100 && !isProcessing,
