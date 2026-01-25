@@ -8,6 +8,7 @@ import pingcasetLogo from "@/assets/pingcaset-logo.png";
 interface SpinWheelProps {
   onSpin: () => Promise<{ success: boolean; reward?: number; error?: string }>;
   onAdSpin: () => Promise<{ success: boolean; reward: number }>;
+  onAdRewardComplete?: (reward: number) => Promise<void>;
   spinning: boolean;
   cost: number;
   remainingAds: number;
@@ -49,7 +50,7 @@ const getSegmentIndex = (reward: number): number => {
   return fallbackIndex !== -1 ? fallbackIndex : 1;
 };
 
-export function SpinWheel({ onSpin, onAdSpin, spinning, cost, remainingAds }: SpinWheelProps) {
+export function SpinWheel({ onSpin, onAdSpin, onAdRewardComplete, spinning, cost, remainingAds }: SpinWheelProps) {
   const { profile } = useAuth();
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<number | null>(null);
@@ -57,11 +58,13 @@ export function SpinWheel({ onSpin, onAdSpin, spinning, cost, remainingAds }: Sp
   const [showResult, setShowResult] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [isAdSpin, setIsAdSpin] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
 
-  const animateWheel = (reward: number) => {
+  const animateWheel = (reward: number, fromAd: boolean = false) => {
     const segmentIndex = getSegmentIndex(reward);
     setIsUnlucky(reward === 0);
+    setIsAdSpin(fromAd);
     
     const numSegments = SEGMENTS.length;
     const segmentAngle = 360 / numSegments;
@@ -73,9 +76,14 @@ export function SpinWheel({ onSpin, onAdSpin, spinning, cost, remainingAds }: Sp
     setRotation(newRotation);
     setResult(reward);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setShowResult(true);
       setIsSpinning(false);
+      
+      // Apply reward after animation if it was an ad spin
+      if (fromAd && reward > 0 && onAdRewardComplete) {
+        await onAdRewardComplete(reward);
+      }
     }, 3500);
   };
 
@@ -109,7 +117,8 @@ export function SpinWheel({ onSpin, onAdSpin, spinning, cost, remainingAds }: Sp
     const response = await onAdSpin();
 
     if (response.success) {
-      animateWheel(response.reward);
+      // Animate with the reward, mark as ad spin
+      animateWheel(response.reward, true);
     } else {
       setIsSpinning(false);
     }

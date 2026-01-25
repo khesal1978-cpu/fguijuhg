@@ -126,34 +126,26 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
     }
   }, [user?.uid, profile, rewardAmount, refreshProfile]);
 
-  // Watch ad for free game (spin/scratch) with limited rewards and daily limit
-  const watchAdForFreeGame = useCallback(async (gameType: 'spin' | 'scratch'): Promise<{ success: boolean; reward: number }> => {
+  // Watch ad for free game (spin/scratch) - returns reward for animation, applies reward in this function
+  const watchAdForFreeGame = useCallback(async (gameType: 'spin' | 'scratch', applyRewardImmediately: boolean = false): Promise<{ success: boolean; reward: number }> => {
     if (!user?.uid || !profile) {
       toast.error('Please sign in to watch ads');
       return { success: false, reward: 0 };
     }
 
-    if (!isNativePlatform()) {
-      // Demo mode for web - simulate ad watching
-      const gameReward = calculateAdGameReward();
-      if (gameReward > 0) {
-        const profileRef = doc(db, 'profiles', user.uid);
-        await updateDoc(profileRef, {
-          balance: (profile.balance || 0) + gameReward,
-        });
-        await refreshProfile();
-        toast.success(`+${gameReward} CASET won! 🎉`);
-      } else {
-        toast.info('Unlucky! Try again next time 💀');
-      }
-      return { success: true, reward: gameReward };
-    }
-
-    // Check daily limit
+    // Check daily limit first
     const currentAdCount = await getTodayGameAdCount(user.uid, gameType);
     if (currentAdCount >= DAILY_AD_LIMITS[gameType]) {
       toast.error(`Daily ${gameType} ad limit reached (${DAILY_AD_LIMITS[gameType]}/day)`);
       return { success: false, reward: 0 };
+    }
+
+    if (!isNativePlatform()) {
+      // Demo mode for web - simulate ad watching
+      await incrementGameAdCount(user.uid, gameType);
+      const gameReward = calculateAdGameReward();
+      // Return reward - don't apply here, let animation complete first
+      return { success: true, reward: gameReward };
     }
 
     setIsLoading(true);
@@ -168,30 +160,9 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
         // Calculate reward: 40% = 10, 60% = 0
         const gameReward = calculateAdGameReward();
         
-        if (gameReward > 0) {
-          const profileRef = doc(db, 'profiles', user.uid);
-          await updateDoc(profileRef, {
-            balance: (profile.balance || 0) + gameReward,
-          });
-
-          // Add transaction
-          await addDoc(collection(db, 'transactions'), {
-            user_id: user.uid,
-            type: gameType === 'spin' ? 'ad_spin' : 'ad_scratch',
-            amount: gameReward,
-            description: `Free ${gameType} via ad`,
-            created_at: Timestamp.now(),
-            metadata: { source: 'rewarded_ad' },
-          });
-
-          await refreshProfile();
-          toast.success(`+${gameReward} CASET won! 🎉`);
-        } else {
-          toast.info('Unlucky! Try again next time 💀');
-        }
-        
         await prepareRewardedAd();
         
+        // Return reward - the component will apply it after animation
         return { success: true, reward: gameReward };
       } else {
         toast.info('Watch the full ad to play');
@@ -203,6 +174,34 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
       return { success: false, reward: 0 };
     } finally {
       setIsLoading(false);
+    }
+  }, [user?.uid, profile, refreshProfile]);
+
+  // Apply game reward after animation completes
+  const applyGameReward = useCallback(async (gameType: 'spin' | 'scratch', reward: number): Promise<boolean> => {
+    if (!user?.uid || !profile || reward <= 0) return false;
+
+    try {
+      const profileRef = doc(db, 'profiles', user.uid);
+      await updateDoc(profileRef, {
+        balance: (profile.balance || 0) + reward,
+      });
+
+      // Add transaction
+      await addDoc(collection(db, 'transactions'), {
+        user_id: user.uid,
+        type: gameType === 'spin' ? 'ad_spin' : 'ad_scratch',
+        amount: reward,
+        description: `Free ${gameType} via ad`,
+        created_at: Timestamp.now(),
+        metadata: { source: 'rewarded_ad' },
+      });
+
+      await refreshProfile();
+      return true;
+    } catch (error) {
+      console.error('Error applying game reward:', error);
+      return false;
     }
   }, [user?.uid, profile, refreshProfile]);
 
@@ -283,6 +282,7 @@ export function useRewardedAd(options: UseRewardedAdOptions = {}) {
   return {
     watchAd,
     watchAdForFreeGame,
+    applyGameReward,
     getRemainingGameAds,
     showMiningAd,
     trackMiningSession,
