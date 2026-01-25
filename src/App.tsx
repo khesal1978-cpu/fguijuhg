@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageLoader } from "@/components/PageLoader";
@@ -114,22 +115,24 @@ const App = memo(() => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider delayDuration={300}>
-          <Toaster />
-          <Sonner 
-            position="top-center" 
-            toastOptions={{
-              duration: 3000,
-              className: "!bg-card !border-border !text-foreground",
-            }}
-          />
-          <NetworkStatus />
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <AnimatedRoutes />
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
+        <NotificationProvider>
+          <TooltipProvider delayDuration={300}>
+            <Toaster />
+            <Sonner 
+              position="top-center" 
+              toastOptions={{
+                duration: 3000,
+                className: "!bg-card !border-border !text-foreground",
+              }}
+            />
+            <NetworkStatus />
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <AnimatedRoutes />
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </NotificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
