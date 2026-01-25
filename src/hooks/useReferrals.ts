@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Referral, getReferrals, subscribeToReferrals, claimPendingBonuses } from "@/lib/firebase";
 
@@ -7,43 +7,84 @@ export function useReferrals() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  
+  // Track mounted state
+  const isMountedRef = useRef(true);
 
   // Memoized fetch function
   const fetchReferrals = useCallback(async () => {
-    if (!user?.uid) {
-      setLoading(false);
+    if (!user?.uid || !isMountedRef.current) {
+      if (isMountedRef.current) setLoading(false);
       return;
     }
 
     try {
       console.log('Fetching referrals for user:', user.uid);
       const data = await getReferrals(user.uid);
-      console.log('Fetched referrals:', data.length);
-      setReferrals(data);
+      if (isMountedRef.current) {
+        console.log('Fetched referrals:', data.length);
+        setReferrals(data);
+      }
     } catch (error) {
       console.error('Error fetching referrals:', error);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [user?.uid]);
 
+  // Initial mount and cleanup
   useEffect(() => {
-    fetchReferrals();
-  }, [fetchReferrals]);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-  // Subscribe to referral changes (real-time updates)
+  // Subscribe to referral changes with proper cleanup
   useEffect(() => {
-    if (!user?.uid) return;
-
-    console.log('Subscribing to referrals for user:', user.uid);
-    const unsubscribe = subscribeToReferrals(user.uid, (data) => {
-      console.log('Real-time referral update:', data.length);
-      setReferrals(data);
+    if (!user?.uid) {
+      setReferrals([]);
       setLoading(false);
-    });
+      return;
+    }
 
-    return () => unsubscribe();
-  }, [user?.uid]);
+    let unsubscribe: (() => void) | undefined;
+    let isActive = true;
+
+    // Delay subscription to avoid rapid mount/unmount issues
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+      
+      try {
+        console.log('Subscribing to referrals for user:', user.uid);
+        unsubscribe = subscribeToReferrals(user.uid, (data) => {
+          if (isActive && isMountedRef.current) {
+            console.log('Real-time referral update:', data.length);
+            setReferrals(data);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Error subscribing to referrals:', error);
+        // Fallback to one-time fetch
+        fetchReferrals();
+      }
+    }, 100);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Ignore unsubscribe errors during cleanup
+        }
+      }
+    };
+  }, [user?.uid, fetchReferrals]);
 
   // Memoized claim bonuses with debounce protection
   const claimBonuses = useCallback(async () => {
@@ -61,7 +102,9 @@ export function useReferrals() {
       console.error('Error claiming bonuses:', error);
       return { claimed: 0, total: 0 };
     } finally {
-      setClaiming(false);
+      if (isMountedRef.current) {
+        setClaiming(false);
+      }
     }
   }, [user?.uid, claiming, refreshProfile]);
 

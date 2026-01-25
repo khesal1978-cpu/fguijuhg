@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   DailyTask,
@@ -30,33 +30,79 @@ export function useGames() {
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
   const [scratching, setScratching] = useState(false);
+  
+  // Track mounted state
+  const isMountedRef = useRef(true);
 
   const fetchTasks = useCallback(async () => {
-    if (!user) return;
+    if (!user?.uid || !isMountedRef.current) return;
 
-    const data = await getDailyTasks(user.uid);
-    setTasks(data);
-    setLoading(false);
-  }, [user]);
+    try {
+      const data = await getDailyTasks(user.uid);
+      if (isMountedRef.current) {
+        setTasks(data);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [user?.uid]);
 
+  // Initial mount and cleanup
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-  // Subscribe to task changes
+  // Subscribe to task changes with proper cleanup
   useEffect(() => {
-    if (!user) return;
-
-    const unsubscribe = subscribeToTasks(user.uid, (updatedTasks) => {
-      setTasks(updatedTasks);
+    if (!user?.uid) {
+      setTasks([]);
       setLoading(false);
-    });
+      return;
+    }
 
-    return () => unsubscribe();
-  }, [user]);
+    let unsubscribe: (() => void) | undefined;
+    let isActive = true;
+
+    // Delay subscription to avoid rapid mount/unmount issues
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+      
+      try {
+        unsubscribe = subscribeToTasks(user.uid, (updatedTasks) => {
+          if (isActive && isMountedRef.current) {
+            setTasks(updatedTasks);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Error subscribing to tasks:', error);
+        // Fallback to one-time fetch
+        fetchTasks();
+      }
+    }, 100);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Ignore unsubscribe errors during cleanup
+        }
+      }
+    };
+  }, [user?.uid, fetchTasks]);
 
   const playSpin = async (): Promise<SpinResult> => {
-    if (!user) {
+    if (!user?.uid) {
       toast.error("Please sign in to play");
       return { success: false, error: "Not authenticated" };
     }
@@ -74,12 +120,14 @@ export function useGames() {
       await refreshProfile();
       return result;
     } finally {
-      setSpinning(false);
+      if (isMountedRef.current) {
+        setSpinning(false);
+      }
     }
   };
 
   const playScratch = async (): Promise<ScratchResult> => {
-    if (!user) {
+    if (!user?.uid) {
       toast.error("Please sign in to play");
       return { success: false, error: "Not authenticated" };
     }
@@ -97,27 +145,35 @@ export function useGames() {
       await refreshProfile();
       return result;
     } finally {
-      setScratching(false);
+      if (isMountedRef.current) {
+        setScratching(false);
+      }
     }
   };
 
   const claimTask = async (taskId: string): Promise<boolean> => {
-    if (!user) {
+    if (!user?.uid) {
       toast.error("Please sign in");
       return false;
     }
 
-    const result = await claimTaskReward(user.uid, taskId);
+    try {
+      const result = await claimTaskReward(user.uid, taskId);
 
-    if (!result.success) {
-      toast.error(result.error || "Failed to claim");
+      if (!result.success) {
+        toast.error(result.error || "Failed to claim");
+        return false;
+      }
+
+      toast.success(`+${result.reward} CASET claimed! 🎉`);
+      await refreshProfile();
+      await fetchTasks();
+      return true;
+    } catch (error) {
+      console.error('Error claiming task:', error);
+      toast.error("Failed to claim reward");
       return false;
     }
-
-    toast.success(`+${result.reward} CASET claimed! 🎉`);
-    await refreshProfile();
-    await fetchTasks();
-    return true;
   };
 
   return {
