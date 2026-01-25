@@ -53,10 +53,6 @@ const WalletInner = forwardRef<HTMLDivElement, object>(function Wallet(_, ref) {
             </span>
             <span className="text-base font-semibold text-primary">CASET</span>
           </div>
-          <p className="text-sm text-foreground/60 mt-2 flex items-center gap-1.5">
-            <TrendingUp className="size-4 text-success" />
-            ≈ ${(Number(profile?.balance || 0) * 0.34).toFixed(2)} USD
-          </p>
         </div>
 
         {/* Balance Split */}
