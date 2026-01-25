@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,56 +9,96 @@ export function useBonusTasks() {
   const { user, profile, refreshProfile } = useAuth();
   const [bonusTasks, setBonusTasks] = useState<BonusTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
 
-  // Subscribe to bonus tasks
+  // Subscribe to bonus tasks with proper cleanup
   useEffect(() => {
+    isMountedRef.current = true;
+    
     if (!user?.uid) {
       setBonusTasks([]);
       setLoading(false);
       return;
     }
 
-    const bonusTasksRef = collection(db, 'bonus_tasks');
-    const q = query(
-      bonusTasksRef,
-      where('user_id', '==', user.uid)
-    );
+    let unsubscribe: (() => void) | undefined;
+    let isActive = true;
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const tasks: BonusTask[] = [];
-      const now = new Date();
-      
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const expiresAt = data.expires_at?.toDate() || new Date();
-        
-        // Only include non-expired tasks
-        if (expiresAt > now || !data.is_claimed) {
-          tasks.push({
-            id: docSnap.id,
-            user_id: data.user_id,
-            task_type: data.task_type,
-            title: data.title,
-            description: data.description,
-            reward: data.reward,
-            is_completed: data.is_completed,
-            is_claimed: data.is_claimed,
-            expires_at: expiresAt,
-            created_at: data.created_at?.toDate() || new Date(),
-          });
+    // Delay subscription to prevent rapid mount/unmount issues
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+
+      try {
+        const bonusTasksRef = collection(db, 'bonus_tasks');
+        const q = query(
+          bonusTasksRef,
+          where('user_id', '==', user.uid)
+        );
+
+        unsubscribe = onSnapshot(
+          q, 
+          (snapshot) => {
+            if (!isActive || !isMountedRef.current) return;
+            
+            const tasks: BonusTask[] = [];
+            const now = new Date();
+            
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              const expiresAt = data.expires_at?.toDate() || new Date();
+              
+              // Only include non-expired tasks
+              if (expiresAt > now || !data.is_claimed) {
+                tasks.push({
+                  id: docSnap.id,
+                  user_id: data.user_id,
+                  task_type: data.task_type,
+                  title: data.title,
+                  description: data.description,
+                  reward: data.reward,
+                  is_completed: data.is_completed,
+                  is_claimed: data.is_claimed,
+                  expires_at: expiresAt,
+                  created_at: data.created_at?.toDate() || new Date(),
+                });
+              }
+            });
+
+            // Sort by created_at desc, filter out claimed
+            const activeTasks = tasks
+              .filter(t => !t.is_claimed)
+              .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+            
+            setBonusTasks(activeTasks);
+            setLoading(false);
+          },
+          (error) => {
+            console.error('[BONUS_TASKS] Subscription error:', error);
+            if (isActive && isMountedRef.current) {
+              setLoading(false);
+            }
+          }
+        );
+      } catch (error) {
+        console.error('[BONUS_TASKS] Setup error:', error);
+        if (isActive && isMountedRef.current) {
+          setLoading(false);
         }
-      });
+      }
+    }, 150);
 
-      // Sort by created_at desc, filter out claimed
-      const activeTasks = tasks
-        .filter(t => !t.is_claimed)
-        .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
-      
-      setBonusTasks(activeTasks);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    return () => {
+      isActive = false;
+      isMountedRef.current = false;
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+    };
   }, [user?.uid]);
 
   // Generate a random bonus task when daily tasks are all completed
@@ -159,7 +199,7 @@ export function useBonusTasks() {
     }
   }, [user?.uid, profile, bonusTasks, refreshProfile]);
 
-  // Check if all daily tasks are completed
+  // Check if all daily tasks are completed - memoized to prevent excessive calls
   const checkAndGenerateBonusTask = useCallback(async (dailyTasks: Array<{ is_completed: boolean; is_claimed: boolean }>) => {
     if (!user?.uid) return;
 
