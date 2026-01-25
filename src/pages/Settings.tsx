@@ -157,12 +157,11 @@ export default function Settings() {
     </motion.div>
   );
 
-  const renderModal = () => {
-    if (!activeModal) return null;
-
-    return (
-      <AnimatePresence>
+  const renderModal = () => (
+    <AnimatePresence>
+      {activeModal && (
         <motion.div
+          key="modal-backdrop"
           className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 pb-24"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -170,10 +169,12 @@ export default function Settings() {
           onClick={() => setActiveModal(null)}
         >
           <motion.div
-            className="w-full max-w-md modal-glass p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+            key="modal-content"
+            className="w-full max-w-md modal-glass p-6 space-y-4 max-h-[80vh] overflow-y-auto overscroll-contain"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -358,9 +359,9 @@ export default function Settings() {
             )}
           </motion.div>
         </motion.div>
-      </AnimatePresence>
-    );
-  };
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <>
