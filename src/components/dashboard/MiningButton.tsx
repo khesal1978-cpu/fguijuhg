@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Check, Play, Sparkles, WifiOff } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -14,7 +14,8 @@ interface MiningButtonProps {
   miningRate?: number;
 }
 
-export const MiningButton = memo(function MiningButton({ 
+// Use forwardRef to avoid React warnings when parent components try to pass refs
+const MiningButtonInner = forwardRef<HTMLDivElement, MiningButtonProps>(function MiningButton({ 
   progress = 0, 
   isMining = false, 
   canClaim = false,
@@ -22,7 +23,7 @@ export const MiningButton = memo(function MiningButton({
   onTap,
   loading = false,
   miningRate = 10,
-}: MiningButtonProps) {
+}, ref) {
   const [isPressed, setIsPressed] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number }[]>([]);
   const { isOnline } = useNetworkStatus();
@@ -193,3 +194,6 @@ export const MiningButton = memo(function MiningButton({
     </div>
   );
 });
+
+// Export memoized and forwardRef-wrapped component
+export const MiningButton = memo(MiningButtonInner);

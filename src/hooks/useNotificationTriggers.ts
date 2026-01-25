@@ -54,63 +54,106 @@ export function useNotificationTriggers() {
   useEffect(() => {
     if (!user?.uid) return;
 
-    const sessionsRef = collection(db, 'mining_sessions');
-    const q = query(
-      sessionsRef,
-      where('user_id', '==', user.uid),
-      orderBy('created_at', 'desc'),
-      limit(1)
-    );
+    let unsubscribe: (() => void) | undefined;
+    let isActive = true;
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified') {
-          const data = change.doc.data();
-          const sessionId = change.doc.id;
+    // Delay subscription to avoid rapid mount/unmount issues
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+
+      try {
+        const sessionsRef = collection(db, 'mining_sessions');
+        // IMPORTANT: Only filter by user_id to avoid requiring composite index
+        const q = query(
+          sessionsRef,
+          where('user_id', '==', user.uid),
+          limit(5)
+        );
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          if (!isActive) return;
           
-          // Check if session just became claimable (is_active = false, is_claimed = false)
-          if (!data.is_active && !data.is_claimed && prevMiningSessionRef.current !== sessionId) {
-            prevMiningSessionRef.current = sessionId;
-            
-            addNotification(
-              'mining_complete',
-              'Mining Complete! ⛏️',
-              `Your mining session is ready! Claim ${data.earned_amount} CASET now before it expires.`,
-              { sessionId, earnedAmount: data.earned_amount }
-            );
-          }
-        }
-      });
-    });
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'modified') {
+              const data = change.doc.data();
+              const sessionId = change.doc.id;
+              
+              // Check if session just became claimable (is_active = false, is_claimed = false)
+              if (!data.is_active && !data.is_claimed && prevMiningSessionRef.current !== sessionId) {
+                prevMiningSessionRef.current = sessionId;
+                
+                addNotification(
+                  'mining_complete',
+                  'Mining Complete! ⛏️',
+                  `Your mining session is ready! Claim ${data.earned_amount} CASET now before it expires.`,
+                  { sessionId, earnedAmount: data.earned_amount }
+                );
+              }
+            }
+          });
+        }, (error) => {
+          console.error('Error subscribing to mining sessions:', error);
+        });
+      } catch (error) {
+        console.error('Error setting up mining session subscription:', error);
+      }
+    }, 150);
 
-    return () => unsubscribe();
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Ignore unsubscribe errors during cleanup
+        }
+      }
+    };
   }, [user?.uid, addNotification]);
 
   // Track new referral bonuses
   useEffect(() => {
     if (!user?.uid) return;
 
-    const pendingBonusesRef = collection(db, 'pending_bonuses');
-    const q = query(
-      pendingBonusesRef,
-      where('user_id', '==', user.uid),
-      where('claimed', '==', false)
-    );
+    let unsubscribe: (() => void) | undefined;
+    let isActive = true;
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added' && !initialLoadRef.current) {
-          const data = change.doc.data();
+    // Delay subscription to avoid rapid mount/unmount issues
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+
+      try {
+        const pendingBonusesRef = collection(db, 'pending_bonuses');
+        // IMPORTANT: Use 'is_claimed' (correct field name, not 'claimed')
+        const q = query(
+          pendingBonusesRef,
+          where('user_id', '==', user.uid),
+          where('is_claimed', '==', false)
+        );
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          if (!isActive) return;
           
-          addNotification(
-            'referral_bonus',
-            'Referral Bonus! 🎉',
-            `You earned ${data.amount} CASET from a referral. Go to Team page to claim!`,
-            { amount: data.amount, fromUser: data.from_user_id }
-          );
-        }
-      });
-    });
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added' && !initialLoadRef.current) {
+              const data = change.doc.data();
+              
+              addNotification(
+                'referral_bonus',
+                'Referral Bonus! 🎉',
+                `You earned ${data.amount} CASET from a referral. Go to Team page to claim!`,
+                { amount: data.amount, fromUser: data.from_user_id }
+              );
+            }
+          });
+        }, (error) => {
+          console.error('Error subscribing to pending bonuses:', error);
+        });
+      } catch (error) {
+        console.error('Error setting up pending bonuses subscription:', error);
+      }
+    }, 150);
 
     // Mark initial load complete after first snapshot
     const timer = setTimeout(() => {
@@ -118,8 +161,16 @@ export function useNotificationTriggers() {
     }, 2000);
 
     return () => {
-      unsubscribe();
+      isActive = false;
+      clearTimeout(timeoutId);
       clearTimeout(timer);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Ignore unsubscribe errors during cleanup
+        }
+      }
     };
   }, [user?.uid, addNotification]);
 }

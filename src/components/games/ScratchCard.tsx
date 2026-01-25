@@ -1,4 +1,4 @@
-import { useState, useRef, memo } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, RotateCcw, Coins, Skull, Gift, Star, Zap, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ interface ScratchCardProps {
   remainingAds: number;
 }
 
-export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, onAdRewardComplete, scratching, cost, remainingAds }: ScratchCardProps) {
+export function ScratchCard({ onScratch, onAdScratch, onAdRewardComplete, scratching, cost, remainingAds }: ScratchCardProps) {
   const { profile } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -469,4 +469,4 @@ export const ScratchCard = memo(function ScratchCard({ onScratch, onAdScratch, o
       )}
     </div>
   );
-});
+}
