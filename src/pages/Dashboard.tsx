@@ -247,27 +247,6 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* Microsoft for Startups Badge */}
-      <motion.div
-        className="flex items-center justify-center gap-2 pt-2 pb-4"
-        {...fadeInUp}
-        transition={{ type: "spring" as const, stiffness: 300, damping: 30, delay: 0.25 }}
-      >
-        <span className="text-xs text-muted-foreground">Supported by</span>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md card-glass-subtle">
-          <svg 
-            viewBox="0 0 23 23" 
-            className="size-4"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path fill="#f25022" d="M1 1h10v10H1z"/>
-            <path fill="#00a4ef" d="M1 12h10v10H1z"/>
-            <path fill="#7fba00" d="M12 1h10v10H12z"/>
-            <path fill="#ffb900" d="M12 12h10v10H12z"/>
-          </svg>
-          <span className="text-xs font-medium text-foreground">Microsoft for Startups</span>
-        </div>
-      </motion.div>
     </div>
   );
 }
