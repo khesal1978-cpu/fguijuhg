@@ -358,35 +358,67 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
   if (screen === "welcome") {
     return (
       <motion.div 
-        className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative bg-[#0A0A12]"
+        className="min-h-screen min-h-[100dvh] flex flex-col dark overflow-hidden relative bg-[#030308]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
+        style={{ willChange: 'opacity', backfaceVisibility: 'hidden' }}
       >
-        {/* Video Background - loads in background */}
+        {/* Video Background - loads in background with better aspect ratio handling */}
         <video
           autoPlay
           loop
           muted
           playsInline
           onCanPlay={() => setVideoLoaded(true)}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          style={{ 
+            transform: 'scale(1.02)', 
+            transformOrigin: 'center center',
+            willChange: 'opacity'
+          }}
         >
           <source src={welcomeVideo} type="video/mp4" />
         </video>
         
-        {/* Dark overlay - darker at top and bottom */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A12]/90 via-transparent to-[#0A0A12]/95" />
+        {/* Enhanced dark overlay - deeper contrast with richer gradients */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `
+              linear-gradient(180deg, 
+                rgba(3, 3, 8, 0.95) 0%, 
+                rgba(3, 3, 8, 0.5) 25%,
+                rgba(3, 3, 8, 0.15) 45%,
+                rgba(3, 3, 8, 0.15) 55%,
+                rgba(3, 3, 8, 0.7) 75%,
+                rgba(3, 3, 8, 0.98) 100%
+              )
+            `
+          }}
+        />
+        
+        {/* Ambient purple glow at top for depth */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(123, 63, 228, 0.2) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
 
-        {/* Main Content */}
+        {/* Main Content - pushed up for better balance */}
         <div className="relative z-10 flex-1 flex flex-col px-6">
           {/* Headline Section */}
-          <div className="pt-14 sm:pt-20">
+          <div className="pt-12 sm:pt-16">
             <motion.h1 
-              className="text-[32px] sm:text-[38px] md:text-[44px] font-display font-bold text-white text-center leading-[1.1]"
+              className="text-[36px] sm:text-[42px] md:text-[48px] font-display font-bold text-white text-center leading-[1.05] tracking-tight"
+              style={{
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6)'
+              }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
             >
               Be early.
               <br />
@@ -395,26 +427,31 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
               before listing.
             </motion.h1>
 
-            <motion.p
-              className="text-white/70 text-[13px] sm:text-[14px] text-center mt-4 tracking-wide px-4 py-2 rounded-full backdrop-blur-md"
-              style={{
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.25 }}
+            <motion.div
+              className="flex justify-center mt-5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
             >
-              No hardware • No fees • Time-based mining
-            </motion.p>
+              <p
+                className="text-white/80 text-[13px] sm:text-[14px] text-center tracking-wide px-5 py-2.5 rounded-full backdrop-blur-xl font-medium"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                No hardware • No fees • Time-based mining
+              </p>
+            </motion.div>
           </div>
 
           {/* Spacer */}
           <div className="flex-1" />
         </div>
 
-        {/* Bottom Section */}
-        <div className="relative z-10 px-6 pb-10 sm:pb-12">
+        {/* Bottom Section - improved spacing */}
+        <div className="relative z-10 px-6 pb-8 sm:pb-10">
           {/* Mining Status Pill */}
           <motion.div
             className="flex justify-center mb-5"
@@ -423,23 +460,24 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
             transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
           >
             <motion.div 
-              className="inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 backdrop-blur-xl"
+              className="inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 backdrop-blur-2xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.85) 0%, rgba(20, 20, 28, 0.9) 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                background: 'linear-gradient(135deg, rgba(35, 35, 45, 0.9) 0%, rgba(22, 22, 30, 0.95) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
               }}
               animate={{ 
                 boxShadow: [
-                  '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                  '0 8px 40px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                  '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                  '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                  '0 8px 40px rgba(34, 197, 94, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                  '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
               <motion.span 
                 className="size-2.5 rounded-full bg-[#22C55E]"
+                style={{ boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)' }}
                 animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -450,11 +488,11 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
           {/* CTA Button with Enhanced Animation */}
           <motion.button
             onClick={() => setScreen("landing")}
-            className="group relative w-full h-[60px] rounded-full font-semibold text-[18px] text-white flex items-center justify-center gap-2.5 overflow-hidden"
+            className="group relative w-full h-[58px] rounded-full font-semibold text-[17px] text-white flex items-center justify-center gap-2.5 overflow-hidden transform-gpu"
             style={{
               background: 'linear-gradient(135deg, #7B3FE4 0%, #9C6BFF 50%, #7B3FE4 100%)',
-              boxShadow: '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-              border: '1px solid rgba(156, 107, 255, 0.3)'
+              boxShadow: '0 0 35px rgba(123, 63, 228, 0.55), 0 0 70px rgba(123, 63, 228, 0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+              border: '1px solid rgba(156, 107, 255, 0.4)'
             }}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ 
@@ -462,9 +500,9 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
               y: 0, 
               scale: 1,
               boxShadow: [
-                '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-                '0 0 40px rgba(123, 63, 228, 0.7), 0 0 80px rgba(123, 63, 228, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
-                '0 0 30px rgba(123, 63, 228, 0.5), 0 0 60px rgba(123, 63, 228, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
+                '0 0 35px rgba(123, 63, 228, 0.55), 0 0 70px rgba(123, 63, 228, 0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                '0 0 45px rgba(123, 63, 228, 0.75), 0 0 90px rgba(123, 63, 228, 0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
+                '0 0 35px rgba(123, 63, 228, 0.55), 0 0 70px rgba(123, 63, 228, 0.35), inset 0 1px 0 rgba(255,255,255,0.25)'
               ]
             }}
             transition={{ 
@@ -480,7 +518,7 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
             <span 
               className="absolute inset-0 overflow-hidden rounded-full pointer-events-none"
               style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%)',
                 animation: 'shine 2.5s ease-in-out infinite',
               }}
             />
@@ -496,37 +534,13 @@ const AuthInner = forwardRef<HTMLDivElement, object>(function Auth(_, ref) {
 
           {/* Helper text */}
           <motion.p
-            className="text-center text-[14px] text-[#6B6B7B] mt-4"
+            className="text-center text-[14px] text-white/50 mt-4 font-medium"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
             Swipe or tap to start
           </motion.p>
-
-          {/* Microsoft Badge */}
-          <motion.div 
-            className="flex items-center justify-center mt-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div 
-              className="flex items-center gap-3 px-5 py-2.5 rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, rgba(25, 25, 32, 0.9) 0%, rgba(18, 18, 24, 0.95) 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
-              }}
-            >
-              <svg viewBox="0 0 23 23" className="size-4" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#f25022" d="M1 1h10v10H1z"/>
-                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
-                <path fill="#7fba00" d="M12 1h10v10H12z"/>
-                <path fill="#ffb900" d="M12 12h10v10H12z"/>
-              </svg>
-              <span className="text-[14px] text-[#A0A0B0]">Microsoft for Startups</span>
-            </div>
-          </motion.div>
         </div>
 
         {/* CSS for shine animation */}
