@@ -91,7 +91,7 @@ export const AppLayout = memo(function AppLayout() {
         {/* Safe area padding for notched devices */}
         <div 
           ref={scrollRef}
-          className="relative z-10 flex-1 overflow-y-auto pb-24 scrollbar-hide overscroll-none"
+          className="relative z-10 flex-1 overflow-y-auto scrollbar-hide overscroll-none"
           data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',

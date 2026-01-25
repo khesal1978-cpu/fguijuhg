@@ -91,7 +91,8 @@ export const MobileNav = memo(function MobileNav() {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 glass-nav safe-area-bottom"
+      className="fixed bottom-0 left-0 right-0 z-50 glass-nav"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       role="navigation"
       aria-label="Main navigation"
     >
