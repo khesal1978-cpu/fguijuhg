@@ -18,7 +18,7 @@ export default function Wallet() {
   };
 
   return (
-    <div className="px-4 py-6 pb-28 max-w-lg mx-auto space-y-6">
+    <div className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
