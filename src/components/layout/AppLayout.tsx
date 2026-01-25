@@ -2,9 +2,12 @@ import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { MobileNav } from "./MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { memo, useMemo, useEffect, useRef } from "react";
+import { memo, useMemo, useEffect, useRef, useState, useCallback } from "react";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { useNotificationTriggers } from "@/hooks/useNotificationTriggers";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { useQueryClient } from "@tanstack/react-query";
+import { haptic } from "@/lib/haptics";
 
 // Memoized ambient gradient to prevent re-renders
 const AmbientGlow = memo(() => (
@@ -31,10 +34,12 @@ const AmbientGlow = memo(() => (
 AmbientGlow.displayName = "AmbientGlow";
 
 export const AppLayout = memo(function AppLayout() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshProfile } = useAuth();
   const { pathname } = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeNavigation();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Set up notification triggers for mining, referrals, balance changes
   useNotificationTriggers();
@@ -62,6 +67,29 @@ export const AppLayout = memo(function AppLayout() {
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
+  // Pull to refresh handler - invalidates all queries and refreshes profile
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    haptic('medium');
+    
+    try {
+      // Invalidate all React Query caches to force refetch
+      await queryClient.invalidateQueries();
+      
+      // Refresh user profile
+      await refreshProfile();
+      
+      // Small delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      haptic('success');
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient, refreshProfile]);
+
   // Memoize loading state UI
   const loadingUI = useMemo(() => (
     <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -88,22 +116,29 @@ export const AppLayout = memo(function AppLayout() {
         {/* Ambient glow effects - GPU accelerated */}
         <AmbientGlow />
         
-        {/* Scrollable content area - optimized for 60fps */}
-        <div 
-          ref={scrollRef}
-          className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide overscroll-none transform-gpu"
-          data-scrollable="true"
-          style={{ 
-            WebkitOverflowScrolling: 'touch',
-            paddingTop: 'env(safe-area-inset-top, 0px)',
-            paddingLeft: 'env(safe-area-inset-left, 0px)',
-            paddingRight: 'env(safe-area-inset-right, 0px)',
-            willChange: 'scroll-position',
-            contain: 'layout style paint',
-          }}
+        {/* Pull to refresh wrapper */}
+        <PullToRefresh 
+          onRefresh={handleRefresh}
+          disabled={isRefreshing}
+          className="relative z-10 flex-1 min-h-0"
         >
-          <Outlet />
-        </div>
+          {/* Scrollable content area - optimized for 60fps */}
+          <div 
+            ref={scrollRef}
+            className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide overscroll-none transform-gpu"
+            data-scrollable="true"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+              paddingLeft: 'env(safe-area-inset-left, 0px)',
+              paddingRight: 'env(safe-area-inset-right, 0px)',
+              willChange: 'scroll-position',
+              contain: 'layout style paint',
+            }}
+          >
+            <Outlet />
+          </div>
+        </PullToRefresh>
       </main>
       <MobileNav />
     </div>

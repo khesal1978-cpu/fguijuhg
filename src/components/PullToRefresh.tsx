@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, ReactNode, memo } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { useState, useRef, useCallback, ReactNode, memo, useEffect } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { Loader2, ArrowDown } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 
 interface PullToRefreshProps {
@@ -20,118 +20,155 @@ export const PullToRefresh = memo(function PullToRefresh({
 }: PullToRefreshProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
+  const startYRef = useRef(0);
+  const currentYRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollableRef = useRef<HTMLElement | null>(null);
   const y = useMotionValue(0);
+  const hasTriggeredHaptic = useRef(false);
   
   // Transform for the pull indicator
-  const pullProgress = useTransform(y, [0, threshold], [0, 1]);
-  const indicatorOpacity = useTransform(y, [0, threshold * 0.5, threshold], [0, 0.5, 1]);
-  const indicatorScale = useTransform(y, [0, threshold], [0.5, 1]);
+  const indicatorOpacity = useTransform(y, [0, threshold * 0.3, threshold], [0, 0.5, 1]);
+  const indicatorScale = useTransform(y, [0, threshold], [0.6, 1]);
   const indicatorRotate = useTransform(y, [0, threshold], [0, 180]);
+  const contentY = useTransform(y, (value) => Math.min(value, threshold * 1.2));
 
-  const handlePanStart = useCallback(() => {
+  // Find scrollable element
+  useEffect(() => {
+    const scrollable = containerRef.current?.querySelector('[data-scrollable="true"]');
+    scrollableRef.current = scrollable as HTMLElement;
+  }, []);
+
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || isRefreshing) return;
     
-    // Only allow pull if at top
-    const scrollTop = containerRef.current?.scrollTop || 0;
+    const scrollable = scrollableRef.current;
+    const scrollTop = scrollable?.scrollTop || 0;
+    
+    // Only start tracking if at top of scroll
     if (scrollTop <= 0) {
-      setIsPulling(true);
+      startYRef.current = e.touches[0].clientY;
+      currentYRef.current = 0;
+      hasTriggeredHaptic.current = false;
     }
   }, [disabled, isRefreshing]);
 
-  const handlePan = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (disabled || isRefreshing || !isPulling) return;
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (disabled || isRefreshing) return;
     
-    const scrollTop = containerRef.current?.scrollTop || 0;
+    const scrollable = scrollableRef.current;
+    const scrollTop = scrollable?.scrollTop || 0;
+    
+    // Only allow pull if at top
     if (scrollTop > 0) {
-      y.set(0);
+      if (isPulling) {
+        setIsPulling(false);
+        y.set(0);
+      }
       return;
     }
 
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - startYRef.current;
+
     // Only allow downward pull
-    if (info.delta.y > 0) {
-      // Apply resistance
-      const resistance = 0.4;
-      const currentY = y.get();
-      const newY = Math.min(currentY + info.delta.y * resistance, threshold * 1.5);
-      y.set(newY);
+    if (deltaY > 0) {
+      if (!isPulling) {
+        setIsPulling(true);
+      }
+      
+      // Apply resistance - more resistance as we pull further
+      const resistance = 0.5 * (1 - Math.min(deltaY / (threshold * 3), 0.7));
+      const pullDistance = Math.min(deltaY * resistance, threshold * 1.5);
+      currentYRef.current = pullDistance;
+      y.set(pullDistance);
       
       // Haptic when crossing threshold
-      if (currentY < threshold && newY >= threshold) {
+      if (!hasTriggeredHaptic.current && pullDistance >= threshold) {
         haptic('medium');
+        hasTriggeredHaptic.current = true;
       }
-    } else if (info.delta.y < 0 && y.get() > 0) {
-      y.set(Math.max(0, y.get() + info.delta.y));
+      
+      // Prevent default scrolling while pulling
+      if (pullDistance > 5) {
+        e.preventDefault();
+      }
     }
   }, [disabled, isRefreshing, isPulling, y, threshold]);
 
-  const handlePanEnd = useCallback(async () => {
+  const handleTouchEnd = useCallback(async () => {
     if (disabled || isRefreshing) return;
+    
+    const pullDistance = currentYRef.current;
     setIsPulling(false);
     
-    const currentY = y.get();
-    
-    if (currentY >= threshold) {
+    if (pullDistance >= threshold) {
       // Trigger refresh
       setIsRefreshing(true);
       haptic('success');
       
-      // Keep at threshold position while refreshing
-      y.set(threshold * 0.6);
+      // Animate to loading position
+      animate(y, threshold * 0.6, { type: 'spring', stiffness: 400, damping: 30 });
       
       try {
         await onRefresh();
       } finally {
         setIsRefreshing(false);
-        y.set(0);
+        animate(y, 0, { type: 'spring', stiffness: 400, damping: 30 });
       }
     } else {
       // Snap back
-      y.set(0);
+      animate(y, 0, { type: 'spring', stiffness: 500, damping: 35 });
     }
+    
+    startYRef.current = 0;
+    currentYRef.current = 0;
+    hasTriggeredHaptic.current = false;
   }, [disabled, isRefreshing, y, threshold, onRefresh]);
 
+  // Attach touch listeners
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div ref={containerRef} className={`relative overflow-hidden ${className}`}>
       {/* Pull indicator */}
       <motion.div
-        className="absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center"
+        className="absolute left-1/2 -translate-x-1/2 z-30 flex items-center justify-center pointer-events-none"
         style={{
-          top: -40,
-          y: useTransform(y, [0, threshold], [0, threshold + 20]),
+          top: 8,
+          y: useTransform(y, [0, threshold], [-50, 10]),
           opacity: indicatorOpacity,
           scale: indicatorScale,
         }}
       >
-        <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shadow-lg">
+        <div className="w-11 h-11 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 flex items-center justify-center shadow-xl shadow-black/20">
           {isRefreshing ? (
             <Loader2 className="size-5 text-primary animate-spin" />
           ) : (
-            <motion.svg
-              className="size-5 text-primary"
-              style={{ rotate: indicatorRotate }}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 5v14M19 12l-7 7-7-7" />
-            </motion.svg>
+            <motion.div style={{ rotate: indicatorRotate }}>
+              <ArrowDown className="size-5 text-primary" />
+            </motion.div>
           )}
         </div>
       </motion.div>
 
-      {/* Content */}
+      {/* Content wrapper with pull effect */}
       <motion.div
-        ref={containerRef}
-        className="h-full overflow-y-auto overscroll-none"
-        style={{ y }}
-        onPanStart={handlePanStart}
-        onPan={handlePan}
-        onPanEnd={handlePanEnd}
-        data-scrollable="true"
+        className="h-full"
+        style={{ y: contentY }}
       >
         {children}
       </motion.div>
