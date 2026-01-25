@@ -39,28 +39,28 @@ const NavItem = memo(function NavItem({
     <Link
       to={path}
       onClick={handleClick}
-      className="relative flex flex-col items-center justify-center w-14 h-14 gap-0.5 active:scale-90 transition-transform duration-75 will-change-transform select-none"
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+      className="relative flex flex-col items-center justify-center w-14 h-14 gap-0.5 active:scale-90 transition-transform duration-75 will-change-transform transform-gpu select-none"
+      style={{ WebkitTapHighlightColor: 'transparent', backfaceVisibility: 'hidden' }}
       aria-current={isActive ? "page" : undefined}
       aria-label={label}
     >
       {isActive && (
-        <div className="absolute -top-0.5 w-6 h-1 bg-primary rounded-full animate-scale-in" />
+        <div className="absolute -top-0.5 w-6 h-1 bg-primary rounded-full animate-scale-in transform-gpu" />
       )}
-      <div className="relative">
+      <div className="relative transform-gpu">
         <Icon 
-          className={`size-5 transition-colors duration-100 ${
+          className={`size-5 transition-colors duration-75 ${
             isActive ? "text-primary" : "text-muted-foreground"
           }`} 
         />
         {showBadge && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full animate-scale-in">
+          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full animate-scale-in transform-gpu">
             {badgeCount > 9 ? "9+" : badgeCount}
           </span>
         )}
       </div>
       <span 
-        className={`text-[10px] font-medium transition-colors duration-100 ${
+        className={`text-[10px] font-medium transition-colors duration-75 ${
           isActive ? "text-primary" : "text-muted-foreground"
         }`}
       >

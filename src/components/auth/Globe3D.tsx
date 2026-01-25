@@ -1,5 +1,5 @@
-import { useRef, useMemo, Suspense } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { useRef, useMemo, Suspense, memo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { Sphere, Line } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -71,19 +71,21 @@ const ConnectionLine = ({ start, end }: { start: [number, number, number]; end: 
   );
 };
 
-// Main Globe component
+// Main Globe component - optimized for 60fps
 const GlobeScene = () => {
   const groupRef = useRef<THREE.Group>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
   
-  // Slow rotation
-  useFrame((state) => {
+  // Use delta time for consistent 60fps animation regardless of frame rate
+  useFrame((state, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += 0.002;
+      // Use delta for frame-rate independent rotation
+      groupRef.current.rotation.y += delta * 0.12;
     }
-    // Subtle atmosphere pulse
+    // Subtle atmosphere pulse - throttled to reduce GPU load
     if (atmosphereRef.current) {
-      const scale = 1.12 + Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      const time = state.clock.elapsedTime;
+      const scale = 1.12 + Math.sin(time * 0.5) * 0.02;
       atmosphereRef.current.scale.setScalar(scale);
     }
   });
@@ -268,31 +270,42 @@ const GlobeScene = () => {
   );
 };
 
-const Globe3D = () => {
+const Globe3D = memo(() => {
   return (
-    <div className="relative w-full max-w-[320px] aspect-square mx-auto">
-      {/* Ambient purple glow behind globe */}
+    <div className="relative w-full max-w-[320px] aspect-square mx-auto transform-gpu">
+      {/* Ambient purple glow behind globe - GPU accelerated */}
       <div 
-        className="absolute inset-[-30%] rounded-full pointer-events-none"
+        className="absolute inset-[-30%] rounded-full pointer-events-none will-change-transform transform-gpu"
         style={{
           background: 'radial-gradient(circle at 35% 35%, rgba(147, 51, 234, 0.4) 0%, rgba(124, 58, 237, 0.2) 35%, transparent 65%)',
           filter: 'blur(40px)',
+          backfaceVisibility: 'hidden',
         }}
       />
       
       {/* Secondary glow for depth */}
       <div 
-        className="absolute inset-[-10%] rounded-full pointer-events-none"
+        className="absolute inset-[-10%] rounded-full pointer-events-none will-change-transform transform-gpu"
         style={{
           background: 'radial-gradient(circle at 40% 40%, rgba(192, 132, 252, 0.25) 0%, transparent 50%)',
           filter: 'blur(20px)',
+          backfaceVisibility: 'hidden',
         }}
       />
       
       <Canvas
         camera={{ position: [0, 0, 2.6], fov: 45 }}
         style={{ background: 'transparent' }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: true, 
+          alpha: true,
+          powerPreference: 'high-performance',
+          stencil: false,
+          depth: true,
+        }}
+        dpr={[1, 2]} // Limit pixel ratio for performance
+        frameloop="always"
+        performance={{ min: 0.5 }}
       >
         <Suspense fallback={null}>
           <GlobeScene />
@@ -300,6 +313,8 @@ const Globe3D = () => {
       </Canvas>
     </div>
   );
-};
+});
+
+Globe3D.displayName = 'Globe3D';
 
 export default Globe3D;

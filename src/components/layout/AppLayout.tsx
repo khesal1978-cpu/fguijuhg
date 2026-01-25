@@ -83,21 +83,23 @@ export const AppLayout = memo(function AppLayout() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background dark">
+    <div className="fixed inset-0 flex flex-col bg-background dark transform-gpu">
       <main className="flex-1 relative flex flex-col min-h-0">
         {/* Ambient glow effects - GPU accelerated */}
         <AmbientGlow />
         
-        {/* Scrollable content area */}
+        {/* Scrollable content area - optimized for 60fps */}
         <div 
           ref={scrollRef}
-          className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide overscroll-none"
+          className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide overscroll-none transform-gpu"
           data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',
             paddingTop: 'env(safe-area-inset-top, 0px)',
             paddingLeft: 'env(safe-area-inset-left, 0px)',
             paddingRight: 'env(safe-area-inset-right, 0px)',
+            willChange: 'scroll-position',
+            contain: 'layout style paint',
           }}
         >
           <Outlet />
