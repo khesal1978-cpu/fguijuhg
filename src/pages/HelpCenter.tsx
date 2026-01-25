@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +19,7 @@ const QUICK_QUESTIONS = [
   "What are daily tasks?",
 ];
 
-export default function HelpCenter() {
+const HelpCenterInner = forwardRef<HTMLDivElement, object>(function HelpCenter(_, ref) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -132,7 +132,7 @@ export default function HelpCenter() {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-lg mx-auto">
+    <div ref={ref} className="flex flex-col h-full max-w-lg mx-auto">
       {/* Header */}
       <motion.div
         className="px-4 py-4 flex items-center gap-3 border-b border-border bg-background"
@@ -277,4 +277,6 @@ export default function HelpCenter() {
       </div>
     </div>
   );
-}
+});
+
+export default memo(HelpCenterInner);

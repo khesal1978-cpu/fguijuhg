@@ -1,13 +1,14 @@
+import { forwardRef, memo } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield, Lock, Eye, Database } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-export default function PrivacyPolicy() {
+const PrivacyPolicyInner = forwardRef<HTMLDivElement, object>(function PrivacyPolicy(_, ref) {
   const navigate = useNavigate();
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
+    <div ref={ref} className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6">
       {/* Header */}
       <motion.div
         className="flex items-center gap-3"
@@ -125,4 +126,6 @@ export default function PrivacyPolicy() {
       </p>
     </div>
   );
-}
+});
+
+export default memo(PrivacyPolicyInner);

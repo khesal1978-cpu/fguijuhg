@@ -49,7 +49,7 @@ const ActivityItemInner = forwardRef<HTMLDivElement, { tx: any; index: number }>
 
 const ActivityItem = memo(ActivityItemInner);
 
-export default function Dashboard() {
+const DashboardInner = forwardRef<HTMLDivElement, object>(function Dashboard(_, ref) {
   const { profile } = useAuth();
   const { 
     progress, 
@@ -106,7 +106,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6 select-none">
+    <div ref={ref} className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6 select-none">
       {/* Header */}
       <motion.div
         className="flex items-center justify-between"
@@ -252,4 +252,6 @@ export default function Dashboard() {
 
     </div>
   );
-}
+});
+
+export default memo(DashboardInner);
