@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { Play, Coins, Loader2, Smartphone } from "lucide-react";
+import { Play, Coins, Loader2, Smartphone, Sparkles, TicketPercent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
 
@@ -15,7 +15,6 @@ export const WatchAdButton = memo(function WatchAdButton({
 }: WatchAdButtonProps) {
   const { watchAd, isLoading, isNative } = useRewardedAd({ rewardAmount });
 
-  // Don't show if not on native platform
   if (!isNative) {
     return (
       <div className={`card-glass-subtle p-4 rounded-xl ${className}`}>
@@ -41,7 +40,7 @@ export const WatchAdButton = memo(function WatchAdButton({
       <Button
         onClick={watchAd}
         disabled={isLoading}
-        className="w-full h-14 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/30"
+        className="w-full h-14 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground font-semibold shadow-lg"
       >
         {isLoading ? (
           <>
@@ -52,7 +51,7 @@ export const WatchAdButton = memo(function WatchAdButton({
           <>
             <Play className="size-5 mr-2 fill-current" />
             Watch Ad
-            <div className="ml-2 flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full">
+            <div className="ml-2 flex items-center gap-1 px-2 py-0.5 bg-background/20 rounded-full">
               <Coins className="size-3.5" />
               <span className="text-sm">+{rewardAmount}</span>
             </div>
@@ -60,5 +59,54 @@ export const WatchAdButton = memo(function WatchAdButton({
         )}
       </Button>
     </motion.div>
+  );
+});
+
+interface FreeGameAdButtonProps {
+  gameType: 'spin' | 'scratch';
+  onReward: (reward: number) => void;
+  className?: string;
+}
+
+export const FreeGameAdButton = memo(function FreeGameAdButton({
+  gameType,
+  onReward,
+  className = ""
+}: FreeGameAdButtonProps) {
+  const { watchAdForFreeGame, isLoading, isNative } = useRewardedAd({ 
+    rewardType: gameType 
+  });
+
+  const handleClick = async () => {
+    const result = await watchAdForFreeGame();
+    if (result.success) {
+      onReward(result.reward);
+    }
+  };
+
+  if (!isNative) {
+    return null;
+  }
+
+  return (
+    <Button
+      onClick={handleClick}
+      disabled={isLoading}
+      variant="outline"
+      size="sm"
+      className={`rounded-lg border-primary/30 hover:bg-primary/10 ${className}`}
+    >
+      {isLoading ? (
+        <Loader2 className="size-4 animate-spin mr-1.5" />
+      ) : (
+        <Play className="size-4 mr-1.5 fill-current text-primary" />
+      )}
+      Free {gameType === 'spin' ? 'Spin' : 'Scratch'}
+      {gameType === 'spin' ? (
+        <Sparkles className="size-3.5 ml-1.5 text-primary" />
+      ) : (
+        <TicketPercent className="size-3.5 ml-1.5 text-primary" />
+      )}
+    </Button>
   );
 });
