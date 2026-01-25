@@ -2,7 +2,8 @@ import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { MobileNav } from "./MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { memo, useMemo, useEffect, useRef } from "react";
+import { memo, useMemo, useEffect, useRef, useCallback } from "react";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 // Memoized ambient gradient to prevent re-renders
 const AmbientGlow = memo(() => (
@@ -32,6 +33,7 @@ export const AppLayout = memo(function AppLayout() {
   const { user, loading } = useAuth();
   const { pathname } = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeNavigation();
 
   // Scroll to top on route change (native behavior)
   useEffect(() => {
@@ -39,6 +41,22 @@ export const AppLayout = memo(function AppLayout() {
       scrollRef.current.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
     }
   }, [pathname]);
+
+  // Set up swipe navigation
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchmove', handleTouchMove, { passive: true });
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Memoize loading state UI
   const loadingUI = useMemo(() => (
@@ -69,7 +87,7 @@ export const AppLayout = memo(function AppLayout() {
         {/* Safe area padding for notched devices */}
         <div 
           ref={scrollRef}
-          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-none scroll-smooth"
+          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-none"
           data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',
