@@ -208,7 +208,7 @@ export function SpinWheel({ onSpin, spinning, cost }: SpinWheelProps) {
             <motion.img
               src={pingcasetLogo}
               alt="PingCaset"
-              className="w-10 h-10 object-contain"
+              className="w-10 h-10 object-cover rounded-full"
               animate={isSpinning ? { rotate: 360 } : { rotate: 0 }}
               transition={{ duration: 2, repeat: isSpinning ? Infinity : 0, ease: "linear" }}
             />
