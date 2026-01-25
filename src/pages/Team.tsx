@@ -69,7 +69,7 @@ export default function Team() {
   const displayedReferrals = activeTab === "direct" ? directReferrals : indirectReferrals;
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
+    <div className="px-4 py-6 pb-28 max-w-lg mx-auto space-y-6">
       {/* Header with Claim Button */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

@@ -103,7 +103,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto space-y-6 select-none">
+    <div className="px-4 py-6 pb-28 max-w-lg mx-auto space-y-6 select-none">
       {/* Header */}
       <motion.div
         className="flex items-center justify-between"
