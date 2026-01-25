@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { firebaseAuth } from "@/lib/firebase";
@@ -31,10 +32,12 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Notification states
+  // Notification preferences - linked to context
+  const { requestPushPermission, pushPermissionStatus } = useNotifications();
   const [miningNotifs, setMiningNotifs] = useState(true);
   const [referralNotifs, setReferralNotifs] = useState(true);
   const [gameNotifs, setGameNotifs] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(pushPermissionStatus === 'granted');
 
   const handleLogout = async () => {
     await signOut();
@@ -223,9 +226,36 @@ export default function Settings() {
 
             {activeModal === "notifications" && (
               <div className="space-y-3">
+                {/* Push notification toggle */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Push Notifications</p>
+                    <p className="text-xs text-foreground/60">
+                      {pushPermissionStatus === 'granted' 
+                        ? 'Enabled - receive alerts when app is closed'
+                        : pushPermissionStatus === 'denied'
+                        ? 'Blocked - enable in browser settings'
+                        : 'Get alerts even when app is closed'}
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={pushEnabled} 
+                    onCheckedChange={async (checked) => {
+                      if (checked && pushPermissionStatus !== 'granted') {
+                        const granted = await requestPushPermission();
+                        setPushEnabled(granted);
+                      } else {
+                        setPushEnabled(checked);
+                      }
+                    }}
+                    disabled={pushPermissionStatus === 'denied'}
+                  />
+                </div>
+                
+                {/* Notification type toggles */}
                 {[
-                  { label: "Mining Alerts", desc: "Get notified when mining session ends", value: miningNotifs, onChange: setMiningNotifs },
-                  { label: "Referral Updates", desc: "New team member notifications", value: referralNotifs, onChange: setReferralNotifs },
+                  { label: "Mining Alerts", desc: "Session complete & claim reminders", value: miningNotifs, onChange: setMiningNotifs },
+                  { label: "Referral Updates", desc: "New team member bonuses", value: referralNotifs, onChange: setReferralNotifs },
                   { label: "Game Rewards", desc: "Spin & scratch win alerts", value: gameNotifs, onChange: setGameNotifs },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between p-4 rounded-xl card-glass-subtle">
@@ -236,9 +266,6 @@ export default function Settings() {
                     <Switch checked={item.value} onCheckedChange={item.onChange} />
                   </div>
                 ))}
-                <p className="text-xs text-foreground/50 text-center pt-2">
-                  Push notifications coming soon!
-                </p>
               </div>
             )}
 

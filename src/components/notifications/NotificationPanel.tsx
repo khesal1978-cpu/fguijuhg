@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { X, Bell, BellOff, CheckCheck, Coins, Pickaxe, Users, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ const getNotificationIcon = (type: NotificationType) => {
 };
 
 export const NotificationPanel = memo(function NotificationPanel({ onClose }: NotificationPanelProps) {
+  const navigate = useNavigate();
   const { 
     notifications, 
     unreadCount, 
@@ -50,10 +52,28 @@ export const NotificationPanel = memo(function NotificationPanel({ onClose }: No
     await requestPushPermission();
   };
 
-  const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
-    if (!isRead) {
+  const handleNotificationClick = async (notification: typeof notifications[0]) => {
+    if (!notification.is_read) {
       haptic('light');
-      await markAsRead(notificationId);
+      await markAsRead(notification.id);
+    }
+    
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'mining_complete':
+        onClose();
+        navigate('/');
+        break;
+      case 'referral_bonus':
+        onClose();
+        navigate('/team');
+        break;
+      case 'balance_update':
+        onClose();
+        navigate('/wallet');
+        break;
+      default:
+        break;
     }
   };
 
@@ -134,8 +154,8 @@ export const NotificationPanel = memo(function NotificationPanel({ onClose }: No
                 key={notification.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                onClick={() => handleNotificationClick(notification.id, notification.is_read)}
-                className={`p-4 flex gap-3 cursor-pointer transition-colors hover:bg-muted/50 ${
+                onClick={() => handleNotificationClick(notification)}
+                className={`p-4 flex gap-3 cursor-pointer transition-colors hover:bg-muted/50 active:bg-muted/70 ${
                   !notification.is_read ? 'bg-primary/5' : ''
                 }`}
               >
@@ -154,9 +174,21 @@ export const NotificationPanel = memo(function NotificationPanel({ onClose }: No
                   <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
                     {notification.message}
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    {formatDistanceToNow(notification.created_at, { addSuffix: true })}
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-muted-foreground/70">
+                      {formatDistanceToNow(notification.created_at, { addSuffix: true })}
+                    </p>
+                    {notification.type === 'mining_complete' && (
+                      <span className="text-xs font-semibold text-primary">
+                        Tap to claim →
+                      </span>
+                    )}
+                    {notification.type === 'referral_bonus' && (
+                      <span className="text-xs font-semibold text-primary">
+                        View team →
+                      </span>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))}

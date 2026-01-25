@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { memo, useMemo, useCallback } from "react";
 import { Home, Gamepad2, Users, Wallet, Settings } from "lucide-react";
 import { usePendingBonuses } from "@/hooks/usePendingBonuses";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { haptic } from "@/lib/haptics";
 
 const navItems = [
@@ -72,9 +73,21 @@ const NavItem = memo(function NavItem({
 export const MobileNav = memo(function MobileNav() {
   const location = useLocation();
   const { count: pendingBonusCount } = usePendingBonuses();
+  const { unreadCount } = useNotifications();
 
   // Memoize active path check
   const activePath = useMemo(() => location.pathname, [location.pathname]);
+
+  // Determine which nav items should show badges
+  const getBadgeInfo = useCallback((path: string) => {
+    if (path === "/team" && pendingBonusCount > 0) {
+      return { show: true, count: pendingBonusCount };
+    }
+    if (path === "/settings" && unreadCount > 0) {
+      return { show: true, count: unreadCount };
+    }
+    return { show: false, count: 0 };
+  }, [pendingBonusCount, unreadCount]);
 
   return (
     <nav 
@@ -83,17 +96,20 @@ export const MobileNav = memo(function MobileNav() {
       aria-label="Main navigation"
     >
       <div className="flex items-center justify-around h-16 px-2 max-w-lg mx-auto">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.path}
-            icon={item.icon}
-            label={item.label}
-            path={item.path}
-            isActive={activePath === item.path}
-            showBadge={item.path === "/team" && pendingBonusCount > 0}
-            badgeCount={pendingBonusCount}
-          />
-        ))}
+        {navItems.map((item) => {
+          const badge = getBadgeInfo(item.path);
+          return (
+            <NavItem
+              key={item.path}
+              icon={item.icon}
+              label={item.label}
+              path={item.path}
+              isActive={activePath === item.path}
+              showBadge={badge.show}
+              badgeCount={badge.count}
+            />
+          );
+        })}
       </div>
     </nav>
   );
