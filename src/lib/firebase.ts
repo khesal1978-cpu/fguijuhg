@@ -1290,3 +1290,55 @@ export const getLeaderboard = async (): Promise<{ rank: number; user_id: string;
     };
   });
 };
+
+// Record mining activity for all groups the user is in
+export const recordGroupMiningActivity = async (userId: string): Promise<void> => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get all groups the user is a member of
+    const membershipQuery = query(
+      collection(db, 'group_members'),
+      where('user_id', '==', userId)
+    );
+    const membershipSnap = await getDocs(membershipQuery);
+    
+    if (membershipSnap.empty) return;
+
+    for (const memberDoc of membershipSnap.docs) {
+      const groupId = memberDoc.data().group_id;
+      
+      // Check for existing activity record
+      const activityQuery = query(
+        collection(db, 'group_daily_activity'),
+        where('group_id', '==', groupId),
+        where('user_id', '==', userId),
+        where('date', '==', today)
+      );
+      const activitySnap = await getDocs(activityQuery);
+
+      if (activitySnap.empty) {
+        // Create new activity record
+        await addDoc(collection(db, 'group_daily_activity'), {
+          date: today,
+          group_id: groupId,
+          user_id: userId,
+          mines_today: 1,
+          is_active: true
+        });
+      } else {
+        // Update existing (max 6 mines per day)
+        const activityDoc = activitySnap.docs[0];
+        const currentMines = activityDoc.data().mines_today || 0;
+        if (currentMines < 6) {
+          await updateDoc(doc(db, 'group_daily_activity', activityDoc.id), {
+            mines_today: increment(1),
+            is_active: true
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error recording group mining activity:', error);
+  }
+};
