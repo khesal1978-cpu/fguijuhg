@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { firebaseAuth } from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 type ModalType = "profile" | "notifications" | "security" | "passcode" | "id" | null;
 
@@ -366,13 +367,17 @@ export default function Settings() {
   return (
     <>
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        {/* Header */}
+        {/* Header with Notification Bell */}
         <motion.div
+          className="flex items-center justify-between"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-xl font-display font-bold text-foreground">Settings</h1>
-          <p className="text-sm text-muted-foreground">Manage your account</p>
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground">Settings</h1>
+            <p className="text-sm text-muted-foreground">Manage your account</p>
+          </div>
+          <NotificationBell />
         </motion.div>
 
         {/* Profile Card */}
