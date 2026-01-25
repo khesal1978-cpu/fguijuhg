@@ -1,7 +1,8 @@
 import { useState, useEffect, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Check, Play, Sparkles } from "lucide-react";
+import { Zap, Check, Play, Sparkles, WifiOff } from "lucide-react";
 import { haptic } from "@/lib/haptics";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 interface MiningButtonProps {
   progress?: number;
@@ -24,16 +25,21 @@ export const MiningButton = memo(function MiningButton({
 }: MiningButtonProps) {
   const [isPressed, setIsPressed] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number }[]>([]);
+  const { isOnline } = useNetworkStatus();
 
   const handleTap = useCallback(() => {
     setIsPressed(false);
+    if (!isOnline) {
+      haptic('error');
+      return;
+    }
     if (canClaim) {
       haptic('success');
     } else {
       haptic('medium');
     }
     onTap?.();
-  }, [canClaim, onTap]);
+  }, [canClaim, onTap, isOnline]);
   
   const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -52,6 +58,7 @@ export const MiningButton = memo(function MiningButton({
   }, [isMining]);
 
   const getButtonState = () => {
+    if (!isOnline) return { text: "OFFLINE", sub: "No connection", color: "bg-muted" };
     if (loading) return { text: "...", sub: "Loading", color: "bg-muted" };
     if (canClaim) return { text: "CLAIM", sub: "Tap to collect", color: "bg-success" };
     if (isMining) return { text: "MINING", sub: `+${(miningRate / 3600).toFixed(4)}/s`, color: "bg-primary" };
@@ -60,6 +67,7 @@ export const MiningButton = memo(function MiningButton({
 
   const state = getButtonState();
   const isInactive = !isMining && !canClaim && canStart;
+  const isDisabled = !isOnline || loading || (isMining && !canClaim);
 
   return (
     <div className="relative flex items-center justify-center py-8">
@@ -115,28 +123,34 @@ export const MiningButton = memo(function MiningButton({
       {/* Main button */}
       <motion.button
         className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center z-20 will-change-transform ${
-          canClaim 
+          !isOnline
+            ? "bg-muted opacity-60"
+            : canClaim 
             ? "bg-gradient-to-br from-success to-emerald-500" 
             : isInactive 
             ? "bg-muted" 
             : "bg-gradient-to-br from-primary to-violet-600"
-        } ${(isMining || canClaim) ? (canClaim ? 'shadow-[0_0_30px_-5px_hsl(142_70%_45%/0.5)]' : 'btn-glow') : ''}`}
-        whileTap={{ scale: 0.94 }}
+        } ${(isMining || canClaim) && isOnline ? (canClaim ? 'shadow-[0_0_30px_-5px_hsl(142_70%_45%/0.5)]' : 'btn-glow') : ''}`}
+        whileTap={isDisabled ? {} : { scale: 0.94 }}
         onTapStart={() => {
-          setIsPressed(true);
-          haptic('light');
+          if (!isDisabled) {
+            setIsPressed(true);
+            haptic('light');
+          }
         }}
         onTap={handleTap}
         onTapCancel={() => setIsPressed(false)}
-        disabled={loading || (isMining && !canClaim)}
+        disabled={isDisabled}
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {/* Icon */}
         <motion.div
-          animate={isMining ? { scale: [1, 1.1, 1] } : {}}
+          animate={isMining && isOnline ? { scale: [1, 1.1, 1] } : {}}
           transition={{ duration: 1, repeat: Infinity }}
         >
-          {canClaim ? (
+          {!isOnline ? (
+            <WifiOff className="size-10 text-white/60" />
+          ) : canClaim ? (
             <Check className="size-10 text-white" />
           ) : isMining ? (
             <Zap className="size-10 text-white fill-current" />
