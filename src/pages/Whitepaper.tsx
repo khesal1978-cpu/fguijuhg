@@ -1,3 +1,4 @@
+import { forwardRef, memo } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Coins, Users, Zap, Shield, Wallet, TrendingUp, Target, AlertTriangle, Download, FileText, Flame, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -204,7 +205,7 @@ END OF WHITE PAPER
   return text;
 };
 
-export default function Whitepaper() {
+const WhitepaperInner = forwardRef<HTMLDivElement, object>(function Whitepaper(_, ref) {
   const handleDownload = () => {
     const content = generateWhitepaperText();
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -220,7 +221,7 @@ export default function Whitepaper() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div ref={ref} className="min-h-screen bg-background pb-32">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -426,4 +427,6 @@ export default function Whitepaper() {
       </div>
     </div>
   );
-}
+});
+
+export default memo(WhitepaperInner);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, forwardRef, memo } from "react";
 import { motion } from "framer-motion";
 import { Coins, Sparkles, TicketPercent, Gift, WifiOff } from "lucide-react";
 import { SpinWheel } from "@/components/games/SpinWheel";
@@ -12,7 +12,7 @@ import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { toast } from "sonner";
 
-export default function Games() {
+const GamesInner = forwardRef<HTMLDivElement, object>(function Games(_, ref) {
   const { profile, refreshProfile } = useAuth();
   const { tasks, loading, spinning, scratching, playSpin, playScratch, claimTask } = useGames();
   const { bonusTasks, loading: bonusLoading, completeBonusTask, claimBonusTask, checkAndGenerateBonusTask } = useBonusTasks();
@@ -80,7 +80,7 @@ export default function Games() {
   }, [applyGameReward]);
 
   return (
-    <div className="px-4 py-6 pb-32 max-w-lg mx-auto w-full space-y-5">
+    <div ref={ref} className="px-4 py-6 pb-32 max-w-lg mx-auto w-full space-y-5">
       {/* Header */}
       <motion.header 
         className="flex items-center justify-between"
@@ -227,4 +227,6 @@ export default function Games() {
       </motion.div>
     </div>
   );
-}
+});
+
+export default memo(GamesInner);

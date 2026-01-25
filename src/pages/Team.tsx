@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, Zap, Copy, Share2, Plus, Loader2, Gift, UserPlus, TrendingUp, Link2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ function getMultiplierTier(activeReferrals: number) {
   return MULTIPLIER_TIERS.find(tier => activeReferrals >= tier.min && activeReferrals <= tier.max) || MULTIPLIER_TIERS[0];
 }
 
-export default function Team() {
+const TeamInner = forwardRef<HTMLDivElement, object>(function Team(_, ref) {
   const { profile } = useAuth();
   const { directReferrals, indirectReferrals, stats, loading, claiming, claimBonuses } = useReferrals();
   const [activeTab, setActiveTab] = useState<"direct" | "indirect">("direct");
@@ -69,7 +69,7 @@ export default function Team() {
   const displayedReferrals = activeTab === "direct" ? directReferrals : indirectReferrals;
 
   return (
-    <div className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6">
+    <div ref={ref} className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6">
       {/* Header with Claim Button */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -379,4 +379,6 @@ export default function Team() {
       </motion.div>
     </div>
   );
-}
+});
+
+export default memo(TeamInner);

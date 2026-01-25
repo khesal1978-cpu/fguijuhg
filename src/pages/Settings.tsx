@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Bell, Shield, LogOut, ChevronRight, Zap, Award, Loader2,
@@ -18,7 +18,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 type ModalType = "profile" | "notifications" | "security" | "passcode" | "id" | null;
 
-export default function Settings() {
+const SettingsInner = forwardRef<HTMLDivElement, object>(function Settings(_, ref) {
   const { profile, user, signOut, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -392,7 +392,7 @@ export default function Settings() {
   );
 
   return (
-    <>
+    <div ref={ref}>
       <div className="px-4 py-6 pb-32 max-w-lg mx-auto space-y-6">
         {/* Header with Notification Bell */}
         <motion.div
@@ -503,6 +503,8 @@ export default function Settings() {
       </div>
 
       {renderModal()}
-    </>
+    </div>
   );
-}
+});
+
+export default memo(SettingsInner);
