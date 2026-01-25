@@ -2,8 +2,10 @@ import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { MobileNav } from "./MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { memo, useMemo, useEffect, useRef, useCallback } from "react";
+import { memo, useMemo, useEffect, useRef } from "react";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { useNotificationTriggers } from "@/hooks/useNotificationTriggers";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 // Memoized ambient gradient to prevent re-renders
 const AmbientGlow = memo(() => (
@@ -34,6 +36,9 @@ export const AppLayout = memo(function AppLayout() {
   const { pathname } = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeNavigation();
+  
+  // Set up notification triggers for mining, referrals, balance changes
+  useNotificationTriggers();
 
   // Scroll to top on route change (native behavior)
   useEffect(() => {
@@ -83,6 +88,17 @@ export const AppLayout = memo(function AppLayout() {
       <main className="flex-1 relative flex flex-col h-full">
         {/* Ambient glow effects - GPU accelerated */}
         <AmbientGlow />
+        
+        {/* Notification bell - fixed position */}
+        <div 
+          className="absolute top-0 right-0 z-30"
+          style={{ 
+            paddingTop: 'calc(var(--safe-area-top) + 8px)',
+            paddingRight: 'calc(var(--safe-area-right) + 8px)',
+          }}
+        >
+          <NotificationBell />
+        </div>
         
         {/* Safe area padding for notched devices */}
         <div 
