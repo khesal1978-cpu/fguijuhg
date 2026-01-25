@@ -68,14 +68,15 @@ export function SpinWheel({ onSpin, onAdSpin, onAdRewardComplete, spinning, cost
     
     const numSegments = SEGMENTS.length;
     const segmentAngle = 360 / numSegments;
-    const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.5);
+    const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.4);
     const segmentCenterAngle = segmentIndex * segmentAngle + segmentAngle / 2;
-    const spins = 5 + Math.floor(Math.random() * 3);
-    const newRotation = spins * 360 + (360 - segmentCenterAngle) + randomOffset;
+    const spins = 6 + Math.floor(Math.random() * 2);
+    const newRotation = rotation + spins * 360 + (360 - segmentCenterAngle) + randomOffset;
 
     setRotation(newRotation);
     setResult(reward);
 
+    // Wait for animation to complete before showing result
     setTimeout(async () => {
       setShowResult(true);
       setIsSpinning(false);
@@ -84,7 +85,7 @@ export function SpinWheel({ onSpin, onAdSpin, onAdRewardComplete, spinning, cost
       if (fromAd && reward > 0 && onAdRewardComplete) {
         await onAdRewardComplete(reward);
       }
-    }, 3500);
+    }, 4000);
   };
 
   const handleCoinSpin = async () => {
@@ -160,7 +161,10 @@ export function SpinWheel({ onSpin, onAdSpin, onAdRewardComplete, spinning, cost
             className="relative w-full h-full rounded-full overflow-hidden"
             style={{ rotate: rotation }}
             animate={{ rotate: rotation }}
-            transition={{ duration: 3.5, ease: [0.2, 0.8, 0.2, 1] }}
+            transition={{ 
+              duration: 4, 
+              ease: [0.15, 0.85, 0.25, 1],
+            }}
           >
             <svg viewBox="0 0 200 200" className="w-full h-full">
               {SEGMENTS.map((segment, i) => {
