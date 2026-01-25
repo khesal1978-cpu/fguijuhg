@@ -68,7 +68,7 @@ export default function Auth() {
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [foundUniqueId, setFoundUniqueId] = useState<string | null>(null);
   const [linkRecoveryEmail, setLinkRecoveryEmail] = useState("");
-  const [showReferralInput, setShowReferralInput] = useState(false);
+  
 
   const generateUniqueId = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -125,6 +125,13 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate referral code is provided for registration
+    if ((screen === "register" || screen === "unique-id-setup") && !referralCode.trim()) {
+      toast.error("Invite code is required");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -144,7 +151,7 @@ export default function Auth() {
         await createProfile(
           userCredential.user.uid,
           displayName || 'Miner',
-          referralCode || undefined,
+          referralCode.trim(),
           { recoveryEmail: email }
         );
         console.log('Profile created with referral code:', referralCode);
@@ -161,7 +168,7 @@ export default function Auth() {
         await createProfile(
           userCredential.user.uid,
           displayName || generatedId,
-          referralCode || undefined,
+          referralCode.trim(),
           { 
             uniqueId: generatedId,
             recoveryEmail: linkRecoveryEmail || undefined
@@ -919,33 +926,23 @@ export default function Auth() {
               />
             </div>
 
-            {/* Referral Code Toggle */}
-            {!showReferralInput ? (
-              <button
-                type="button"
-                onClick={() => setShowReferralInput(true)}
-                className="flex items-center gap-2 text-[13px] text-primary"
+            {/* Referral Code - Required */}
+            <div className="relative">
+              <div 
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255, 255, 255, 0.06)' }}
               >
-                <Gift className="size-3.5" />
-                Have a referral code? <span className="text-white/40">Apply ›</span>
-              </button>
-            ) : (
-              <div className="relative">
-                <div 
-                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(255, 255, 255, 0.06)' }}
-                >
-                  <Gift className="size-4 text-white/50" />
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Referral code"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                  className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
-                />
+                <Gift className="size-4 text-white/50" />
               </div>
-            )}
+              <Input
+                type="text"
+                placeholder="Invite code (required)"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                required
+                className="h-[52px] pl-14 rounded-xl bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/40 text-[15px]"
+              />
+            </div>
 
             {/* Submit Button */}
             <motion.button
@@ -1095,9 +1092,10 @@ export default function Auth() {
               <Gift className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Referral code (optional)"
+                placeholder="Invite code (required)"
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value)}
+                required
                 className="h-14 pl-12 rounded-xl bg-muted border-border text-foreground"
               />
             </div>

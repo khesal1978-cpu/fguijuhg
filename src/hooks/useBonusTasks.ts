@@ -25,7 +25,7 @@ export function useBonusTasks() {
     let isActive = true;
 
     // Delay subscription to prevent rapid mount/unmount issues
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       if (!isActive) return;
 
       try {
@@ -35,50 +35,96 @@ export function useBonusTasks() {
           where('user_id', '==', user.uid)
         );
 
-        unsubscribe = onSnapshot(
-          q, 
-          (snapshot) => {
-            if (!isActive || !isMountedRef.current) return;
+        // Try to get initial data first to check permissions
+        try {
+          const snapshot = await getDocs(q);
+          if (!isActive || !isMountedRef.current) return;
+          
+          const tasks: BonusTask[] = [];
+          const now = new Date();
+          
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const expiresAt = data.expires_at?.toDate() || new Date();
             
-            const tasks: BonusTask[] = [];
-            const now = new Date();
-            
-            snapshot.forEach((docSnap) => {
-              const data = docSnap.data();
-              const expiresAt = data.expires_at?.toDate() || new Date();
-              
-              // Only include non-expired tasks
-              if (expiresAt > now || !data.is_claimed) {
-                tasks.push({
-                  id: docSnap.id,
-                  user_id: data.user_id,
-                  task_type: data.task_type,
-                  title: data.title,
-                  description: data.description,
-                  reward: data.reward,
-                  is_completed: data.is_completed,
-                  is_claimed: data.is_claimed,
-                  expires_at: expiresAt,
-                  created_at: data.created_at?.toDate() || new Date(),
-                });
-              }
-            });
-
-            // Sort by created_at desc, filter out claimed
-            const activeTasks = tasks
-              .filter(t => !t.is_claimed)
-              .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
-            
-            setBonusTasks(activeTasks);
-            setLoading(false);
-          },
-          (error) => {
-            console.error('[BONUS_TASKS] Subscription error:', error);
-            if (isActive && isMountedRef.current) {
-              setLoading(false);
+            // Only include non-expired tasks
+            if (expiresAt > now || !data.is_claimed) {
+              tasks.push({
+                id: docSnap.id,
+                user_id: data.user_id,
+                task_type: data.task_type,
+                title: data.title,
+                description: data.description,
+                reward: data.reward,
+                is_completed: data.is_completed,
+                is_claimed: data.is_claimed,
+                expires_at: expiresAt,
+                created_at: data.created_at?.toDate() || new Date(),
+              });
             }
+          });
+
+          // Sort by created_at desc, filter out claimed
+          const activeTasks = tasks
+            .filter(t => !t.is_claimed)
+            .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+          
+          setBonusTasks(activeTasks);
+          setLoading(false);
+          
+          // Now set up realtime listener
+          unsubscribe = onSnapshot(
+            q, 
+            (snapshot) => {
+              if (!isActive || !isMountedRef.current) return;
+              
+              const tasks: BonusTask[] = [];
+              const now = new Date();
+              
+              snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const expiresAt = data.expires_at?.toDate() || new Date();
+                
+                if (expiresAt > now || !data.is_claimed) {
+                  tasks.push({
+                    id: docSnap.id,
+                    user_id: data.user_id,
+                    task_type: data.task_type,
+                    title: data.title,
+                    description: data.description,
+                    reward: data.reward,
+                    is_completed: data.is_completed,
+                    is_claimed: data.is_claimed,
+                    expires_at: expiresAt,
+                    created_at: data.created_at?.toDate() || new Date(),
+                  });
+                }
+              });
+
+              const activeTasks = tasks
+                .filter(t => !t.is_claimed)
+                .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+              
+              setBonusTasks(activeTasks);
+            },
+            (error) => {
+              // Silently handle permission errors - collection may not exist yet
+              if (error.code !== 'permission-denied') {
+                console.error('[BONUS_TASKS] Realtime error:', error);
+              }
+            }
+          );
+        } catch (error: any) {
+          // Permission denied means collection doesn't exist or no access yet - this is OK
+          if (error?.code === 'permission-denied') {
+            // Silently continue - bonus tasks will be created when conditions are met
+            setBonusTasks([]);
+            setLoading(false);
+          } else {
+            console.error('[BONUS_TASKS] Query error:', error);
+            setLoading(false);
           }
-        );
+        }
       } catch (error) {
         console.error('[BONUS_TASKS] Setup error:', error);
         if (isActive && isMountedRef.current) {

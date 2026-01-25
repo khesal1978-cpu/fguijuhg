@@ -157,12 +157,15 @@ export function ScratchCard({ onScratch, onAdScratch, onAdRewardComplete, scratc
     const progress = (transparent / (imageData.data.length / 4)) * 100;
     setScratchProgress(progress);
 
-    if (progress > 40 && !revealed) {
+    if (progress > 45 && !revealed) {
       setRevealed(true);
       
       // Apply reward after reveal if it was an ad scratch
       if (isAdScratch && reward !== null && reward > 0 && onAdRewardComplete) {
-        onAdRewardComplete(reward);
+        // Small delay to let the reveal animation play
+        setTimeout(() => {
+          onAdRewardComplete(reward);
+        }, 300);
       }
     }
   };
