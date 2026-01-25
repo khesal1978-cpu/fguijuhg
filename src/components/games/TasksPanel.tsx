@@ -1,3 +1,4 @@
+import { forwardRef, memo } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Gift, Users, Gamepad2, Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,105 +37,107 @@ const TASK_CONFIG: Record<string, { icon: typeof Calendar; title: string; descri
   },
 };
 
-export function TasksPanel({ tasks, loading, onClaimTask }: TasksPanelProps) {
-  if (loading) {
+export const TasksPanel = memo(forwardRef<HTMLDivElement, TasksPanelProps>(
+  function TasksPanel({ tasks, loading, onClaimTask }, ref) {
+    if (loading) {
+      return (
+        <div ref={ref} className="flex items-center justify-center py-8">
+          <Loader2 className="size-5 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (tasks.length === 0) {
+      return (
+        <div ref={ref} className="text-center py-6 text-muted-foreground">
+          <Calendar className="size-8 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">No active tasks</p>
+          <p className="text-xs opacity-70">Check back later!</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="size-5 animate-spin text-primary" />
-      </div>
-    );
-  }
+      <div ref={ref} className="space-y-3">
+        {tasks.map((task, index) => {
+          const config = TASK_CONFIG[task.task_type] || {
+            icon: Circle,
+            title: task.task_type,
+            description: "",
+          };
+          const IconComponent = config.icon;
+          const progress = Math.min((task.progress / task.target) * 100, 100);
 
-  if (tasks.length === 0) {
-    return (
-      <div className="text-center py-6 text-muted-foreground">
-        <Calendar className="size-8 mx-auto mb-2 opacity-40" />
-        <p className="text-sm">No active tasks</p>
-        <p className="text-xs opacity-70">Check back later!</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {tasks.map((task, index) => {
-        const config = TASK_CONFIG[task.task_type] || {
-          icon: Circle,
-          title: task.task_type,
-          description: "",
-        };
-        const IconComponent = config.icon;
-        const progress = Math.min((task.progress / task.target) * 100, 100);
-
-        return (
-          <motion.div
-            key={task.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className={`p-3 rounded-xl border transition-all ${
-              task.is_completed
-                ? "bg-primary/5 border-primary/20"
-                : "bg-background border-border"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {/* Icon */}
-              <div
-                className={`size-10 rounded-lg flex items-center justify-center shrink-0 ${
-                  task.is_completed
-                    ? "bg-primary/15 text-primary"
-                    : "bg-secondary text-muted-foreground"
-                }`}
-              >
-                <IconComponent className="size-5" />
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h4 className="font-semibold text-sm text-foreground truncate">
-                    {config.title}
-                  </h4>
-                  <div className="flex items-center gap-1 text-xs font-bold text-primary shrink-0">
-                    <Gift className="size-3" />
-                    +{task.reward}
-                  </div>
-                </div>
-                
-                {/* Progress */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <motion.div
-                      className={`h-full rounded-full ${
-                        task.is_completed ? "bg-primary" : "bg-primary/50"
-                      }`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.4 }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium text-muted-foreground shrink-0">
-                    {task.progress}/{task.target}
-                  </span>
+          return (
+            <motion.div
+              key={task.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className={`p-3 rounded-xl border transition-all ${
+                task.is_completed
+                  ? "bg-primary/5 border-primary/20"
+                  : "bg-background border-border"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {/* Icon */}
+                <div
+                  className={`size-10 rounded-lg flex items-center justify-center shrink-0 ${
+                    task.is_completed
+                      ? "bg-primary/15 text-primary"
+                      : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  <IconComponent className="size-5" />
                 </div>
 
-                {/* Claim Button */}
-                {task.is_completed && !task.is_claimed && (
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <h4 className="font-semibold text-sm text-foreground truncate">
+                      {config.title}
+                    </h4>
+                    <div className="flex items-center gap-1 text-xs font-bold text-primary shrink-0">
+                      <Gift className="size-3" />
+                      +{task.reward}
+                    </div>
+                  </div>
+                  
+                  {/* Progress */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                      <motion.div
+                        className={`h-full rounded-full ${
+                          task.is_completed ? "bg-primary" : "bg-primary/50"
+                        }`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.4 }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground shrink-0">
+                      {task.progress}/{task.target}
+                    </span>
+                  </div>
+
+                  {/* Claim Button */}
+                  {task.is_completed && !task.is_claimed && (
                   <Button
                     size="sm"
                     onClick={() => onClaimTask(task.id)}
-                    className="w-full h-7 mt-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold text-xs"
+                    className="w-full h-7 mt-2 rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-xs"
                   >
-                    <CheckCircle2 className="size-3 mr-1" />
-                    Claim Reward
-                  </Button>
-                )}
+                      <CheckCircle2 className="size-3 mr-1" />
+                      Claim Reward
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-}
+            </motion.div>
+          );
+        })}
+      </div>
+    );
+  }
+));

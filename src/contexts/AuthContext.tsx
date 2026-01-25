@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback, useRef } from "react";
 import { 
   firebaseAuth, 
   onAuthStateChanged, 
@@ -36,6 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Track mounted state to prevent updates after unmount
+  const isMountedRef = useRef(true);
+  const profileSubscriptionRef = useRef<(() => void) | null>(null);
 
   // Memoized fetch profile function
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
@@ -43,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       const data = await getProfile(userId);
-      if (data) {
+      if (data && isMountedRef.current) {
         setProfile(data);
       }
       return data;
@@ -63,23 +67,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Memoized sign out function
   const signOut = useCallback(async () => {
     try {
+      // Clean up profile subscription before signing out
+      if (profileSubscriptionRef.current) {
+        try {
+          profileSubscriptionRef.current();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+        profileSubscriptionRef.current = null;
+      }
+      
       await firebaseSignOut();
-      setProfile(null);
-      setUser(null);
+      
+      if (isMountedRef.current) {
+        setProfile(null);
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error signing out:', error);
-      throw error; // Re-throw for caller to handle
+      throw error;
     }
   }, []);
 
-  // Auth state listener
+  // Auth state listener - runs once on mount
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let isMounted = true;
+    isMountedRef.current = true;
+    let unsubscribeAuth: (() => void) | undefined;
     
     try {
-      unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
-        if (!isMounted) return;
+      unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+        if (!isMountedRef.current) return;
         
         try {
           setUser(firebaseUser);
@@ -90,17 +107,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             if (!userProfile) {
               // Wait briefly for profile creation (handles race condition with Auth page)
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise(resolve => setTimeout(resolve, 500));
               userProfile = await getProfile(firebaseUser.uid);
               
               // Create fallback profile for edge cases (direct Google sign-in)
-              if (!userProfile && isMounted) {
+              if (!userProfile && isMountedRef.current) {
                 try {
                   console.log('Creating fallback profile for user:', firebaseUser.uid);
-                  // Sanitize display name
                   const displayName = (firebaseUser.displayName || 'Miner')
                     .slice(0, 50)
-                    .replace(/[<>"']/g, ''); // Remove potentially dangerous characters
+                    .replace(/[<>"']/g, '');
                   userProfile = await createProfile(firebaseUser.uid, displayName);
                 } catch (createError) {
                   console.error('Error creating fallback profile:', createError);
@@ -108,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
             
-            if (isMounted) {
+            if (isMountedRef.current) {
               setProfile(userProfile);
             }
             
@@ -126,17 +142,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               trackDailyLogin(firebaseUser.uid).catch(console.error);
             }
           } else {
-            if (isMounted) {
+            if (isMountedRef.current) {
               setProfile(null);
             }
           }
         } catch (error) {
           console.error('Auth state change error:', error);
-          if (isMounted) {
+          if (isMountedRef.current) {
             setProfile(null);
           }
         } finally {
-          if (isMounted) {
+          if (isMountedRef.current) {
             setLoading(false);
             setIsInitialized(true);
           }
@@ -144,42 +160,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       console.error('Error setting up auth listener:', error);
-      setLoading(false);
-      setIsInitialized(true);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setIsInitialized(true);
+      }
     }
 
     return () => {
-      isMounted = false;
-      if (unsubscribe) {
-        unsubscribe();
+      isMountedRef.current = false;
+      if (unsubscribeAuth) {
+        unsubscribeAuth();
       }
     };
   }, []);
 
-  // Subscribe to profile changes in real-time
+  // Subscribe to profile changes in real-time - with improved cleanup
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid || !isInitialized) return;
 
-    let unsubscribe: (() => void) | undefined;
-    let isMounted = true;
+    let isActive = true;
     
-    try {
-      unsubscribe = subscribeToProfile(user.uid, (updatedProfile) => {
-        if (isMounted) {
-          setProfile(updatedProfile);
-        }
-      });
-    } catch (error) {
-      console.error('Error subscribing to profile:', error);
+    // Clean up any existing subscription first
+    if (profileSubscriptionRef.current) {
+      try {
+        profileSubscriptionRef.current();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      profileSubscriptionRef.current = null;
     }
+    
+    // Delay subscription to avoid race conditions during auth state changes
+    const timeoutId = setTimeout(() => {
+      if (!isActive || !isMountedRef.current) return;
+      
+      try {
+        profileSubscriptionRef.current = subscribeToProfile(user.uid, (updatedProfile) => {
+          if (isActive && isMountedRef.current) {
+            setProfile(updatedProfile);
+          }
+        });
+      } catch (error) {
+        console.error('Error subscribing to profile:', error);
+      }
+    }, 200);
 
     return () => {
-      isMounted = false;
-      if (unsubscribe) {
-        unsubscribe();
+      isActive = false;
+      clearTimeout(timeoutId);
+      
+      if (profileSubscriptionRef.current) {
+        try {
+          profileSubscriptionRef.current();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+        profileSubscriptionRef.current = null;
       }
     };
-  }, [user?.uid]);
+  }, [user?.uid, isInitialized]);
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo<AuthContextType>(() => ({
@@ -200,7 +239,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   
-  // Safety check - should never happen with proper provider setup
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }

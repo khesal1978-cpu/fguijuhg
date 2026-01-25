@@ -1,4 +1,4 @@
-import { lazy, Suspense, memo } from "react";
+import { lazy, Suspense, memo, useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +9,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { PageLoader } from "@/components/PageLoader";
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { PageTransition } from "@/components/PageTransition";
 
@@ -26,13 +25,19 @@ const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const Whitepaper = lazy(() => import("./pages/Whitepaper"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+// Ultra-minimal loading placeholder - prevents layout shift without showing spinner
+const PagePlaceholder = memo(() => (
+  <div className="w-full h-full min-h-[50vh]" aria-hidden="true" />
+));
+PagePlaceholder.displayName = "PagePlaceholder";
+
 // Configure query client with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
-      retry: 2,
+      gcTime: 1000 * 60 * 30, // 30 minutes
+      retry: 1,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     },
@@ -42,68 +47,93 @@ const queryClient = new QueryClient({
   },
 });
 
-// Animated routes wrapper
+// Animated routes wrapper with optimized Suspense boundaries
 const AnimatedRoutes = memo(function AnimatedRoutes() {
   const location = useLocation();
   
+  // Memoize location key to prevent unnecessary re-renders
+  const locationKey = useMemo(() => location.pathname, [location.pathname]);
+  
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location} key={locationKey}>
         <Route path="/auth" element={
           <PageTransition>
-            <Auth />
+            <Suspense fallback={<PagePlaceholder />}>
+              <Auth />
+            </Suspense>
           </PageTransition>
         } />
         <Route element={<AppLayout />}>
           <Route path="/" element={
             <PageTransition>
-              <Dashboard />
+              <Suspense fallback={<PagePlaceholder />}>
+                <Dashboard />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/games" element={
             <PageTransition>
-              <Games />
+              <Suspense fallback={<PagePlaceholder />}>
+                <Games />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/wallet" element={
             <PageTransition>
-              <Wallet />
+              <Suspense fallback={<PagePlaceholder />}>
+                <Wallet />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/team" element={
             <PageTransition>
-              <Team />
+              <Suspense fallback={<PagePlaceholder />}>
+                <Team />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/settings" element={
             <PageTransition>
-              <Settings />
+              <Suspense fallback={<PagePlaceholder />}>
+                <Settings />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/terms" element={
             <PageTransition>
-              <TermsConditions />
+              <Suspense fallback={<PagePlaceholder />}>
+                <TermsConditions />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/privacy" element={
             <PageTransition>
-              <PrivacyPolicy />
+              <Suspense fallback={<PagePlaceholder />}>
+                <PrivacyPolicy />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/help" element={
             <PageTransition>
-              <HelpCenter />
+              <Suspense fallback={<PagePlaceholder />}>
+                <HelpCenter />
+              </Suspense>
             </PageTransition>
           } />
           <Route path="/whitepaper" element={
             <PageTransition>
-              <Whitepaper />
+              <Suspense fallback={<PagePlaceholder />}>
+                <Whitepaper />
+              </Suspense>
             </PageTransition>
           } />
         </Route>
         <Route path="*" element={
           <PageTransition>
-            <NotFound />
+            <Suspense fallback={<PagePlaceholder />}>
+              <NotFound />
+            </Suspense>
           </PageTransition>
         } />
       </Routes>
@@ -127,9 +157,7 @@ const App = memo(() => (
             />
             <NetworkStatus />
             <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
-                <AnimatedRoutes />
-              </Suspense>
+              <AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </NotificationProvider>
