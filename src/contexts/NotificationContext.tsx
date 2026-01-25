@@ -1,9 +1,18 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
 import { collection, query, where, orderBy, limit, onSnapshot, doc, updateDoc, addDoc, Timestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './AuthContext';
 import { AppNotification, NotificationType } from '@/types/notifications';
 import { haptic } from '@/lib/haptics';
+import {
+  requestNotificationPermission,
+  setupForegroundMessageHandler,
+  isPushNotificationSupported,
+  getNotificationPermissionStatus,
+  sendLocalNotification,
+  notificationTemplates,
+  NotificationType as PushNotificationType,
+} from '@/lib/pushNotifications';
 
 interface NotificationContextType {
   notifications: AppNotification[];
@@ -14,6 +23,9 @@ interface NotificationContextType {
   addNotification: (type: NotificationType, title: string, message: string, data?: Record<string, unknown>) => Promise<void>;
   requestPushPermission: () => Promise<boolean>;
   pushPermissionStatus: NotificationPermission | 'unsupported';
+  isPushSupported: boolean;
+  fcmToken: string | null;
+  sendPushNotification: (type: PushNotificationType, data?: Record<string, string>) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -23,14 +35,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [pushPermissionStatus, setPushPermissionStatus] = useState<NotificationPermission | 'unsupported'>('default');
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const foregroundUnsubscribeRef = useRef<(() => void) | null>(null);
+  const prevNotificationsRef = useRef<AppNotification[]>([]);
 
   // Check push notification support
   useEffect(() => {
-    if ('Notification' in window) {
-      setPushPermissionStatus(Notification.permission);
-    } else {
-      setPushPermissionStatus('unsupported');
+    async function checkSupport() {
+      const supported = await isPushNotificationSupported();
+      setIsPushSupported(supported);
+      setPushPermissionStatus(getNotificationPermissionStatus());
     }
+    checkSupport();
   }, []);
 
   // Subscribe to notifications
@@ -66,12 +83,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
       
       // Check for new unread notifications and trigger haptic
-      const prevUnread = notifications.filter(n => !n.is_read).length;
+      const prevUnread = prevNotificationsRef.current.filter(n => !n.is_read).length;
       const newUnread = newNotifications.filter(n => !n.is_read).length;
-      if (newUnread > prevUnread && prevUnread > 0) {
+      if (newUnread > prevUnread && prevNotificationsRef.current.length > 0) {
         haptic('medium');
       }
       
+      prevNotificationsRef.current = newNotifications;
       setNotifications(newNotifications);
       setLoading(false);
     }, (error) => {
@@ -81,6 +99,32 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, [user?.uid]);
+
+  // Set up FCM foreground message handler
+  useEffect(() => {
+    if (!user?.uid || pushPermissionStatus !== 'granted') return;
+
+    foregroundUnsubscribeRef.current = setupForegroundMessageHandler((payload) => {
+      // Add to in-app notifications
+      addDoc(collection(db, 'notifications'), {
+        user_id: user.uid,
+        type: payload.data?.type || 'system',
+        title: payload.title,
+        message: payload.body,
+        data: payload.data || null,
+        is_read: false,
+        created_at: Timestamp.now(),
+      }).catch(console.error);
+      
+      haptic('medium');
+    });
+
+    return () => {
+      if (foregroundUnsubscribeRef.current) {
+        foregroundUnsubscribeRef.current();
+      }
+    };
+  }, [user?.uid, pushPermissionStatus]);
 
   const unreadCount = useMemo(() => 
     notifications.filter(n => !n.is_read).length, 
@@ -134,8 +178,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
 
       // Show browser notification if permission granted
-      if (pushPermissionStatus === 'granted' && 'Notification' in window) {
-        new Notification(title, {
+      if (pushPermissionStatus === 'granted') {
+        await sendLocalNotification({
+          title,
           body: message,
           icon: '/favicon.ico',
           tag: type,
@@ -147,19 +192,37 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [user?.uid, pushPermissionStatus]);
 
   const requestPushPermission = useCallback(async () => {
-    if (!('Notification' in window)) {
+    if (!user?.uid || !isPushSupported) {
       return false;
     }
 
     try {
-      const permission = await Notification.requestPermission();
-      setPushPermissionStatus(permission);
-      return permission === 'granted';
+      const token = await requestNotificationPermission(user.uid);
+      
+      if (token) {
+        setFcmToken(token);
+        setPushPermissionStatus('granted');
+        return true;
+      } else {
+        setPushPermissionStatus(getNotificationPermissionStatus());
+        return false;
+      }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
       return false;
     }
-  }, []);
+  }, [user?.uid, isPushSupported]);
+
+  // Send a push notification using templates
+  const sendPushNotification = useCallback(async (
+    type: PushNotificationType,
+    data?: Record<string, string>
+  ) => {
+    if (pushPermissionStatus !== 'granted') return;
+
+    const payload = notificationTemplates[type](data);
+    await sendLocalNotification(payload);
+  }, [pushPermissionStatus]);
 
   const value = useMemo(() => ({
     notifications,
@@ -170,7 +233,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     addNotification,
     requestPushPermission,
     pushPermissionStatus,
-  }), [notifications, unreadCount, loading, markAsRead, markAllAsRead, addNotification, requestPushPermission, pushPermissionStatus]);
+    isPushSupported,
+    fcmToken,
+    sendPushNotification,
+  }), [notifications, unreadCount, loading, markAsRead, markAllAsRead, addNotification, requestPushPermission, pushPermissionStatus, isPushSupported, fcmToken, sendPushNotification]);
 
   return (
     <NotificationContext.Provider value={value}>

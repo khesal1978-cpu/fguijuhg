@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -9,10 +9,12 @@ import { useNotifications } from '@/contexts/NotificationContext';
  * - Mining session completion
  * - Referral bonuses
  * - Balance changes
+ * 
+ * Also triggers push notifications for background alerts
  */
 export function useNotificationTriggers() {
   const { user, profile } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification, pushPermissionStatus, sendPushNotification } = useNotifications();
   const prevBalanceRef = useRef<number | null>(null);
   const prevMiningSessionRef = useRef<string | null>(null);
   const initialLoadRef = useRef(true);
@@ -47,8 +49,15 @@ export function useNotificationTriggers() {
         `You received +${difference} CASET. Your new balance is ${currentBalance} CASET.`,
         { amount: difference, newBalance: currentBalance }
       );
+      
+      // Send push notification if enabled
+      if (pushPermissionStatus === 'granted') {
+        sendPushNotification('balance_update', {
+          amount: `+${difference}`,
+        });
+      }
     }
-  }, [profile?.balance, addNotification]);
+  }, [profile?.balance, addNotification, pushPermissionStatus, sendPushNotification]);
 
   // Track mining session completion
   useEffect(() => {
@@ -78,8 +87,11 @@ export function useNotificationTriggers() {
               const data = change.doc.data();
               const sessionId = change.doc.id;
               
-              // Check if session just became claimable (is_active = false, is_claimed = false)
-              if (!data.is_active && !data.is_claimed && prevMiningSessionRef.current !== sessionId) {
+              // Check if session just became claimable (ended but not claimed)
+              const endsAt = data.ends_at?.toDate?.() || new Date(data.ends_at);
+              const isComplete = endsAt <= new Date();
+              
+              if (isComplete && !data.is_claimed && prevMiningSessionRef.current !== sessionId) {
                 prevMiningSessionRef.current = sessionId;
                 
                 addNotification(
@@ -88,6 +100,13 @@ export function useNotificationTriggers() {
                   `Your mining session is ready! Claim ${data.earned_amount} CASET now before it expires.`,
                   { sessionId, earnedAmount: data.earned_amount }
                 );
+                
+                // Send push notification if enabled
+                if (pushPermissionStatus === 'granted') {
+                  sendPushNotification('mining_complete', {
+                    amount: String(data.earned_amount),
+                  });
+                }
               }
             }
           });
@@ -110,7 +129,7 @@ export function useNotificationTriggers() {
         }
       }
     };
-  }, [user?.uid, addNotification]);
+  }, [user?.uid, addNotification, pushPermissionStatus, sendPushNotification]);
 
   // Track new referral bonuses
   useEffect(() => {
@@ -145,6 +164,14 @@ export function useNotificationTriggers() {
                 `You earned ${data.amount} CASET from a referral. Go to Team page to claim!`,
                 { amount: data.amount, fromUser: data.from_user_id }
               );
+              
+              // Send push notification if enabled
+              if (pushPermissionStatus === 'granted') {
+                sendPushNotification('referral_bonus', {
+                  amount: String(data.amount),
+                  name: data.from_user_name || 'Someone',
+                });
+              }
             }
           });
         }, (error) => {
@@ -172,5 +199,5 @@ export function useNotificationTriggers() {
         }
       }
     };
-  }, [user?.uid, addNotification]);
+  }, [user?.uid, addNotification, pushPermissionStatus, sendPushNotification]);
 }
