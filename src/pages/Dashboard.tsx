@@ -104,6 +104,29 @@ export default function Dashboard() {
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto space-y-6 select-none">
+      {/* Microsoft for Startups Badge */}
+      <motion.div
+        className="flex justify-center"
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
+          <span className="text-[10px] text-muted-foreground">Supported by</span>
+          <svg 
+            viewBox="0 0 23 23" 
+            className="size-3"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path fill="#f25022" d="M1 1h10v10H1z"/>
+            <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+            <path fill="#7fba00" d="M12 1h10v10H12z"/>
+            <path fill="#ffb900" d="M12 12h10v10H12z"/>
+          </svg>
+          <span className="text-[10px] font-medium text-foreground/80">Microsoft for Startups</span>
+        </div>
+      </motion.div>
+
       {/* Header */}
       <motion.div
         className="flex items-center justify-between"
