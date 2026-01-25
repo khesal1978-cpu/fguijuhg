@@ -91,7 +91,7 @@ export const AppLayout = memo(function AppLayout() {
         {/* Safe area padding for notched devices */}
         <div 
           ref={scrollRef}
-          className="relative z-10 flex-1 overflow-y-auto pb-20 scrollbar-hide overscroll-none"
+          className="relative z-10 flex-1 overflow-y-auto pb-24 scrollbar-hide overscroll-none"
           data-scrollable="true"
           style={{ 
             WebkitOverflowScrolling: 'touch',
@@ -101,6 +101,24 @@ export const AppLayout = memo(function AppLayout() {
           }}
         >
           <Outlet />
+        </div>
+
+        {/* Microsoft for Startups Badge - Above Nav */}
+        <div className="absolute bottom-[68px] left-0 right-0 z-20 flex justify-center pointer-events-none">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/30">
+            <span className="text-[10px] text-muted-foreground">Supported by</span>
+            <svg 
+              viewBox="0 0 23 23" 
+              className="size-3"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path fill="#f25022" d="M1 1h10v10H1z"/>
+              <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+              <path fill="#7fba00" d="M12 1h10v10H12z"/>
+              <path fill="#ffb900" d="M12 12h10v10H12z"/>
+            </svg>
+            <span className="text-[10px] font-medium text-foreground/80">Microsoft for Startups</span>
+          </div>
         </div>
       </main>
       <MobileNav />
